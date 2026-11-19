@@ -780,15 +780,7 @@ export function TournamentDetailPage() {
                   </thead>
                   <tbody>
                     {finalsInfo.finalsRows.map((row) => (
-                      <tr
-                        key={row.playerName}
-                        className={row.rank === 1 ? 'zone-row' : undefined}
-                        style={
-                          row.rank === 1
-                            ? ({ '--zone-bg': '#fff1f2' } as CSSProperties)
-                            : undefined
-                        }
-                      >
+                      <tr key={row.playerName}>
                         <td className="tabular-nums" style={{ fontWeight: 600 }}>
                           {row.rank}
                         </td>
