@@ -265,15 +265,29 @@ export function TournamentDetailPage() {
                 </thead>
                 <tbody>
                   {footballStandings.map((row, idx) => {
-                    const isTopTwo = idx < 2;
-                    const showRelegationLine =
-                      idx === 13 && footballStandings.length >= 16;
+                    const rowClass =
+                      idx === 0
+                        ? 'qualified-deep'
+                        : idx === 1
+                          ? 'qualified'
+                          : idx >= 14
+                            ? 'relegated'
+                            : undefined;
+                    const cutoffLabel =
+                      idx === 0
+                        ? '亚冠精英正赛'
+                        : idx === 1
+                          ? '亚冠精英小组赛'
+                          : idx === 13 && footballStandings.length >= 16
+                            ? tournament?.qualifyLabel || '降级'
+                            : null;
+                    const isAclCutoff = idx === 0 || idx === 1;
                     const gd = row.goalsFor - row.goalsAgainst;
                     const gdText = gd > 0 ? `+${gd}` : `${gd}`;
 
                     return (
                       <Fragment key={row.teamName}>
-                        <tr className={isTopTwo ? 'qualified' : undefined}>
+                        <tr className={rowClass}>
                           <td className="tabular-nums" style={{ fontWeight: 600 }}>
                             {row.rank}
                           </td>
@@ -293,12 +307,20 @@ export function TournamentDetailPage() {
                             {row.points}
                           </td>
                         </tr>
-                        {showRelegationLine ? (
+                        {cutoffLabel ? (
                           <tr className="cutoff-row">
                             <td colSpan={7}>
-                              <div className="cutoff-divider">
-                                <span className="cutoff-pill">
-                                  {tournament?.qualifyLabel || '降级'}
+                              <div
+                                className={`cutoff-divider ${
+                                  isAclCutoff ? 'acl' : ''
+                                }`}
+                              >
+                                <span
+                                  className={`cutoff-pill ${
+                                    isAclCutoff ? 'acl' : ''
+                                  }`}
+                                >
+                                  {cutoffLabel}
                                 </span>
                               </div>
                             </td>

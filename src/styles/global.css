@@ -574,8 +574,16 @@ button {
   border-bottom: none;
 }
 
+.standings-board tr.qualified-deep td {
+  background-color: #ffe4e6;
+}
+
 .standings-board tr.qualified td {
   background-color: #fff1f2;
+}
+
+.standings-board tr.relegated td {
+  background-color: #f1f5f9;
 }
 
 .standings-board tr.cutoff-row td {
@@ -601,6 +609,10 @@ button {
   right: 0;
   top: 50%;
   height: 1px;
+  background: #cbd5e1;
+}
+
+.cutoff-divider.acl::before {
   background: #fda4af;
 }
 
@@ -613,6 +625,10 @@ button {
   font-weight: 700;
   padding: 1px 12px;
   border-radius: 999px;
+}
+
+.cutoff-pill.acl {
+  background: #f43f5e;
 }
 
 .rules-section {
