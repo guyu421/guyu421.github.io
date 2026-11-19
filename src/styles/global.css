@@ -784,6 +784,16 @@ a.fixture-row:hover {
   color: var(--color-text-muted);
 }
 
+.player-no {
+  display: inline-block;
+  min-width: 1.5em;
+  text-align: right;
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
 .role-tag {
   font-size: 0.68rem;
   font-weight: 700;

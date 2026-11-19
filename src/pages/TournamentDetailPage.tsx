@@ -723,19 +723,14 @@ export function TournamentDetailPage() {
                           {row.rank}
                         </td>
                         <td style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
-                          {row.playerNo !== undefined ? (
-                            <span
-                              className="tabular-nums"
-                              style={{
-                                color: 'var(--color-text-muted)',
-                                fontSize: '0.78rem',
-                                marginRight: 6,
-                              }}
-                            >
-                              {row.playerNo}
-                            </span>
-                          ) : null}
-                          {row.playerName}
+                          <span className="team-cell">
+                            {row.playerNo !== undefined ? (
+                              <span className="player-no tabular-nums">
+                                {row.playerNo}
+                              </span>
+                            ) : null}
+                            <span>{row.playerName}</span>
+                          </span>
                         </td>
                         <td className="tabular-nums">{row.played}</td>
                         <td
@@ -818,7 +813,7 @@ export function TournamentDetailPage() {
                   <div className="fixture-players">
                     <div className="fixture-player-line">
                       {match.blackId !== 'BYE' && match.blackNo !== undefined ? (
-                        <span className="fixture-player-id tabular-nums">
+                        <span className="player-no tabular-nums">
                           {match.blackNo}
                         </span>
                       ) : null}
@@ -832,7 +827,7 @@ export function TournamentDetailPage() {
 
                     <div className="fixture-player-line">
                       {match.whiteId !== 'BYE' && match.whiteNo !== undefined ? (
-                        <span className="fixture-player-id tabular-nums">
+                        <span className="player-no tabular-nums">
                           {match.whiteNo}
                         </span>
                       ) : null}
