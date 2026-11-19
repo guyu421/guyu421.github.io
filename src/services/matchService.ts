@@ -3,6 +3,7 @@ import type {
   FootballMatch,
   FootballStanding,
   PlayerInfo,
+  RenjuBracketMatch,
   RenjuMatch,
   StandingsZone,
   TiebreakerKey,
@@ -258,5 +259,53 @@ export const matchService = {
       }
     }
     return map;
+  },
+
+  async getBracketMatches(tournamentId: number): Promise<RenjuBracketMatch[]> {
+    const supabase = requireSupabase();
+    const { data, error } = await supabase
+      .from('renju_bracket_matches')
+      .select('*')
+      .eq('tournament_id', tournamentId)
+      .order('stage_round', { ascending: true })
+      .order('match_order', { ascending: true });
+
+    if (error || !data) {
+      return [];
+    }
+
+    return (
+      data as {
+        id: number;
+        tournament_id: number;
+        stage_round: number;
+        match_order: number;
+        bracket_type: 'main' | 'third_place';
+        round_label: string;
+        match_time: string;
+        player1_name: string;
+        player1_seed: number | null;
+        player1_score: string;
+        player2_name: string;
+        player2_seed: number | null;
+        player2_score: string;
+        winner_slot: 1 | 2;
+      }[]
+    ).map((r) => ({
+      id: r.id,
+      tournamentId: r.tournament_id,
+      stageRound: r.stage_round,
+      matchOrder: r.match_order,
+      bracketType: r.bracket_type,
+      roundLabel: r.round_label,
+      matchTime: r.match_time,
+      player1Name: r.player1_name,
+      player1Seed: r.player1_seed ?? undefined,
+      player1Score: r.player1_score,
+      player2Name: r.player2_name,
+      player2Seed: r.player2_seed ?? undefined,
+      player2Score: r.player2_score,
+      winnerSlot: r.winner_slot,
+    }));
   },
 };

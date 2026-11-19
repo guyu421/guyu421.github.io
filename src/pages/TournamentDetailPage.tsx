@@ -6,6 +6,7 @@ import { matchService } from '@/services/matchService';
 import { useAppStore } from '@/store/AppContext';
 import type {
   FootballMatch,
+  RenjuBracketMatch,
   RenjuMatch,
   StandingsZone,
   TiebreakerKey,
@@ -110,12 +111,17 @@ export function TournamentDetailPage() {
   const { searchQuery } = useAppStore();
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const numericId = Number(tournamentId);
-  const activeTab: 'matches' | 'standings' = location.pathname.includes('/standings')
-    ? 'standings'
-    : 'matches';
+  const activeTab: 'matches' | 'standings' | 'bracket' = location.pathname.endsWith(
+    '/bracket',
+  )
+    ? 'bracket'
+    : location.pathname.includes('/standings')
+      ? 'standings'
+      : 'matches';
 
   const [tournament, setTournament] = useState<TournamentItem | null>(null);
   const [matches, setMatches] = useState<RenjuMatch[]>([]);
+  const [bracketMatches, setBracketMatches] = useState<RenjuBracketMatch[]>([]);
   const [footballMatches, setFootballMatches] = useState<FootballMatch[]>([]);
   const [footballDeductions, setFootballDeductions] = useState<Map<string, number>>(
     () => new Map(),
@@ -154,9 +160,13 @@ export function TournamentDetailPage() {
           setFootballDeductions(fDeductions);
           setFootballTeamLogos(fLogos);
         } else {
-          const mData = await matchService.getMatchesByTournament(numericId);
+          const [mData, bData] = await Promise.all([
+            matchService.getMatchesByTournament(numericId),
+            matchService.getBracketMatches(numericId),
+          ]);
           if (!active) return;
           setMatches(mData);
+          setBracketMatches(bData);
         }
       })
       .catch((err: unknown) => {
@@ -197,7 +207,7 @@ export function TournamentDetailPage() {
   }, [roundNo, rounds, defaultRound]);
 
   useEffect(() => {
-    if (loading || rounds.length === 0) return;
+    if (loading || rounds.length === 0 || activeTab === 'bracket') return;
     const parsed = roundNo ? Number(roundNo) : NaN;
     if (!Number.isInteger(parsed) || !rounds.includes(parsed)) {
       const target =
@@ -208,13 +218,19 @@ export function TournamentDetailPage() {
     }
   }, [loading, rounds, roundNo, activeTab, numericId, defaultRound, navigate]);
 
-  const goToView = (tab: 'matches' | 'standings', round: number) => {
+  const goToView = (tab: 'matches' | 'standings' | 'bracket', round: number) => {
+    if (tab === 'bracket') {
+      navigate(`/matches/${numericId}/bracket`);
+      return;
+    }
     navigate(
       tab === 'standings'
         ? `/matches/${numericId}/standings/round/${round}`
         : `/matches/${numericId}/round/${round}`,
     );
   };
+
+  const hasBracket = bracketMatches.length > 0;
 
   const roundIndex = rounds.indexOf(currentRound);
 
@@ -366,7 +382,7 @@ export function TournamentDetailPage() {
           className={`league-subtab ${activeTab === 'matches' ? 'active' : ''}`}
           onClick={() => goToView('matches', currentRound)}
         >
-          比赛
+          {hasBracket ? '预赛对阵' : '比赛'}
         </button>
         <button
           type="button"
@@ -375,8 +391,19 @@ export function TournamentDetailPage() {
           className={`league-subtab ${activeTab === 'standings' ? 'active' : ''}`}
           onClick={() => goToView('standings', currentRound)}
         >
-          积分
+          {hasBracket ? '预赛积分' : '积分'}
         </button>
+        {hasBracket ? (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'bracket'}
+            className={`league-subtab ${activeTab === 'bracket' ? 'active' : ''}`}
+            onClick={() => goToView('bracket', currentRound)}
+          >
+            决赛对阵图
+          </button>
+        ) : null}
       </div>
 
       {loading ? (
@@ -636,6 +663,149 @@ export function TournamentDetailPage() {
             </div>
           </>
         )
+      ) : activeTab === 'bracket' ? (
+        (() => {
+          const semis = bracketMatches.filter(
+            (m) => m.stageRound === 1 && m.bracketType === 'main',
+          );
+          const finalMatch = bracketMatches.find(
+            (m) => m.stageRound === 2 && m.bracketType === 'main',
+          );
+          const thirdMatch = bracketMatches.find(
+            (m) => m.bracketType === 'third_place',
+          );
+
+          const champion = finalMatch
+            ? finalMatch.winnerSlot === 1
+              ? finalMatch.player1Name
+              : finalMatch.player2Name
+            : null;
+          const runnerUp = finalMatch
+            ? finalMatch.winnerSlot === 1
+              ? finalMatch.player2Name
+              : finalMatch.player1Name
+            : null;
+          const thirdPlace = thirdMatch
+            ? thirdMatch.winnerSlot === 1
+              ? thirdMatch.player1Name
+              : thirdMatch.player2Name
+            : null;
+          const fourthPlace = thirdMatch
+            ? thirdMatch.winnerSlot === 1
+              ? thirdMatch.player2Name
+              : thirdMatch.player1Name
+            : null;
+
+          const renderCard = (m: RenjuBracketMatch) => {
+            const dt = formatScheduleLines(m.matchTime);
+            return (
+              <div key={m.id} className="bracket-match-card">
+                <div className="bracket-match-meta">
+                  <span>{m.roundLabel}</span>
+                  <span className="tabular-nums">
+                    {dt.date} {dt.time}
+                  </span>
+                </div>
+                <div
+                  className={`bracket-player-row ${
+                    m.winnerSlot === 1 ? 'winner' : ''
+                  }`}
+                >
+                  <span className="bracket-player-name">
+                    {m.player1Seed !== undefined ? (
+                      <span className="bracket-seed tabular-nums">
+                        预#{m.player1Seed}
+                      </span>
+                    ) : null}
+                    <span>{m.player1Name}</span>
+                  </span>
+                  <span className="bracket-score tabular-nums">
+                    {m.player1Score}
+                  </span>
+                </div>
+                <div
+                  className={`bracket-player-row ${
+                    m.winnerSlot === 2 ? 'winner' : ''
+                  }`}
+                >
+                  <span className="bracket-player-name">
+                    {m.player2Seed !== undefined ? (
+                      <span className="bracket-seed tabular-nums">
+                        预#{m.player2Seed}
+                      </span>
+                    ) : null}
+                    <span>{m.player2Name}</span>
+                  </span>
+                  <span className="bracket-score tabular-nums">
+                    {m.player2Score}
+                  </span>
+                </div>
+              </div>
+            );
+          };
+
+          return (
+            <div className="bracket-section">
+              {champion ? (
+                <div className="podium-grid">
+                  <div className="podium-item" style={{ background: '#fff1f2', borderColor: '#fda4af' }}>
+                    <div className="podium-rank" style={{ color: '#e11d48' }}>🏆 冠军</div>
+                    <div className="podium-name">{champion}</div>
+                  </div>
+                  <div className="podium-item">
+                    <div className="podium-rank">🥈 亚军</div>
+                    <div className="podium-name">{runnerUp}</div>
+                  </div>
+                  {thirdPlace ? (
+                    <div className="podium-item">
+                      <div className="podium-rank">🥉 季军</div>
+                      <div className="podium-name">{thirdPlace}</div>
+                    </div>
+                  ) : null}
+                  {fourthPlace ? (
+                    <div className="podium-item">
+                      <div className="podium-rank">第四名</div>
+                      <div className="podium-name">{fourthPlace}</div>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              <div className="bracket-tree-scroll">
+                <div className="bracket-tree">
+                  <div className="bracket-col">
+                    <div className="bracket-col-title">半决赛</div>
+                    {semis.map(renderCard)}
+                  </div>
+
+                  {finalMatch ? (
+                    <>
+                      <div className="bracket-connectors" aria-hidden="true" />
+                      <div className="bracket-col">
+                        <div className="bracket-col-title">冠亚军决赛</div>
+                        {renderCard(finalMatch)}
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+
+              {thirdMatch ? (
+                <div className="bracket-third-wrap">
+                  <div className="bracket-col-title">三四名决赛</div>
+                  {renderCard(thirdMatch)}
+                </div>
+              ) : null}
+
+              {tournament?.rulesText ? (
+                <section className="rules-section" style={{ marginTop: 24, borderRadius: 10 }}>
+                  <h2 className="rules-section-title">赛制说明</h2>
+                  <p className="rules-section-body">{tournament.rulesText}</p>
+                </section>
+              ) : null}
+            </div>
+          );
+        })()
       ) : matches.length === 0 ? (
         <div style={{ padding: 16 }}>
           <EmptyState

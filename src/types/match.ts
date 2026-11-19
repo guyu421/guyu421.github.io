@@ -55,6 +55,23 @@ export interface RenjuMatch {
   result: string | null;
 }
 
+export interface RenjuBracketMatch {
+  id: number;
+  tournamentId: number;
+  stageRound: number;
+  matchOrder: number;
+  bracketType: 'main' | 'third_place';
+  roundLabel: string;
+  matchTime: string;
+  player1Name: string;
+  player1Seed?: number;
+  player1Score: string;
+  player2Name: string;
+  player2Seed?: number;
+  player2Score: string;
+  winnerSlot: 1 | 2;
+}
+
 export interface FootballMatch {
   id: number;
   tournamentId: number;

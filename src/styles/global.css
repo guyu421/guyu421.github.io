@@ -1196,3 +1196,170 @@ a.fixture-row:hover {
     margin: 12px auto 32px;
   }
 }
+
+/* 淘汰赛对阵图（决赛阶段） */
+.bracket-section {
+  padding: 20px 16px 32px;
+  background: var(--color-bg);
+}
+
+.bracket-tree-scroll {
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.bracket-tree {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-width: 540px;
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.bracket-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.bracket-col-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.bracket-connectors {
+  width: 44px;
+  height: 156px;
+  position: relative;
+  flex-shrink: 0;
+  margin-top: 24px;
+}
+
+.bracket-connectors::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 25%;
+  bottom: 25%;
+  width: 22px;
+  border-top: 2px solid #cbd5e1;
+  border-right: 2px solid #cbd5e1;
+  border-bottom: 2px solid #cbd5e1;
+  border-radius: 0 6px 6px 0;
+}
+
+.bracket-connectors::after {
+  content: '';
+  position: absolute;
+  left: 22px;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  background: #cbd5e1;
+}
+
+.bracket-match-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.bracket-match-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: var(--color-surface-muted);
+  font-size: 0.74rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.bracket-player-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-top: 1px solid var(--color-surface-muted);
+  font-size: 0.92rem;
+}
+
+.bracket-player-row.winner {
+  background: #fff1f2;
+  font-weight: 700;
+}
+
+.bracket-player-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bracket-seed {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  background: var(--color-surface-muted);
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+.bracket-score {
+  font-weight: 800;
+  font-size: 0.96rem;
+  color: var(--color-text);
+}
+
+.bracket-player-row:not(.winner) .bracket-score {
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.bracket-third-wrap {
+  max-width: 360px;
+  margin: 24px auto 0;
+}
+
+.podium-grid {
+  max-width: 780px;
+  margin: 0 auto 22px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.podium-item {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  text-align: center;
+}
+
+.podium-rank {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.podium-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+@media (max-width: 640px) {
+  .podium-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
