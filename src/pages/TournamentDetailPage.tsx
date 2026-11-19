@@ -55,29 +55,42 @@ function getDisplayScores(match: RenjuMatch): {
   blackText: string;
   whiteText: string;
   blackOutcome: 'win' | 'draw' | 'loss' | null;
+  forfeitSide: 'black' | 'white' | null;
 } {
+  const isBye = match.whiteId === 'BYE' || match.blackId === 'BYE';
   if (!match.result) {
-    return { blackText: '-', whiteText: '-', blackOutcome: null };
+    return { blackText: '-', whiteText: '-', blackOutcome: null, forfeitSide: null };
   }
-  if (match.result === '+') {
-    return { blackText: '+', whiteText: '-', blackOutcome: 'win' };
+  if (match.result === '+' || match.result === 'WF') {
+    return {
+      blackText: '+',
+      whiteText: '-',
+      blackOutcome: 'win',
+      forfeitSide: isBye ? null : 'white',
+    };
   }
-  if (match.result === '-') {
-    return { blackText: '-', whiteText: '+', blackOutcome: 'loss' };
+  if (match.result === '-' || match.result === 'BF') {
+    return {
+      blackText: '-',
+      whiteText: '+',
+      blackOutcome: 'loss',
+      forfeitSide: isBye ? null : 'black',
+    };
   }
-  if (match.result === 'WF' || match.result === 'B' || match.result === '1:0') {
-    return { blackText: '1', whiteText: '0', blackOutcome: 'win' };
+  if (match.result === 'B' || match.result === '1:0') {
+    return { blackText: '1', whiteText: '0', blackOutcome: 'win', forfeitSide: null };
   }
-  if (match.result === 'BF' || match.result === 'W' || match.result === '0:1') {
-    return { blackText: '0', whiteText: '1', blackOutcome: 'loss' };
+  if (match.result === 'W' || match.result === '0:1') {
+    return { blackText: '0', whiteText: '1', blackOutcome: 'loss', forfeitSide: null };
   }
   if (match.result === 'D' || match.result === '0.5:0.5') {
-    return { blackText: '0.5', whiteText: '0.5', blackOutcome: 'draw' };
+    return { blackText: '0.5', whiteText: '0.5', blackOutcome: 'draw', forfeitSide: null };
   }
   return {
     blackText: match.result,
     whiteText: '',
     blackOutcome: null,
+    forfeitSide: null,
   };
 }
 
@@ -706,34 +719,33 @@ export function TournamentDetailPage() {
               <div className="v-stage-label" style={{ textAlign: 'left', marginBottom: 10 }}>
                 决赛名次
               </div>
-              <div className="podium-grid" style={{ margin: '0 auto 10px' }}>
-                <div
-                  className="podium-item"
-                  style={{ background: '#fff1f2', borderColor: '#fda4af' }}
-                >
-                  <div className="podium-rank" style={{ color: '#e11d48' }}>
-                    🏆 冠军
+              <div className="finals-rank-list">
+                <div className="finals-rank-row">
+                  <span className="finals-rank-pos" style={{ color: '#e11d48' }}>
+                    1 冠军
+                  </span>
+                  <span className="finals-rank-name">{finalsInfo.champion}</span>
+                </div>
+                {finalsInfo.runnerUp ? (
+                  <div className="finals-rank-row">
+                    <span className="finals-rank-pos">2 亚军</span>
+                    <span className="finals-rank-name">{finalsInfo.runnerUp}</span>
                   </div>
-                  <div className="podium-name">{finalsInfo.champion}</div>
-                </div>
-                <div className="podium-item">
-                  <div className="podium-rank">🥈 亚军</div>
-                  <div className="podium-name">{finalsInfo.runnerUp}</div>
-                </div>
+                ) : null}
                 {finalsInfo.thirdPlace ? (
-                  <div className="podium-item">
-                    <div className="podium-rank">🥉 季军</div>
-                    <div className="podium-name">{finalsInfo.thirdPlace}</div>
+                  <div className="finals-rank-row">
+                    <span className="finals-rank-pos">3 季军</span>
+                    <span className="finals-rank-name">{finalsInfo.thirdPlace}</span>
                   </div>
                 ) : null}
                 {finalsInfo.fourthPlace ? (
-                  <div className="podium-item">
-                    <div className="podium-rank">第四名</div>
-                    <div className="podium-name">{finalsInfo.fourthPlace}</div>
+                  <div className="finals-rank-row">
+                    <span className="finals-rank-pos">4 第四名</span>
+                    <span className="finals-rank-name">{finalsInfo.fourthPlace}</span>
                   </div>
                 ) : null}
               </div>
-              <div className="v-stage-label" style={{ textAlign: 'left', margin: '12px 0 0' }}>
+              <div className="v-stage-label" style={{ textAlign: 'left', margin: '14px 0 0' }}>
                 预赛积分
               </div>
             </div>
@@ -877,11 +889,6 @@ export function TournamentDetailPage() {
                           finalsInfo.semi1.winnerSlot === 1 ? 'winner' : 'loser'
                         }`}
                       >
-                        {finalsInfo.semi1.player1Seed !== undefined ? (
-                          <span className="bracket-seed tabular-nums">
-                            预#{finalsInfo.semi1.player1Seed}
-                          </span>
-                        ) : null}
                         <span>{finalsInfo.semi1.player1Name}</span>
                       </span>
                       <span className="v-score tabular-nums">
@@ -893,11 +900,6 @@ export function TournamentDetailPage() {
                         }`}
                       >
                         <span>{finalsInfo.semi1.player2Name}</span>
-                        {finalsInfo.semi1.player2Seed !== undefined ? (
-                          <span className="bracket-seed tabular-nums">
-                            预#{finalsInfo.semi1.player2Seed}
-                          </span>
-                        ) : null}
                       </span>
                     </div>
                     <svg
@@ -952,11 +954,6 @@ export function TournamentDetailPage() {
                         finalsInfo.finalMatch.winnerSlot === 1 ? 'winner' : 'loser'
                       }`}
                     >
-                      {finalsInfo.finalMatch.player1Seed !== undefined ? (
-                        <span className="bracket-seed tabular-nums">
-                          预#{finalsInfo.finalMatch.player1Seed}
-                        </span>
-                      ) : null}
                       <span>{finalsInfo.finalMatch.player1Name}</span>
                     </span>
                     <span className="v-score tabular-nums">
@@ -969,11 +966,6 @@ export function TournamentDetailPage() {
                       }`}
                     >
                       <span>{finalsInfo.finalMatch.player2Name}</span>
-                      {finalsInfo.finalMatch.player2Seed !== undefined ? (
-                        <span className="bracket-seed tabular-nums">
-                          预#{finalsInfo.finalMatch.player2Seed}
-                        </span>
-                      ) : null}
                     </span>
                   </div>
                 ) : null}
@@ -1028,11 +1020,6 @@ export function TournamentDetailPage() {
                           finalsInfo.semi2.winnerSlot === 1 ? 'winner' : 'loser'
                         }`}
                       >
-                        {finalsInfo.semi2.player1Seed !== undefined ? (
-                          <span className="bracket-seed tabular-nums">
-                            预#{finalsInfo.semi2.player1Seed}
-                          </span>
-                        ) : null}
                         <span>{finalsInfo.semi2.player1Name}</span>
                       </span>
                       <span className="v-score tabular-nums">
@@ -1044,11 +1031,6 @@ export function TournamentDetailPage() {
                         }`}
                       >
                         <span>{finalsInfo.semi2.player2Name}</span>
-                        {finalsInfo.semi2.player2Seed !== undefined ? (
-                          <span className="bracket-seed tabular-nums">
-                            预#{finalsInfo.semi2.player2Seed}
-                          </span>
-                        ) : null}
                       </span>
                     </div>
                   </>
@@ -1112,6 +1094,9 @@ export function TournamentDetailPage() {
                           {prevScores.get(match.blackId) ?? 0}
                         </span>
                       ) : null}
+                      {score.forfeitSide === 'black' ? (
+                        <span className="forfeit-badge">退赛</span>
+                      ) : null}
                     </div>
 
                     <div className="fixture-player-line">
@@ -1125,6 +1110,9 @@ export function TournamentDetailPage() {
                         <span className="fixture-player-id tabular-nums">
                           {prevScores.get(match.whiteId) ?? 0}
                         </span>
+                      ) : null}
+                      {score.forfeitSide === 'white' ? (
+                        <span className="forfeit-badge">退赛</span>
                       ) : null}
                     </div>
                   </div>
