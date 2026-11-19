@@ -3,13 +3,24 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { EmptyState } from '@/components/common/EmptyState';
 import { matchService } from '@/services/matchService';
-import type { RenjuMatch, RenjuMatchStatus, TournamentItem } from '@/types/match';
+import type { RenjuMatch, TournamentItem } from '@/types/match';
 
-const STATUS_LABEL: Record<RenjuMatchStatus, string> = {
-  live: '进行中',
-  upcoming: '未开赛',
-  finished: '已完赛',
-};
+function formatScheduleLines(iso: string): { date: string; time: string } {
+  const d = new Date(iso);
+  const date = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(d);
+  const time = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(d);
+  return { date, time };
+}
 
 function getDisplayScores(match: RenjuMatch): {
   blackText: string;
@@ -114,18 +125,13 @@ export function TournamentDetailPage() {
             <ChevronLeft size={22} />
           </Link>
           <div style={{ fontSize: '1.02rem', fontWeight: 700, lineHeight: 1.35 }}>
-            {tournament?.title || '赛事对局'}
+            {tournament?.name || '赛事对局'}
           </div>
         </div>
       </div>
 
       <div className="league-subtabs">
         <span className="league-subtab">比赛</span>
-        {tournament ? (
-          <span style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>
-            {tournament.groupName}
-          </span>
-        ) : null}
       </div>
 
       {loading ? (
@@ -145,7 +151,7 @@ export function TournamentDetailPage() {
         </div>
       ) : (
         <>
-          <div className="round-bar">
+          <div className="round-bar" style={{ borderBottom: '1px solid var(--color-surface-muted)', paddingBottom: 10 }}>
             <button
               type="button"
               className="round-btn left"
@@ -156,7 +162,7 @@ export function TournamentDetailPage() {
               上一轮
             </button>
 
-            <span>公开组 第{selectedRound}轮</span>
+            <span>第{selectedRound}轮</span>
 
             <button
               type="button"
@@ -169,44 +175,26 @@ export function TournamentDetailPage() {
             </button>
           </div>
 
-          <div className="round-sublabel">
-            第{selectedRound}轮 · 共{roundMatches.length}台
-          </div>
-
           <div className="fixture-list">
             {roundMatches.map((match) => {
               const score = getDisplayScores(match);
+              const dt = formatScheduleLines(match.matchTime);
               return (
                 <div key={match.id} className="fixture-row">
-                  <div className="fixture-meta">
-                    <span className="tabular-nums">{match.matchDate}</span>
-                    <span>
-                      第{match.boardNo}台 ·{' '}
-                      <span
-                        className={
-                          match.status === 'live' ? 'fixture-status-live' : undefined
-                        }
-                      >
-                        {STATUS_LABEL[match.status]}
-                      </span>
-                    </span>
+                  <div className="fixture-meta tabular-nums">
+                    <span>{dt.date}</span>
+                    <span>{dt.time}</span>
                   </div>
 
                   <div className="fixture-players">
                     <div className="fixture-player-line">
                       <span className="role-tag first">假先</span>
                       <span>{match.blackName}</span>
-                      <span className="fixture-player-id tabular-nums">
-                        #{match.blackId}
-                      </span>
                     </div>
 
                     <div className="fixture-player-line">
                       <span className="role-tag second">假后</span>
                       <span>{match.whiteName}</span>
-                      <span className="fixture-player-id tabular-nums">
-                        #{match.whiteId}
-                      </span>
                     </div>
                   </div>
 

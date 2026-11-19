@@ -1,16 +1,9 @@
 import { ChevronRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Badge } from '@/components/common/Badge';
 import { EmptyState } from '@/components/common/EmptyState';
 import { matchService } from '@/services/matchService';
-import type { RenjuMatchStatus, TournamentItem } from '@/types/match';
-
-const STATUS_LABEL: Record<RenjuMatchStatus, string> = {
-  live: '进行中',
-  upcoming: '未开赛',
-  finished: '已完赛',
-};
+import type { TournamentItem } from '@/types/match';
 
 export function MatchesPage() {
   const [tournaments, setTournaments] = useState<TournamentItem[]>([]);
@@ -55,25 +48,18 @@ export function MatchesPage() {
           description="请先在 Supabase 执行 schema.sql 初始化赛事数据。"
         />
       ) : (
-        <div className="fixture-list">
+        <div className="fixture-list" style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)' }}>
           {tournaments.map((item) => (
             <Link key={item.id} to={`/matches/${item.id}`} className="fixture-row">
               <div className="fixture-meta">
                 <span className="tabular-nums" style={{ fontWeight: 600, color: 'var(--color-text)' }}>
-                  {item.dateRange || '待定'}
+                  {item.dateRange}
                 </span>
-                <Badge variant={item.status === 'live' ? 'breaking' : 'neutral'}>
-                  {STATUS_LABEL[item.status]}
-                </Badge>
               </div>
 
               <div className="fixture-players">
                 <div className="fixture-player-line" style={{ whiteSpace: 'normal' }}>
-                  {item.title}
-                </div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
-                  {item.groupName}
-                  {item.location ? ` · ${item.location}` : ''}
+                  {item.name}
                 </div>
               </div>
 

@@ -1,13 +1,12 @@
-export type RenjuMatchStatus = 'live' | 'upcoming' | 'finished';
-
 export interface TournamentItem {
   id: number;
-  title: string;
-  groupName: string;
-  location: string;
+  name: string;
   dateRange: string;
-  status: RenjuMatchStatus;
-  summary: string;
+}
+
+export interface PlayerInfo {
+  id: string;
+  name: string;
 }
 
 export interface RenjuMatch {
@@ -15,12 +14,11 @@ export interface RenjuMatch {
   tournamentId: number;
   roundNo: number;
   boardNo: number;
-  matchDate: string;
-  status: RenjuMatchStatus;
   blackId: string;
   blackName: string;
   whiteId: string;
   whiteName: string;
+  matchTime: string;
   result: string | null;
 }
 

@@ -1,14 +1,10 @@
 import { requireSupabase } from '@/lib/supabase';
-import type { RenjuMatch, RenjuMatchStatus, TournamentItem } from '@/types/match';
+import type { PlayerInfo, RenjuMatch, TournamentItem } from '@/types/match';
 
 interface TournamentRow {
   id: number;
-  title: string;
-  group_name: string;
-  location: string;
+  name: string;
   date_range: string;
-  status: RenjuMatchStatus;
-  summary: string;
 }
 
 interface RenjuMatchRow {
@@ -16,24 +12,25 @@ interface RenjuMatchRow {
   tournament_id: number;
   round_no: number;
   board_no: number;
-  match_date: string;
-  status: RenjuMatchStatus;
   black_id: string;
-  black_name: string;
   white_id: string;
-  white_name: string;
+  match_time: string;
   result: string | null;
+  black: PlayerInfo | PlayerInfo[] | null;
+  white: PlayerInfo | PlayerInfo[] | null;
+}
+
+function unwrapPlayer(p: PlayerInfo | PlayerInfo[] | null, fallbackId: string): string {
+  if (!p) return fallbackId;
+  if (Array.isArray(p)) return p[0]?.name ?? fallbackId;
+  return p.name ?? fallbackId;
 }
 
 function mapTournament(row: TournamentRow): TournamentItem {
   return {
     id: row.id,
-    title: row.title,
-    groupName: row.group_name,
-    location: row.location,
+    name: row.name,
     dateRange: row.date_range,
-    status: row.status,
-    summary: row.summary,
   };
 }
 
@@ -43,12 +40,11 @@ function mapMatch(row: RenjuMatchRow): RenjuMatch {
     tournamentId: row.tournament_id,
     roundNo: row.round_no,
     boardNo: row.board_no,
-    matchDate: row.match_date,
-    status: row.status,
     blackId: row.black_id,
-    blackName: row.black_name,
+    blackName: unwrapPlayer(row.black, row.black_id),
     whiteId: row.white_id,
-    whiteName: row.white_name,
+    whiteName: unwrapPlayer(row.white, row.white_id),
+    matchTime: row.match_time,
     result: row.result,
   };
 }
@@ -58,7 +54,7 @@ export const matchService = {
     const supabase = requireSupabase();
     const { data, error } = await supabase
       .from('tournaments')
-      .select('*')
+      .select('id, name, date_range')
       .order('id', { ascending: false });
 
     if (error) {
@@ -72,7 +68,7 @@ export const matchService = {
     const supabase = requireSupabase();
     const { data, error } = await supabase
       .from('tournaments')
-      .select('*')
+      .select('id, name, date_range')
       .eq('id', tournamentId)
       .maybeSingle();
 
@@ -87,7 +83,9 @@ export const matchService = {
     const supabase = requireSupabase();
     const { data, error } = await supabase
       .from('renju_matches')
-      .select('*')
+      .select(
+        'id, tournament_id, round_no, board_no, black_id, white_id, match_time, result, black:players!renju_matches_black_id_fkey(id, name), white:players!renju_matches_white_id_fkey(id, name)',
+      )
       .eq('tournament_id', tournamentId)
       .order('round_no', { ascending: true })
       .order('board_no', { ascending: true });
@@ -96,6 +94,6 @@ export const matchService = {
       throw new Error(error.message);
     }
 
-    return (data as RenjuMatchRow[]).map(mapMatch);
+    return (data as unknown as RenjuMatchRow[]).map(mapMatch);
   },
 };
