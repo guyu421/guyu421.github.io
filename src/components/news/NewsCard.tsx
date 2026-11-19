@@ -1,8 +1,7 @@
-import { Bookmark, Clock } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/common/Badge';
 import { CATEGORY_MAP } from '@/constants/categories';
-import { useAppStore } from '@/store/AppContext';
 import type { NewsArticle } from '@/types/news';
 import { formatRelativeTime } from '@/utils/formatDate';
 
@@ -11,8 +10,6 @@ interface NewsCardProps {
 }
 
 export function NewsCard({ article }: NewsCardProps) {
-  const { isBookmarked, toggleBookmark } = useAppStore();
-  const bookmarked = isBookmarked(article.id);
   const categoryMeta = CATEGORY_MAP[article.category];
 
   return (
@@ -30,25 +27,9 @@ export function NewsCard({ article }: NewsCardProps) {
       ) : null}
 
       <div className="news-card-body">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Badge color={categoryMeta?.accentColor}>{article.categoryLabel}</Badge>
-            {article.isBreaking ? <Badge variant="breaking">快讯</Badge> : null}
-          </div>
-
-          <button
-            type="button"
-            onClick={() => toggleBookmark(article.id)}
-            aria-label={bookmarked ? '取消收藏' : '收藏文章'}
-            style={{
-              border: 'none',
-              background: 'transparent',
-              padding: 4,
-              color: bookmarked ? 'var(--color-primary)' : 'var(--color-text-muted)',
-            }}
-          >
-            <Bookmark size={16} fill={bookmarked ? 'currentColor' : 'none'} />
-          </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Badge color={categoryMeta?.accentColor}>{article.categoryLabel}</Badge>
+          {article.isBreaking ? <Badge variant="breaking">快讯</Badge> : null}
         </div>
 
         <Link to={`/article/${article.id}`}>

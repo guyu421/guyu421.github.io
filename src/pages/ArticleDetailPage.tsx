@@ -1,4 +1,4 @@
-import { ArrowLeft, Bookmark, Clock, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Clock, ExternalLink } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { AccountComments } from '@/components/common/AccountComments';
@@ -8,13 +8,11 @@ import { LoadingSkeleton } from '@/components/common/LoadingSkeleton';
 import { NewsList } from '@/components/news/NewsList';
 import { CATEGORY_MAP } from '@/constants/categories';
 import { newsService } from '@/services/newsService';
-import { useAppStore } from '@/store/AppContext';
 import type { NewsArticle } from '@/types/news';
 import { formatRelativeTime } from '@/utils/formatDate';
 
 export function ArticleDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { isBookmarked, toggleBookmark } = useAppStore();
 
   const [article, setArticle] = useState<NewsArticle | null>(null);
   const [related, setRelated] = useState<NewsArticle[]>([]);
@@ -69,7 +67,6 @@ export function ArticleDetailPage() {
   }
 
   const categoryMeta = CATEGORY_MAP[article.category];
-  const bookmarked = isBookmarked(article.id);
 
   return (
     <div className="container article-container">
@@ -137,16 +134,6 @@ export function ArticleDetailPage() {
             </a>
           ) : null}
         </div>
-
-        <button
-          type="button"
-          className="category-pill"
-          onClick={() => toggleBookmark(article.id)}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
-        >
-          <Bookmark size={14} fill={bookmarked ? 'currentColor' : 'none'} />
-          {bookmarked ? '已收藏' : '收藏'}
-        </button>
       </div>
 
       {article.coverImage ? (
