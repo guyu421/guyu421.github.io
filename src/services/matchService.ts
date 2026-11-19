@@ -4,7 +4,6 @@ import type { PlayerInfo, RenjuMatch, TournamentItem } from '@/types/match';
 interface TournamentRow {
   id: number;
   name: string;
-  date_range: string;
 }
 
 interface RenjuMatchRow {
@@ -30,7 +29,6 @@ function mapTournament(row: TournamentRow): TournamentItem {
   return {
     id: row.id,
     name: row.name,
-    dateRange: row.date_range,
   };
 }
 
@@ -54,7 +52,7 @@ export const matchService = {
     const supabase = requireSupabase();
     const { data, error } = await supabase
       .from('tournaments')
-      .select('id, name, date_range')
+      .select('id, name')
       .order('id', { ascending: false });
 
     if (error) {
@@ -68,7 +66,7 @@ export const matchService = {
     const supabase = requireSupabase();
     const { data, error } = await supabase
       .from('tournaments')
-      .select('id, name, date_range')
+      .select('id, name')
       .eq('id', tournamentId)
       .maybeSingle();
 

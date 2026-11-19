@@ -62,13 +62,12 @@ export function MatchesPage() {
       ) : (
         <div className="fixture-list">
           {tournaments.map((item) => (
-            <Link key={item.id} to={`/matches/${item.id}`} className="fixture-row">
-              <div className="fixture-meta tabular-nums">
-                {item.dateRange.split(' - ').map((part, idx) => (
-                  <span key={idx}>{part}</span>
-                ))}
-              </div>
-
+            <Link
+              key={item.id}
+              to={`/matches/${item.id}`}
+              className="fixture-row"
+              style={{ gridTemplateColumns: 'minmax(0, 1fr) auto' }}
+            >
               <div className="fixture-players">
                 <div className="fixture-player-line" style={{ whiteSpace: 'normal' }}>
                   {item.name}

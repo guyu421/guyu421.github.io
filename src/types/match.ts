@@ -1,7 +1,6 @@
 export interface TournamentItem {
   id: number;
   name: string;
-  dateRange: string;
 }
 
 export interface PlayerInfo {
