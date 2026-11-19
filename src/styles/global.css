@@ -1270,6 +1270,14 @@ a.fixture-row:hover {
   margin: 4px 0;
 }
 
+.v-third-clean {
+  max-width: 520px;
+  margin: 12px auto 0;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+}
+
 .finals-rank-list {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
