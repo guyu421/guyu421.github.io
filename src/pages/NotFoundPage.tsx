@@ -7,8 +7,8 @@ export function NotFoundPage() {
       <p style={{ color: 'var(--color-text-muted)', marginBottom: 20 }}>
         抱歉，您访问的页面不存在。
       </p>
-      <Link to="/category/football" className="category-pill active" style={{ display: 'inline-block' }}>
-        返回足球频道
+      <Link to="/category/gomoku" className="category-pill active" style={{ display: 'inline-block' }}>
+        返回五子棋频道
       </Link>
     </div>
   );

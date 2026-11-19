@@ -1,10 +1,4 @@
-export type SportCategoryId =
-  | 'all'
-  | 'football'
-  | 'basketball'
-  | 'tennis'
-  | 'esports'
-  | 'motorsport';
+export type SportCategoryId = 'all' | 'gomoku';
 
 export interface ApiResponse<T> {
   data: T;
