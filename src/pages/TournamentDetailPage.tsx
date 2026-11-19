@@ -1,36 +1,18 @@
-import { ArrowLeft, ChevronDown, ChevronUp, Trophy } from 'lucide-react';
+import { ArrowLeft, Trophy } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Badge } from '@/components/common/Badge';
 import { EmptyState } from '@/components/common/EmptyState';
 import { matchService } from '@/services/matchService';
-import type { RenjuMatch, RenjuMatchStatus, TournamentItem } from '@/types/match';
-import { cn } from '@/utils/cn';
-import { formatMatchTime } from '@/utils/formatDate';
-
-const STATUS_TABS: Array<{ id: RenjuMatchStatus | 'all'; label: string }> = [
-  { id: 'all', label: '全部对局' },
-  { id: 'finished', label: '已完赛' },
-  { id: 'live', label: '进行中' },
-  { id: 'upcoming', label: '未开赛' },
-];
-
-const STATUS_LABEL: Record<RenjuMatchStatus, string> = {
-  live: '进行中',
-  upcoming: '未开赛',
-  finished: '已完赛',
-};
+import type { RenjuMatch, TournamentItem } from '@/types/match';
 
 export function TournamentDetailPage() {
   const { tournamentId } = useParams<{ tournamentId: string }>();
   const numericId = Number(tournamentId);
 
   const [tournament, setTournament] = useState<TournamentItem | null>(null);
-  const [statusFilter, setStatusFilter] = useState<RenjuMatchStatus | 'all'>('all');
   const [matches, setMatches] = useState<RenjuMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!Number.isInteger(numericId) || numericId <= 0) {
@@ -44,10 +26,7 @@ export function TournamentDetailPage() {
 
     Promise.all([
       matchService.getTournamentById(numericId),
-      matchService.getMatchesByTournament(
-        numericId,
-        statusFilter === 'all' ? undefined : statusFilter,
-      ),
+      matchService.getMatchesByTournament(numericId),
     ])
       .then(([tData, mData]) => {
         if (!active) return;
@@ -66,7 +45,7 @@ export function TournamentDetailPage() {
     return () => {
       active = false;
     };
-  }, [numericId, statusFilter]);
+  }, [numericId]);
 
   return (
     <div className="container">
@@ -109,24 +88,10 @@ export function TournamentDetailPage() {
         </div>
       ) : null}
 
-      <div
-        className="section-header"
-        style={{ flexWrap: 'wrap', gap: 12, marginBottom: 16 }}
-      >
-        <div style={{ display: 'flex', gap: 8, overflowX: 'auto' }}>
-          {STATUS_TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              className={cn('category-pill', statusFilter === tab.id && 'active')}
-              onClick={() => setStatusFilter(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      <div className="section-header" style={{ marginBottom: 14 }}>
+        <h2 className="section-title">对局列表</h2>
         <span style={{ fontSize: '0.84rem', color: 'var(--color-text-muted)' }}>
-          共 {matches.length} 场对局
+          共 {matches.length} 场
         </span>
       </div>
 
@@ -138,176 +103,79 @@ export function TournamentDetailPage() {
         <EmptyState title="对局加载失败" description={error} />
       ) : matches.length === 0 ? (
         <EmptyState
-          title="暂无该赛事的棋谱对局数据"
-          description="将公开组对局写入 Supabase 的 renju_matches 表后，将在此展示假先、假后、等级分与赛果。"
+          title="暂无对局数据"
+          description="请先在 Supabase 执行最新的 schema.sql 导入对局数据。"
         />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {matches.map((match) => {
-            const expanded = expandedId === match.id;
-            const hasScore =
-              match.blackScore !== null && match.whiteScore !== null;
+          {matches.map((match) => (
+            <div key={match.id} className="match-score-card">
+              <div className="match-score-header">
+                <span>
+                  第 {match.roundNo} 轮 · 第 {match.boardNo} 台
+                </span>
+              </div>
 
-            return (
-              <div key={match.id} className="match-score-card">
-                <div className="match-score-header">
-                  <span>
-                    {match.groupName} · {match.roundName} · 第 {match.boardNo} 台
-                  </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {match.opening ? <Badge>{match.opening}</Badge> : null}
-                    <Badge variant={match.status === 'live' ? 'breaking' : 'neutral'}>
-                      {STATUS_LABEL[match.status]}
-                    </Badge>
-                  </div>
-                </div>
-
-                <div className="match-score-body">
-                  <div style={{ textAlign: 'right' }}>
-                    <div className="match-player home">
-                      <span>{match.blackPlayer}</span>
-                      <span
-                        className="badge"
-                        style={{
-                          backgroundColor: '#0f172a',
-                          color: '#ffffff',
-                          flexShrink: 0,
-                        }}
-                      >
-                        假先
-                      </span>
-                    </div>
-                    {match.blackNo !== undefined || match.blackRating !== undefined ? (
-                      <div
-                        className="tabular-nums"
-                        style={{
-                          fontSize: '0.75rem',
-                          color: 'var(--color-text-muted)',
-                          marginTop: 2,
-                        }}
-                      >
-                        {match.blackNo !== undefined ? `#${match.blackNo}` : ''}
-                        {match.blackNo !== undefined && match.blackRating !== undefined
-                          ? ' · '
-                          : ''}
-                        {match.blackRating !== undefined
-                          ? `等级分 ${match.blackRating.toFixed(1)}`
-                          : ''}
-                      </div>
-                    ) : null}
-                  </div>
-
-                  <div className="score-pill tabular-nums">
-                    {hasScore
-                      ? `${match.blackScore} : ${match.whiteScore}`
-                      : 'VS'}
-                  </div>
-
-                  <div style={{ textAlign: 'left' }}>
-                    <div className="match-player">
-                      <span
-                        className="badge"
-                        style={{
-                          backgroundColor: '#ffffff',
-                          color: '#0f172a',
-                          border: '1px solid #cbd5e1',
-                          flexShrink: 0,
-                        }}
-                      >
-                        假后
-                      </span>
-                      <span>{match.whitePlayer}</span>
-                    </div>
-                    {match.whiteNo !== undefined || match.whiteRating !== undefined ? (
-                      <div
-                        className="tabular-nums"
-                        style={{
-                          fontSize: '0.75rem',
-                          color: 'var(--color-text-muted)',
-                          marginTop: 2,
-                        }}
-                      >
-                        {match.whiteNo !== undefined ? `#${match.whiteNo}` : ''}
-                        {match.whiteNo !== undefined && match.whiteRating !== undefined
-                          ? ' · '
-                          : ''}
-                        {match.whiteRating !== undefined
-                          ? `等级分 ${match.whiteRating.toFixed(1)}`
-                          : ''}
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    marginTop: 12,
-                    paddingTop: 10,
-                    borderTop: '1px solid var(--color-surface-muted)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    fontSize: '0.8rem',
-                    color: 'var(--color-text-muted)',
-                  }}
-                >
-                  <span>
-                    {match.resultText}
-                    {match.movesCount > 0 ? ` · 共 ${match.movesCount} 手` : ''}
-                    {' · '}
-                    {formatMatchTime(match.playedAt)}
-                  </span>
-
-                  {match.moves.length > 0 ? (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setExpandedId(expanded ? null : match.id)
-                      }
+              <div className="match-score-body">
+                <div style={{ textAlign: 'right' }}>
+                  <div className="match-player home">
+                    <span>{match.blackName}</span>
+                    <span
+                      className="badge"
                       style={{
-                        border: 'none',
-                        background: 'transparent',
-                        color: 'var(--color-primary)',
-                        fontWeight: 600,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 4,
-                        fontSize: '0.8rem',
+                        backgroundColor: '#0f172a',
+                        color: '#ffffff',
+                        flexShrink: 0,
                       }}
                     >
-                      {expanded ? '收起棋谱' : '查看棋谱'}
-                      {expanded ? (
-                        <ChevronUp size={14} />
-                      ) : (
-                        <ChevronDown size={14} />
-                      )}
-                    </button>
-                  ) : null}
-                </div>
-
-                {expanded && match.moves.length > 0 ? (
+                      假先
+                    </span>
+                  </div>
                   <div
+                    className="tabular-nums"
                     style={{
-                      marginTop: 12,
-                      padding: 12,
-                      borderRadius: 'var(--radius-sm)',
-                      background: 'var(--color-surface-muted)',
-                      fontSize: '0.82rem',
-                      lineHeight: 1.7,
-                      fontFamily: 'monospace',
-                      wordBreak: 'break-word',
+                      fontSize: '0.75rem',
+                      color: 'var(--color-text-muted)',
+                      marginTop: 2,
                     }}
                   >
-                    {match.moves.map((move, idx) => (
-                      <span key={idx} style={{ marginRight: 8 }}>
-                        {idx + 1}.{move}
-                      </span>
-                    ))}
+                    ID: {match.blackId}
                   </div>
-                ) : null}
+                </div>
+
+                <div className="score-pill tabular-nums">
+                  {match.result || 'VS'}
+                </div>
+
+                <div style={{ textAlign: 'left' }}>
+                  <div className="match-player">
+                    <span
+                      className="badge"
+                      style={{
+                        backgroundColor: '#ffffff',
+                        color: '#0f172a',
+                        border: '1px solid #cbd5e1',
+                        flexShrink: 0,
+                      }}
+                    >
+                      假后
+                    </span>
+                    <span>{match.whiteName}</span>
+                  </div>
+                  <div
+                    className="tabular-nums"
+                    style={{
+                      fontSize: '0.75rem',
+                      color: 'var(--color-text-muted)',
+                      marginTop: 2,
+                    }}
+                  >
+                    ID: {match.whiteId}
+                  </div>
+                </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       )}
     </div>

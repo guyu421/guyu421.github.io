@@ -13,25 +13,14 @@ interface TournamentRow {
 
 interface RenjuMatchRow {
   id: number;
-  tournament_id: number | null;
-  tournament: string;
-  group_name: string;
-  round_name: string;
+  tournament_id: number;
+  round_no: number;
   board_no: number;
-  status: RenjuMatchStatus;
-  black_no: number | null;
-  black_player: string;
-  black_rating: number | null;
-  white_no: number | null;
-  white_player: string;
-  white_rating: number | null;
-  black_score: number | null;
-  white_score: number | null;
-  result_text: string;
-  opening: string | null;
-  moves_count: number | null;
-  moves: string[] | null;
-  played_at: string;
+  black_id: string;
+  black_name: string;
+  white_id: string;
+  white_name: string;
+  result: string | null;
 }
 
 function mapTournament(row: TournamentRow): TournamentItem {
@@ -49,25 +38,14 @@ function mapTournament(row: TournamentRow): TournamentItem {
 function mapMatch(row: RenjuMatchRow): RenjuMatch {
   return {
     id: row.id,
-    tournamentId: row.tournament_id ?? 1,
-    tournament: row.tournament,
-    groupName: row.group_name,
-    roundName: row.round_name,
+    tournamentId: row.tournament_id,
+    roundNo: row.round_no,
     boardNo: row.board_no,
-    status: row.status,
-    blackNo: row.black_no ?? undefined,
-    blackPlayer: row.black_player,
-    blackRating: row.black_rating ?? undefined,
-    whiteNo: row.white_no ?? undefined,
-    whitePlayer: row.white_player,
-    whiteRating: row.white_rating ?? undefined,
-    blackScore: row.black_score,
-    whiteScore: row.white_score,
-    resultText: row.result_text,
-    opening: row.opening ?? undefined,
-    movesCount: row.moves_count ?? 0,
-    moves: Array.isArray(row.moves) ? row.moves : [],
-    playedAt: row.played_at,
+    blackId: row.black_id,
+    blackName: row.black_name,
+    whiteId: row.white_id,
+    whiteName: row.white_name,
+    result: row.result,
   };
 }
 
@@ -101,23 +79,15 @@ export const matchService = {
     return data ? mapTournament(data as TournamentRow) : null;
   },
 
-  async getMatchesByTournament(
-    tournamentId: number,
-    status?: RenjuMatchStatus,
-  ): Promise<RenjuMatch[]> {
+  async getMatchesByTournament(tournamentId: number): Promise<RenjuMatch[]> {
     const supabase = requireSupabase();
-    let query = supabase
+    const { data, error } = await supabase
       .from('renju_matches')
       .select('*')
       .eq('tournament_id', tournamentId)
-      .order('round_name', { ascending: true })
+      .order('round_no', { ascending: true })
       .order('board_no', { ascending: true });
 
-    if (status) {
-      query = query.eq('status', status);
-    }
-
-    const { data, error } = await query;
     if (error) {
       throw new Error(error.message);
     }

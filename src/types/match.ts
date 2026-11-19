@@ -13,24 +13,13 @@ export interface TournamentItem {
 export interface RenjuMatch {
   id: number;
   tournamentId: number;
-  tournament: string;
-  groupName: string;
-  roundName: string;
+  roundNo: number;
   boardNo: number;
-  status: RenjuMatchStatus;
-  blackNo?: number;
-  blackPlayer: string;
-  blackRating?: number;
-  whiteNo?: number;
-  whitePlayer: string;
-  whiteRating?: number;
-  blackScore: number | null;
-  whiteScore: number | null;
-  resultText: string;
-  opening?: string;
-  movesCount: number;
-  moves: string[];
-  playedAt: string;
+  blackId: string;
+  blackName: string;
+  whiteId: string;
+  whiteName: string;
+  result: string | null;
 }
 
 export interface UserProfile {
