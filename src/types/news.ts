@@ -13,6 +13,8 @@ export type ArticleContentBlock =
   | { type: 'heading'; text: string }
   | { type: 'quote'; text: string }
   | { type: 'divider' }
+  | { type: 'table'; rows: string[][] }
+  | { type: 'formula'; tex: string }
   | { type: 'image'; src: string; alt?: string };
 
 export interface NewsArticle {

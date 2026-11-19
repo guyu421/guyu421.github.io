@@ -10,9 +10,12 @@ import {
   Minus,
   Pilcrow,
   Quote,
+  Sigma,
+  Table2,
   Upload,
 } from 'lucide-react';
-import { type ChangeEvent, useRef, useState } from 'react';
+import katex from 'katex';
+import { type ChangeEvent, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/common/Badge';
 import { newsService } from '@/services/newsService';
@@ -32,6 +35,25 @@ function serializeEditorDom(root: HTMLElement): ArticleContentBlock[] {
 
     const el = node as HTMLElement;
     const tag = el.tagName.toLowerCase();
+
+    if (el.dataset.tex) {
+      blocks.push({ type: 'formula', tex: el.dataset.tex });
+      return;
+    }
+
+    if (tag === 'table') {
+      const rows = Array.from(el.querySelectorAll('tr'))
+        .map((tr) =>
+          Array.from(tr.querySelectorAll('th, td')).map(
+            (cell) => cell.textContent?.trim() ?? '',
+          ),
+        )
+        .filter((row) => row.length > 0);
+      if (rows.length > 0) {
+        blocks.push({ type: 'table', rows });
+      }
+      return;
+    }
 
     if (tag === 'img') {
       const src = el.getAttribute('src')?.trim();
@@ -93,6 +115,11 @@ export function PublishArticlePage() {
   const [charCount, setCharCount] = useState(0);
   const [previewBlocks, setPreviewBlocks] = useState<ArticleContentBlock[]>([]);
 
+  const [activePopover, setActivePopover] = useState<'table' | 'formula' | null>(null);
+  const [tableRows, setTableRows] = useState(3);
+  const [tableCols, setTableCols] = useState(3);
+  const [formulaTex, setFormulaTex] = useState('');
+
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingInline, setUploadingInline] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -104,6 +131,14 @@ export function PublishArticlePage() {
   const inlineImgInputRef = useRef<HTMLInputElement | null>(null);
 
   const readMinutes = Math.max(1, Math.ceil(charCount / 400));
+
+  const formulaPreviewHtml = useMemo(() => {
+    if (!formulaTex.trim()) return '';
+    return katex.renderToString(formulaTex.trim(), {
+      displayMode: true,
+      throwOnError: false,
+    });
+  }, [formulaTex]);
 
   if (!user) {
     return (
@@ -136,7 +171,7 @@ export function PublishArticlePage() {
               fontSize: '0.9rem',
             }}
           >
-            登录后即可进入全屏文章编辑器发布内容，每日首次发布可获得 +50 源点奖励
+            登录后即可使用文章编辑器发布内容，每日首次发布可获得 +50 源点奖励
           </p>
           <button
             type="button"
@@ -180,6 +215,37 @@ export function PublishArticlePage() {
     syncEditorStats();
   }
 
+  function insertTableHtml() {
+    const r = Math.min(12, Math.max(1, tableRows));
+    const c = Math.min(8, Math.max(1, tableCols));
+    const headerCells = Array.from({ length: c }, (_, i) => `<th>列${i + 1}</th>`).join('');
+    const bodyRow = `<tr>${Array.from({ length: c }, () => '<td>内容</td>').join('')}</tr>`;
+    const bodyRows = Array.from({ length: Math.max(0, r - 1) }, () => bodyRow).join('');
+    const html = `<table><thead><tr>${headerCells}</tr></thead><tbody>${bodyRows}</tbody></table><p><br /></p>`;
+
+    editorRef.current?.focus();
+    document.execCommand('insertHTML', false, html);
+    syncEditorStats();
+    setActivePopover(null);
+  }
+
+  function insertFormulaHtml() {
+    const tex = formulaTex.trim();
+    if (!tex) return;
+    const rendered = katex.renderToString(tex, {
+      displayMode: true,
+      throwOnError: false,
+    });
+    const escapedTex = tex.replace(/"/g, '&quot;');
+    const html = `<div class="wx-formula-block" data-tex="${escapedTex}" contenteditable="false">${rendered}</div><p><br /></p>`;
+
+    editorRef.current?.focus();
+    document.execCommand('insertHTML', false, html);
+    syncEditorStats();
+    setFormulaTex('');
+    setActivePopover(null);
+  }
+
   async function handleCoverFileChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = '';
@@ -213,6 +279,7 @@ export function PublishArticlePage() {
   }
 
   function togglePreview() {
+    setActivePopover(null);
     if (mode === 'edit') {
       if (editorRef.current) {
         savedHtmlRef.current = editorRef.current.innerHTML;
@@ -417,6 +484,26 @@ export function PublishArticlePage() {
             <button
               type="button"
               className="wx-toolbar-btn"
+              onClick={() =>
+                setActivePopover((prev) => (prev === 'table' ? null : 'table'))
+              }
+            >
+              <Table2 size={14} />
+              表格
+            </button>
+            <button
+              type="button"
+              className="wx-toolbar-btn"
+              onClick={() =>
+                setActivePopover((prev) => (prev === 'formula' ? null : 'formula'))
+              }
+            >
+              <Sigma size={14} />
+              公式
+            </button>
+            <button
+              type="button"
+              className="wx-toolbar-btn"
               onClick={insertDivider}
             >
               <Minus size={14} />
@@ -458,6 +545,72 @@ export function PublishArticlePage() {
             {submitting ? '发布中...' : '发布文章'}
           </button>
         </div>
+
+        {mode === 'edit' && activePopover === 'table' ? (
+          <div className="wx-editor-popover">
+            <span style={{ fontSize: '0.84rem', fontWeight: 700 }}>插入表格：</span>
+            <label style={{ fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              行数
+              <input
+                type="number"
+                min={1}
+                max={12}
+                value={tableRows}
+                onChange={(e) => setTableRows(Number(e.target.value) || 1)}
+                style={{ ...fieldStyle, width: 68, padding: '5px 8px' }}
+              />
+            </label>
+            <label style={{ fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              列数
+              <input
+                type="number"
+                min={1}
+                max={8}
+                value={tableCols}
+                onChange={(e) => setTableCols(Number(e.target.value) || 1)}
+                style={{ ...fieldStyle, width: 68, padding: '5px 8px' }}
+              />
+            </label>
+            <button
+              type="button"
+              className="category-pill active"
+              onClick={insertTableHtml}
+              style={{ padding: '5px 14px', fontSize: '0.82rem' }}
+            >
+              插入表格
+            </button>
+          </div>
+        ) : null}
+
+        {mode === 'edit' && activePopover === 'formula' ? (
+          <div className="wx-editor-popover" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <input
+                type="text"
+                value={formulaTex}
+                onChange={(e) => setFormulaTex(e.target.value)}
+                placeholder="请输入 LaTeX 公式..."
+                style={{ ...fieldStyle, flex: '1 1 260px', padding: '6px 10px' }}
+              />
+              <button
+                type="button"
+                className="category-pill active"
+                onClick={insertFormulaHtml}
+                disabled={!formulaTex.trim()}
+                style={{ padding: '6px 14px', fontSize: '0.82rem' }}
+              >
+                插入公式
+              </button>
+            </div>
+            {formulaPreviewHtml ? (
+              <div
+                className="article-formula"
+                style={{ margin: '6px 0 0', background: '#ffffff' }}
+                dangerouslySetInnerHTML={{ __html: formulaPreviewHtml }}
+              />
+            ) : null}
+          </div>
+        ) : null}
       </header>
 
       {/* 居中稿纸编辑区 */}
@@ -551,6 +704,45 @@ export function PublishArticlePage() {
                         border: 'none',
                         borderTop: '1px solid var(--color-border)',
                       }}
+                    />
+                  );
+                }
+                if (block.type === 'table') {
+                  return (
+                    <div key={idx} style={{ overflowX: 'auto' }}>
+                      <table className="article-table">
+                        <thead>
+                          {block.rows[0] ? (
+                            <tr>
+                              {block.rows[0].map((cell, cIdx) => (
+                                <th key={cIdx}>{cell}</th>
+                              ))}
+                            </tr>
+                          ) : null}
+                        </thead>
+                        <tbody>
+                          {block.rows.slice(1).map((row, rIdx) => (
+                            <tr key={rIdx}>
+                              {row.map((cell, cIdx) => (
+                                <td key={cIdx}>{cell}</td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                }
+                if (block.type === 'formula') {
+                  const html = katex.renderToString(block.tex, {
+                    displayMode: true,
+                    throwOnError: false,
+                  });
+                  return (
+                    <div
+                      key={idx}
+                      className="article-formula"
+                      dangerouslySetInnerHTML={{ __html: html }}
                     />
                   );
                 }

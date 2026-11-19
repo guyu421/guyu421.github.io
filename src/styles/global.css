@@ -1100,6 +1100,51 @@ a.fixture-row:hover {
   margin: 22px 0;
 }
 
+.wx-editor-body table,
+.article-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 18px 0;
+  font-size: 0.9rem;
+}
+
+.wx-editor-body th,
+.wx-editor-body td,
+.article-table th,
+.article-table td {
+  border: 1px solid var(--color-border);
+  padding: 8px 10px;
+  text-align: left;
+  min-width: 60px;
+}
+
+.wx-editor-body th,
+.article-table th {
+  background: var(--color-surface-muted);
+  font-weight: 700;
+}
+
+.wx-formula-block,
+.article-formula {
+  margin: 18px 0;
+  padding: 12px 16px;
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+  text-align: center;
+}
+
+.wx-editor-popover {
+  width: 100%;
+  background: #f8fafc;
+  border-top: 1px solid var(--color-border);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 @media (max-width: 640px) {
   .wx-editor-paper {
     padding: 24px 18px;

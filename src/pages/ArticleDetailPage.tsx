@@ -1,4 +1,5 @@
 import { ArrowLeft, Clock, ExternalLink } from 'lucide-react';
+import katex from 'katex';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { AccountComments } from '@/components/common/AccountComments';
@@ -196,6 +197,45 @@ export function ArticleDetailPage() {
                   border: 'none',
                   borderTop: '1px solid var(--color-border)',
                 }}
+              />
+            );
+          }
+          if (block.type === 'table') {
+            return (
+              <div key={idx} style={{ overflowX: 'auto' }}>
+                <table className="article-table">
+                  <thead>
+                    {block.rows[0] ? (
+                      <tr>
+                        {block.rows[0].map((cell, cIdx) => (
+                          <th key={cIdx}>{cell}</th>
+                        ))}
+                      </tr>
+                    ) : null}
+                  </thead>
+                  <tbody>
+                    {block.rows.slice(1).map((row, rIdx) => (
+                      <tr key={rIdx}>
+                        {row.map((cell, cIdx) => (
+                          <td key={cIdx}>{cell}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          }
+          if (block.type === 'formula') {
+            const html = katex.renderToString(block.tex, {
+              displayMode: true,
+              throwOnError: false,
+            });
+            return (
+              <div
+                key={idx}
+                className="article-formula"
+                dangerouslySetInnerHTML={{ __html: html }}
               />
             );
           }
