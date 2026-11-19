@@ -678,17 +678,30 @@ a.fixture-row:hover {
   font-weight: 500;
 }
 
-.win-dot {
-  width: 16px;
-  height: 16px;
+.win-dot,
+.result-dot {
+  width: 17px;
+  height: 17px;
   border-radius: 50%;
-  background: var(--color-primary);
   color: #ffffff;
   font-size: 0.65rem;
   font-weight: 800;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+.win-dot,
+.result-dot.win {
+  background: #ef4444;
+}
+
+.result-dot.draw {
+  background: #f59e0b;
+}
+
+.result-dot.loss {
+  background: #10b981;
 }
 
 .match-score-header {

@@ -25,28 +25,32 @@ function formatScheduleLines(iso: string): { date: string; time: string } {
 function getDisplayScores(match: RenjuMatch): {
   blackText: string;
   whiteText: string;
-  blackWin: boolean;
-  whiteWin: boolean;
+  blackOutcome: 'win' | 'draw' | 'loss' | null;
 } {
   if (!match.result) {
-    return { blackText: '-', whiteText: '-', blackWin: false, whiteWin: false };
-  }
-  if (match.result === 'BF' || match.result === 'W' || match.result === '0:1') {
-    return { blackText: '0', whiteText: '1', blackWin: false, whiteWin: true };
+    return { blackText: '-', whiteText: '-', blackOutcome: null };
   }
   if (match.result === 'WF' || match.result === 'B' || match.result === '1:0') {
-    return { blackText: '1', whiteText: '0', blackWin: true, whiteWin: false };
+    return { blackText: '1', whiteText: '0', blackOutcome: 'win' };
+  }
+  if (match.result === 'BF' || match.result === 'W' || match.result === '0:1') {
+    return { blackText: '0', whiteText: '1', blackOutcome: 'loss' };
   }
   if (match.result === 'D' || match.result === '0.5:0.5') {
-    return { blackText: '0.5', whiteText: '0.5', blackWin: false, whiteWin: false };
+    return { blackText: '0.5', whiteText: '0.5', blackOutcome: 'draw' };
   }
   return {
     blackText: match.result,
     whiteText: '',
-    blackWin: false,
-    whiteWin: false,
+    blackOutcome: null,
   };
 }
+
+const OUTCOME_LABEL: Record<'win' | 'draw' | 'loss', string> = {
+  win: 'W',
+  draw: 'D',
+  loss: 'L',
+};
 
 export function TournamentDetailPage() {
   const { tournamentId } = useParams<{ tournamentId: string }>();
@@ -195,19 +199,30 @@ export function TournamentDetailPage() {
                   <div className="fixture-scores tabular-nums">
                     <div
                       className={`fixture-score-line ${
-                        !match.result ? 'muted' : !score.blackWin ? 'loser' : ''
+                        !match.result
+                          ? 'muted'
+                          : score.blackOutcome === 'loss'
+                            ? 'loser'
+                            : ''
                       }`}
                     >
                       <span>{score.blackText}</span>
-                      {score.blackWin ? <span className="win-dot">W</span> : null}
+                      {score.blackOutcome ? (
+                        <span className={`result-dot ${score.blackOutcome}`}>
+                          {OUTCOME_LABEL[score.blackOutcome]}
+                        </span>
+                      ) : null}
                     </div>
                     <div
                       className={`fixture-score-line ${
-                        !match.result ? 'muted' : !score.whiteWin ? 'loser' : ''
+                        !match.result
+                          ? 'muted'
+                          : score.blackOutcome === 'win'
+                            ? 'loser'
+                            : ''
                       }`}
                     >
                       <span>{score.whiteText}</span>
-                      {score.whiteWin ? <span className="win-dot">W</span> : null}
                     </div>
                   </div>
                 </div>
