@@ -114,6 +114,7 @@ export const matchService = {
       .select(
         'id, name, sport, win_points, draw_points, loss_points, tiebreakers, qualify_count, qualify_label, logo_url, standings_zones, total_rounds, rules_text',
       )
+      .order('event_date', { ascending: false })
       .order('id', { ascending: false });
 
     if (error) {

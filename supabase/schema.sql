@@ -106,6 +106,7 @@ create table public.tournaments (
   logo_url text not null default '',
   standings_zones jsonb not null default '[]'::jsonb,
   total_rounds integer not null default 9,
+  event_date date not null default current_date,
   rules_text text not null default ''
 );
 
@@ -119,7 +120,7 @@ create policy "tournaments_public_read"
 grant select on public.tournaments to anon, authenticated;
 
 insert into public.tournaments (
-  id, name, sport, win_points, draw_points, loss_points, tiebreakers, qualify_count, qualify_label, logo_url, standings_zones, total_rounds, rules_text
+  id, name, sport, win_points, draw_points, loss_points, tiebreakers, qualify_count, qualify_label, logo_url, standings_zones, total_rounds, event_date, rules_text
 )
 values
   (
@@ -135,6 +136,7 @@ values
     '',
     '[{"fromRank":1,"toRank":16,"bgColor":"#fff1f2","cutoffLabel":"录取线","cutoffColor":"#94a3b8","cutoffLineColor":"#cbd5e1"}]'::jsonb,
     9,
+    '2026-11-16',
     E'积分排名规则\n1.每名棋手胜一场积1分，平一场积0.5分，负一场积0分\n2.比赛结束，积分多的名次靠前\n3.如果两名棋手或两名棋手以上积分相等，依下列顺序排列名次：\na)对手分：所遇对手积分之和\nb)中间对手分：对手分去掉最高和最低一个再求和\nc)胜局数\nd)并列'
   ),
   (
@@ -150,6 +152,7 @@ values
     'https://cqhktfwogmffcorwfrxm.supabase.co/storage/v1/object/public/media/leagues/csl.png',
     '[{"fromRank":1,"toRank":1,"bgColor":"#ffe4e6","cutoffLabel":"亚冠精英正赛","cutoffBefore":true,"cutoffColor":"#f43f5e","cutoffLineColor":"#fda4af"},{"fromRank":2,"toRank":2,"bgColor":"#fff1f2","cutoffLabel":"亚冠精英小组赛","cutoffBefore":true,"cutoffColor":"#f43f5e","cutoffLineColor":"#fda4af"},{"fromRank":15,"toRank":16,"bgColor":"#f1f5f9","cutoffLabel":"降级","cutoffBefore":true,"cutoffColor":"#64748b","cutoffLineColor":"#cbd5e1"}]'::jsonb,
     30,
+    '2026-11-08',
     E'积分排名规则\n1.每队胜一场得3分，平一场得1分，负一场得0分\n2.联赛结束，积分多的队名次靠前\n3.如果两队或两队以上积分相等，依下列顺序排列名次\na)相互战绩（依次比较相互对战积分，相互对战净胜球，相互对战总进球）\nb)总净胜球\nc)总进球数\nd)公平竞赛积分（每张黄牌减1分、每张红牌减3分，两黄变红按照1张红牌计算）\ne)抽签\n注：只有相关球队比赛全部结束后，才比较胜负关系。'
   ),
   (
@@ -165,6 +168,7 @@ values
     '',
     '[{"fromRank":1,"toRank":4,"bgColor":"#fff1f2","cutoffLabel":"晋级决赛","cutoffColor":"#f43f5e","cutoffLineColor":"#fda4af"}]'::jsonb,
     7,
+    '2026-05-21',
     E'赛制说明\n1.竞赛项目：五子棋个人男子组（连珠），采用塔拉山口-10开局，每方时限60分+30秒/手。\n2.预赛阶段：采用7轮积分编排制，前4名晋级决赛阶段。\n3.决赛阶段：前4名采用淘汰制决出冠亚季殿军，和棋加赛决胜。\n4.预赛同分破同分顺序：对手分、中间对手分、胜局数。'
   );
 
