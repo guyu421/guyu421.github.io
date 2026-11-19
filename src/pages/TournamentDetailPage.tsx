@@ -179,13 +179,16 @@ export function TournamentDetailPage() {
               return (
                 <div key={match.id} className="fixture-row">
                   <div className="fixture-meta">
-                    <span className="tabular-nums">第{match.boardNo}台</span>
-                    <span
-                      className={
-                        match.status === 'live' ? 'fixture-status-live' : undefined
-                      }
-                    >
-                      {STATUS_LABEL[match.status]}
+                    <span className="tabular-nums">{match.matchDate}</span>
+                    <span>
+                      第{match.boardNo}台 ·{' '}
+                      <span
+                        className={
+                          match.status === 'live' ? 'fixture-status-live' : undefined
+                        }
+                      >
+                        {STATUS_LABEL[match.status]}
+                      </span>
                     </span>
                   </div>
 

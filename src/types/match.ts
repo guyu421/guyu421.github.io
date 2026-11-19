@@ -15,6 +15,7 @@ export interface RenjuMatch {
   tournamentId: number;
   roundNo: number;
   boardNo: number;
+  matchDate: string;
   status: RenjuMatchStatus;
   blackId: string;
   blackName: string;

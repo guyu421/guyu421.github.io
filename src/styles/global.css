@@ -582,7 +582,7 @@ button {
 
 .fixture-row {
   display: grid;
-  grid-template-columns: 68px minmax(0, 1fr) 52px;
+  grid-template-columns: 84px minmax(0, 1fr) 52px;
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
