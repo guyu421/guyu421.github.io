@@ -1,4 +1,4 @@
-import { Calendar, ChevronRight, MapPin, Trophy } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/common/Badge';
@@ -43,18 +43,13 @@ export function MatchesPage() {
 
   return (
     <div className="container">
-      <div className="section-header" style={{ marginBottom: 18 }}>
-        <h1 className="section-title" style={{ fontSize: '1.5rem' }}>
-          赛事列表
-        </h1>
-        <span style={{ fontSize: '0.86rem', color: 'var(--color-text-muted)' }}>
-          共 {tournaments.length} 项赛事
-        </span>
+      <div className="league-banner">
+        <span style={{ fontSize: '1.05rem', fontWeight: 800 }}>五子棋赛事中心</span>
       </div>
 
       {loading ? (
         <div className="card" style={{ padding: 24 }}>
-          <div className="skeleton" style={{ height: 96 }} />
+          <div className="skeleton" style={{ height: 84 }} />
         </div>
       ) : error ? (
         <EmptyState title="赛事列表加载失败" description={error} />
@@ -64,93 +59,30 @@ export function MatchesPage() {
           description="请先在 Supabase 执行 schema.sql 初始化赛事数据。"
         />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div className="fixture-list">
           {tournaments.map((item) => (
-            <Link
-              key={item.id}
-              to={`/matches/${item.id}`}
-              className="card"
-              style={{
-                padding: '18px 20px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 10,
-                transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 8,
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Trophy size={16} color="#d97706" aria-hidden="true" />
-                  <Badge>{item.groupName}</Badge>
-                </div>
+            <Link key={item.id} to={`/matches/${item.id}`} className="fixture-row">
+              <div className="fixture-meta">
+                <span className="tabular-nums" style={{ fontWeight: 600, color: 'var(--color-text)' }}>
+                  {item.dateRange || '待定'}
+                </span>
                 <Badge variant={item.status === 'live' ? 'breaking' : 'neutral'}>
                   {STATUS_LABEL[item.status]}
                 </Badge>
               </div>
 
-              <h2 style={{ margin: 0, fontSize: '1.12rem', fontWeight: 800, lineHeight: 1.4 }}>
-                {item.title}
-              </h2>
-
-              {item.summary ? (
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: '0.88rem',
-                    color: 'var(--color-text-secondary)',
-                  }}
-                >
-                  {item.summary}
-                </p>
-              ) : null}
-
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  flexWrap: 'wrap',
-                  gap: 10,
-                  paddingTop: 10,
-                  borderTop: '1px solid var(--color-surface-muted)',
-                  fontSize: '0.82rem',
-                  color: 'var(--color-text-muted)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-                  {item.location ? (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                      <MapPin size={13} aria-hidden="true" />
-                      {item.location}
-                    </span>
-                  ) : null}
-                  {item.dateRange ? (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                      <Calendar size={13} aria-hidden="true" />
-                      {item.dateRange}
-                    </span>
-                  ) : null}
+              <div className="fixture-players">
+                <div className="fixture-player-line" style={{ whiteSpace: 'normal' }}>
+                  {item.title}
                 </div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
+                  {item.groupName}
+                  {item.location ? ` · ${item.location}` : ''}
+                </div>
+              </div>
 
-                <span
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    color: 'var(--color-primary)',
-                    fontWeight: 700,
-                  }}
-                >
-                  进入查看对局
-                  <ChevronRight size={15} />
-                </span>
+              <div className="fixture-scores">
+                <ChevronRight size={18} color="var(--color-text-muted)" />
               </div>
             </Link>
           ))}

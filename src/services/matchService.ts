@@ -16,6 +16,7 @@ interface RenjuMatchRow {
   tournament_id: number;
   round_no: number;
   board_no: number;
+  status: RenjuMatchStatus;
   black_id: string;
   black_name: string;
   white_id: string;
@@ -41,6 +42,7 @@ function mapMatch(row: RenjuMatchRow): RenjuMatch {
     tournamentId: row.tournament_id,
     roundNo: row.round_no,
     boardNo: row.board_no,
+    status: row.status,
     blackId: row.black_id,
     blackName: row.black_name,
     whiteId: row.white_id,
