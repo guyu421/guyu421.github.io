@@ -371,7 +371,7 @@ export function ProfilePage() {
               <div>
                 <div style={{ fontWeight: 700, fontSize: '0.92rem' }}>每日发表评论</div>
                 <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
-                  每日首评奖励 +5 源点
+                  奖励 +5 源点
                 </div>
               </div>
             </div>
