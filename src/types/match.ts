@@ -1,6 +1,15 @@
+export type TiebreakerKey = 'buchholz' | 'median_buchholz' | 'wins';
+
 export interface TournamentItem {
   id: number;
   name: string;
+  winPoints: number;
+  drawPoints: number;
+  lossPoints: number;
+  tiebreakers: TiebreakerKey[];
+  qualifyCount: number | null;
+  totalRounds: number;
+  rulesText: string;
 }
 
 export interface PlayerInfo {

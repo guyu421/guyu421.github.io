@@ -572,6 +572,68 @@ button {
   border-bottom: none;
 }
 
+.standings-board tr.qualified td {
+  background-color: #fff1f2;
+}
+
+.standings-board tr.cutoff-row td {
+  padding: 0;
+  border-bottom: none;
+  position: relative;
+  height: 22px;
+  background: var(--color-surface);
+}
+
+.cutoff-divider {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+}
+
+.cutoff-divider::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: #fda4af;
+}
+
+.cutoff-pill {
+  position: relative;
+  z-index: 1;
+  background: #94a3b8;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 12px;
+  border-radius: 999px;
+}
+
+.rules-section {
+  background: var(--color-surface);
+  border-top: 8px solid var(--color-bg);
+  padding: 18px 16px 24px;
+}
+
+.rules-section-title {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.rules-section-body {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.75;
+  color: var(--color-text-secondary);
+  white-space: pre-wrap;
+}
+
 .round-bar {
   background: var(--color-surface);
   padding: 10px 16px 4px;

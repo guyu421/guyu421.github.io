@@ -1,9 +1,21 @@
 import { requireSupabase } from '@/lib/supabase';
-import type { PlayerInfo, RenjuMatch, TournamentItem } from '@/types/match';
+import type {
+  PlayerInfo,
+  RenjuMatch,
+  TiebreakerKey,
+  TournamentItem,
+} from '@/types/match';
 
 interface TournamentRow {
   id: number;
   name: string;
+  win_points: number;
+  draw_points: number;
+  loss_points: number;
+  tiebreakers: TiebreakerKey[] | null;
+  qualify_count: number | null;
+  total_rounds: number;
+  rules_text: string;
 }
 
 interface RenjuMatchRow {
@@ -29,6 +41,15 @@ function mapTournament(row: TournamentRow): TournamentItem {
   return {
     id: row.id,
     name: row.name,
+    winPoints: Number(row.win_points ?? 1),
+    drawPoints: Number(row.draw_points ?? 0.5),
+    lossPoints: Number(row.loss_points ?? 0),
+    tiebreakers: Array.isArray(row.tiebreakers)
+      ? row.tiebreakers
+      : ['buchholz', 'median_buchholz', 'wins'],
+    qualifyCount: row.qualify_count ?? null,
+    totalRounds: row.total_rounds ?? 9,
+    rulesText: row.rules_text ?? '',
   };
 }
 
@@ -54,7 +75,9 @@ export const matchService = {
     const supabase = requireSupabase();
     const { data, error } = await supabase
       .from('tournaments')
-      .select('id, name')
+      .select(
+        'id, name, win_points, draw_points, loss_points, tiebreakers, qualify_count, total_rounds, rules_text',
+      )
       .order('id', { ascending: false });
 
     if (error) {
@@ -68,7 +91,9 @@ export const matchService = {
     const supabase = requireSupabase();
     const { data, error } = await supabase
       .from('tournaments')
-      .select('id, name')
+      .select(
+        'id, name, win_points, draw_points, loss_points, tiebreakers, qualify_count, total_rounds, rules_text',
+      )
       .eq('id', tournamentId)
       .maybeSingle();
 

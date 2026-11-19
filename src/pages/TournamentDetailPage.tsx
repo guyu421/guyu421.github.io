@@ -1,21 +1,10 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { EmptyState } from '@/components/common/EmptyState';
 import { matchService } from '@/services/matchService';
 import type { RenjuMatch, TournamentItem } from '@/types/match';
-
-interface StandingEntry {
-  playerId: string;
-  playerNo?: number;
-  playerName: string;
-  played: number;
-  wins: number;
-  draws: number;
-  losses: number;
-  points: number;
-  rank: number;
-}
+import { computeStandings } from '@/utils/standings';
 
 function formatScheduleLines(iso: string): { date: string; time: string } {
   const d = new Date(iso);
@@ -144,80 +133,12 @@ export function TournamentDetailPage() {
     return map;
   }, [matches, selectedRound]);
 
-  const standings = useMemo<StandingEntry[]>(() => {
-    const map = new Map<string, Omit<StandingEntry, 'rank'>>();
+  const standings = useMemo(
+    () => computeStandings(matches, tournament),
+    [matches, tournament],
+  );
 
-    function ensure(id: string, no: number | undefined, name: string) {
-      if (id === 'BYE') return null;
-      let entry = map.get(id);
-      if (!entry) {
-        entry = {
-          playerId: id,
-          playerNo: no,
-          playerName: name,
-          played: 0,
-          wins: 0,
-          draws: 0,
-          losses: 0,
-          points: 0,
-        };
-        map.set(id, entry);
-      }
-      return entry;
-    }
-
-    for (const m of matches) {
-      const black = ensure(m.blackId, m.blackNo, m.blackName);
-      const white = ensure(m.whiteId, m.whiteNo, m.whiteName);
-      if (!m.result) continue;
-
-      if (m.result === 'B' || m.result === '+' || m.result === 'WF' || m.result === '1:0') {
-        if (black) {
-          black.played += 1;
-          black.wins += 1;
-          black.points += 1;
-        }
-        if (white) {
-          white.played += 1;
-          white.losses += 1;
-        }
-      } else if (m.result === 'W' || m.result === '-' || m.result === 'BF' || m.result === '0:1') {
-        if (black) {
-          black.played += 1;
-          black.losses += 1;
-        }
-        if (white) {
-          white.played += 1;
-          white.wins += 1;
-          white.points += 1;
-        }
-      } else if (m.result === 'D' || m.result === '0.5:0.5') {
-        if (black) {
-          black.played += 1;
-          black.draws += 1;
-          black.points += 0.5;
-        }
-        if (white) {
-          white.played += 1;
-          white.draws += 1;
-          white.points += 0.5;
-        }
-      }
-    }
-
-    const sorted = Array.from(map.values()).sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points;
-      return (a.playerNo ?? 999) - (b.playerNo ?? 999);
-    });
-
-    let currentRank = 1;
-    return sorted.map((item, idx) => {
-      if (idx > 0 && item.points < sorted[idx - 1].points) {
-        currentRank = idx + 1;
-      }
-      return { ...item, rank: currentRank };
-    });
-  }, [matches]);
+  const qualifyCount = tournament?.qualifyCount ?? null;
 
   return (
     <div className="tournament-page">
@@ -281,48 +202,82 @@ export function TournamentDetailPage() {
           />
         </div>
       ) : activeTab === 'standings' ? (
-        <table className="standings-board">
-          <thead>
-            <tr>
-              <th>名次</th>
-              <th>棋手</th>
-              <th>赛</th>
-              <th>胜/平/负</th>
-              <th>积分</th>
-            </tr>
-          </thead>
-          <tbody>
-            {standings.map((row) => (
-              <tr key={row.playerId}>
-                <td className="tabular-nums" style={{ fontWeight: 600 }}>
-                  {row.rank}
-                </td>
-                <td style={{ fontWeight: 600 }}>
-                  {row.playerNo !== undefined ? (
-                    <span
-                      className="tabular-nums"
-                      style={{
-                        color: 'var(--color-text-muted)',
-                        fontSize: '0.78rem',
-                        marginRight: 6,
-                      }}
-                    >
-                      {row.playerNo}
-                    </span>
-                  ) : null}
-                  {row.playerName}
-                </td>
-                <td className="tabular-nums">{row.played}</td>
-                <td className="tabular-nums" style={{ color: 'var(--color-text-secondary)' }}>
-                  {row.wins}/{row.draws}/{row.losses}
-                </td>
-                <td className="tabular-nums" style={{ fontWeight: 800 }}>
-                  {row.points}
-                </td>
+        <>
+          <table className="standings-board">
+            <thead>
+              <tr>
+                <th>名次</th>
+                <th>棋手</th>
+                <th>胜/平/负</th>
+                <th>对手分</th>
+                <th>中间</th>
+                <th>积分</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {standings.map((row, idx) => {
+                const isQualified =
+                  qualifyCount !== null && idx < qualifyCount;
+                const showCutoffLine =
+                  qualifyCount !== null &&
+                  idx === qualifyCount - 1 &&
+                  idx < standings.length - 1;
+
+                return (
+                  <Fragment key={row.playerId}>
+                    <tr className={isQualified ? 'qualified' : undefined}>
+                      <td className="tabular-nums" style={{ fontWeight: 600 }}>
+                        {row.rank}
+                      </td>
+                      <td style={{ fontWeight: 600 }}>
+                        {row.playerNo !== undefined ? (
+                          <span
+                            className="tabular-nums"
+                            style={{
+                              color: 'var(--color-text-muted)',
+                              fontSize: '0.78rem',
+                              marginRight: 6,
+                            }}
+                          >
+                            {row.playerNo}
+                          </span>
+                        ) : null}
+                        {row.playerName}
+                      </td>
+                      <td
+                        className="tabular-nums"
+                        style={{ color: 'var(--color-text-secondary)' }}
+                      >
+                        {row.wins}/{row.draws}/{row.losses}
+                      </td>
+                      <td className="tabular-nums">{row.buchholz}</td>
+                      <td className="tabular-nums">{row.medianBuchholz}</td>
+                      <td className="tabular-nums" style={{ fontWeight: 800 }}>
+                        {row.points}
+                      </td>
+                    </tr>
+                    {showCutoffLine ? (
+                      <tr className="cutoff-row">
+                        <td colSpan={6}>
+                          <div className="cutoff-divider">
+                            <span className="cutoff-pill">录取线</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : null}
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+
+          {tournament?.rulesText ? (
+            <section className="rules-section">
+              <h2 className="rules-section-title">赛制说明</h2>
+              <p className="rules-section-body">{tournament.rulesText}</p>
+            </section>
+          ) : null}
+        </>
       ) : (
         <>
           <div
