@@ -384,7 +384,39 @@ export function TournamentDetailPage() {
     return all.filter((r) => r.teamName.toLowerCase().includes(normalizedQuery));
   }, [footballMatches, footballDeductions, tournament, currentRound, normalizedQuery]);
 
-  const zones = tournament?.standingsZones ?? [];
+  const zones = useMemo<StandingsZone[]>(() => {
+    const raw = tournament?.standingsZones ?? [];
+    if (
+      tournament?.sport === 'renju' &&
+      raw.length === 1 &&
+      !raw[0].cutoffBefore &&
+      raw[0].fromRank === 1
+    ) {
+      const z = raw[0];
+      const isAward = z.cutoffLabel === '录取线' || z.toRank === 16;
+      return [
+        {
+          fromRank: 1,
+          toRank: z.toRank,
+          bgColor: z.bgColor || '#fff1f2',
+          cutoffBefore: true,
+          cutoffLabel: isAward ? '获奖' : z.cutoffLabel || '晋级决赛',
+          cutoffColor: '#f43f5e',
+          cutoffLineColor: '#fda4af',
+        },
+        {
+          fromRank: z.toRank + 1,
+          toRank: 999,
+          bgColor: '',
+          cutoffBefore: true,
+          cutoffLabel: isAward ? '未获奖' : '未晋级决赛',
+          cutoffColor: '#64748b',
+          cutoffLineColor: '#cbd5e1',
+        },
+      ];
+    }
+    return raw;
+  }, [tournament]);
 
   return (
     <div className="tournament-page">
@@ -717,7 +749,7 @@ export function TournamentDetailPage() {
           {finalsInfo?.champion ? (
             <div style={{ padding: '16px 16px 6px' }}>
               <div className="v-stage-label" style={{ textAlign: 'left', marginBottom: 10 }}>
-                决赛名次
+                决赛
               </div>
               <div className="finals-rank-list">
                 <div className="finals-rank-row">
@@ -746,7 +778,7 @@ export function TournamentDetailPage() {
                 ) : null}
               </div>
               <div className="v-stage-label" style={{ textAlign: 'left', margin: '14px 0 0' }}>
-                预赛积分
+                预赛
               </div>
             </div>
           ) : null}
@@ -880,6 +912,9 @@ export function TournamentDetailPage() {
         <>
           {finalsInfo ? (
             <div className="bracket-section" style={{ paddingBottom: 16 }}>
+              <div className="v-stage-label" style={{ textAlign: 'left', marginBottom: 10 }}>
+                决赛
+              </div>
               <div className="v-bracket-clean">
                 {finalsInfo.semi1 ? (
                   <>
@@ -1038,7 +1073,7 @@ export function TournamentDetailPage() {
               </div>
 
               <div className="v-stage-label" style={{ textAlign: 'left', margin: '18px 0 0' }}>
-                预赛对阵
+                预赛
               </div>
             </div>
           ) : null}

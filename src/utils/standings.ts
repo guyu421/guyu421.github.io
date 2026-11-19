@@ -376,11 +376,16 @@ export function computeStandings(
           for (let m = 0; m < group.length; m += 1) {
             if (m === k) continue;
             const peer = group[m];
+            let distinguished = false;
             for (let x = 1; x <= maxDrops; x += 1) {
               if (remSum(cur.playerId, x) !== remSum(peer.playerId, x)) {
                 if (x > maxNeededX) maxNeededX = x;
+                distinguished = true;
                 break;
               }
+            }
+            if (!distinguished && maxDrops > maxNeededX) {
+              maxNeededX = maxDrops;
             }
           }
           if (maxNeededX > 0) {
