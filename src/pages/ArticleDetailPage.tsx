@@ -1,9 +1,9 @@
 import { ArrowLeft, Bookmark, Clock, ExternalLink } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { AccountComments } from '@/components/common/AccountComments';
 import { Badge } from '@/components/common/Badge';
 import { EmptyState } from '@/components/common/EmptyState';
-import { GitHubComments } from '@/components/common/GitHubComments';
 import { LoadingSkeleton } from '@/components/common/LoadingSkeleton';
 import { NewsList } from '@/components/news/NewsList';
 import { CATEGORY_MAP } from '@/constants/categories';
@@ -174,10 +174,7 @@ export function ArticleDetailPage() {
         </section>
       ) : null}
 
-      <GitHubComments
-        issueTerm={`article-${article.id}`}
-        title="文章评价与讨论"
-      />
+      <AccountComments articleId={article.id} />
     </div>
   );
 }
