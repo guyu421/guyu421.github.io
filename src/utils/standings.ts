@@ -33,13 +33,15 @@ interface PlayerAccumulator {
 export function computeStandings(
   matches: RenjuMatch[],
   tournament: TournamentItem | null,
+  upToRound?: number,
 ): StandingEntry[] {
   const winPts = tournament?.winPoints ?? 1;
   const drawPts = tournament?.drawPoints ?? 0.5;
   const lossPts = tournament?.lossPoints ?? 0;
+  const maxRoundInMatches = Math.max(1, ...matches.map((m) => m.roundNo));
   const totalRounds =
-    tournament?.totalRounds ??
-    Math.max(1, ...matches.map((m) => m.roundNo));
+    upToRound ?? tournament?.totalRounds ?? maxRoundInMatches;
+  const scopedMatches = matches.filter((m) => m.roundNo <= totalRounds);
   const tiebreakers: TiebreakerKey[] = tournament?.tiebreakers ?? [
     'buchholz',
     'median_buchholz',
@@ -72,7 +74,7 @@ export function computeStandings(
     return acc;
   }
 
-  for (const m of matches) {
+  for (const m of scopedMatches) {
     const black = ensure(m.blackId, m.blackNo, m.blackName);
     const white = ensure(m.whiteId, m.whiteNo, m.whiteName);
 

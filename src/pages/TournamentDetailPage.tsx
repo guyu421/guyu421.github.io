@@ -3,8 +3,20 @@ import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { EmptyState } from '@/components/common/EmptyState';
 import { matchService } from '@/services/matchService';
-import type { RenjuMatch, TournamentItem } from '@/types/match';
-import { computeStandings } from '@/utils/standings';
+import type { RenjuMatch, TiebreakerKey, TournamentItem } from '@/types/match';
+import { computeStandings, type StandingEntry } from '@/utils/standings';
+
+const TIEBREAKER_HEADER: Record<TiebreakerKey, string> = {
+  buchholz: '对手分',
+  median_buchholz: '中间',
+  wins: '胜局',
+};
+
+function getTiebreakerValue(row: StandingEntry, key: TiebreakerKey): number {
+  if (key === 'buchholz') return row.buchholz;
+  if (key === 'median_buchholz') return row.medianBuchholz;
+  return row.wins;
+}
 
 function formatScheduleLines(iso: string): { date: string; time: string } {
   const d = new Date(iso);
@@ -67,6 +79,7 @@ export function TournamentDetailPage() {
   const [matches, setMatches] = useState<RenjuMatch[]>([]);
   const [activeTab, setActiveTab] = useState<'matches' | 'standings'>('matches');
   const [selectedRound, setSelectedRound] = useState<number>(1);
+  const [standingsRound, setStandingsRound] = useState<number>(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -90,6 +103,7 @@ export function TournamentDetailPage() {
         setMatches(mData);
         if (mData.length > 0) {
           setSelectedRound(mData[0].roundNo);
+          setStandingsRound(mData[mData.length - 1].roundNo);
         }
       })
       .catch((err: unknown) => {
@@ -133,9 +147,16 @@ export function TournamentDetailPage() {
     return map;
   }, [matches, selectedRound]);
 
+  const standingsRoundIndex = rounds.indexOf(standingsRound);
+  const tiebreakers: TiebreakerKey[] = tournament?.tiebreakers ?? [
+    'buchholz',
+    'median_buchholz',
+    'wins',
+  ];
+
   const standings = useMemo(
-    () => computeStandings(matches, tournament),
-    [matches, tournament],
+    () => computeStandings(matches, tournament, standingsRound),
+    [matches, tournament, standingsRound],
   );
 
   const qualifyCount = tournament?.qualifyCount ?? null;
@@ -203,73 +224,114 @@ export function TournamentDetailPage() {
         </div>
       ) : activeTab === 'standings' ? (
         <>
-          <table className="standings-board">
-            <thead>
-              <tr>
-                <th>名次</th>
-                <th>棋手</th>
-                <th>胜/平/负</th>
-                <th>对手分</th>
-                <th>中间</th>
-                <th>积分</th>
-              </tr>
-            </thead>
-            <tbody>
-              {standings.map((row, idx) => {
-                const isQualified =
-                  qualifyCount !== null && idx < qualifyCount;
-                const showCutoffLine =
-                  qualifyCount !== null &&
-                  idx === qualifyCount - 1 &&
-                  idx < standings.length - 1;
+          <div
+            className="round-bar"
+            style={{ borderBottom: '1px solid var(--color-surface-muted)', paddingBottom: 10 }}
+          >
+            <button
+              type="button"
+              className="round-btn left"
+              disabled={standingsRoundIndex <= 0}
+              onClick={() => setStandingsRound(rounds[standingsRoundIndex - 1])}
+            >
+              <ChevronLeft size={15} />
+              上一轮
+            </button>
 
-                return (
-                  <Fragment key={row.playerId}>
-                    <tr className={isQualified ? 'qualified' : undefined}>
-                      <td className="tabular-nums" style={{ fontWeight: 600 }}>
-                        {row.rank}
-                      </td>
-                      <td style={{ fontWeight: 600 }}>
-                        {row.playerNo !== undefined ? (
-                          <span
-                            className="tabular-nums"
-                            style={{
-                              color: 'var(--color-text-muted)',
-                              fontSize: '0.78rem',
-                              marginRight: 6,
-                            }}
-                          >
-                            {row.playerNo}
-                          </span>
-                        ) : null}
-                        {row.playerName}
-                      </td>
-                      <td
-                        className="tabular-nums"
-                        style={{ color: 'var(--color-text-secondary)' }}
-                      >
-                        {row.wins}/{row.draws}/{row.losses}
-                      </td>
-                      <td className="tabular-nums">{row.buchholz}</td>
-                      <td className="tabular-nums">{row.medianBuchholz}</td>
-                      <td className="tabular-nums" style={{ fontWeight: 800 }}>
-                        {row.points}
-                      </td>
-                    </tr>
-                    {showCutoffLine ? (
-                      <tr className="cutoff-row">
-                        <td colSpan={6}>
-                          <div className="cutoff-divider">
-                            <span className="cutoff-pill">录取线</span>
-                          </div>
+            <span>第{standingsRound}轮后积分榜</span>
+
+            <button
+              type="button"
+              className="round-btn right"
+              disabled={
+                standingsRoundIndex === -1 ||
+                standingsRoundIndex >= rounds.length - 1
+              }
+              onClick={() => setStandingsRound(rounds[standingsRoundIndex + 1])}
+            >
+              下一轮
+              <ChevronRight size={15} />
+            </button>
+          </div>
+
+          <div style={{ overflowX: 'auto' }}>
+            <table className="standings-board">
+              <thead>
+                <tr>
+                  <th>名次</th>
+                  <th>棋手</th>
+                  <th>赛</th>
+                  <th>胜/平/负</th>
+                  <th>积分</th>
+                  {tiebreakers.map((tb) => (
+                    <th key={tb}>{TIEBREAKER_HEADER[tb]}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {standings.map((row, idx) => {
+                  const isQualified =
+                    qualifyCount !== null && idx < qualifyCount;
+                  const showCutoffLine =
+                    qualifyCount !== null &&
+                    idx === qualifyCount - 1 &&
+                    idx < standings.length - 1;
+
+                  return (
+                    <Fragment key={row.playerId}>
+                      <tr className={isQualified ? 'qualified' : undefined}>
+                        <td className="tabular-nums" style={{ fontWeight: 600 }}>
+                          {row.rank}
                         </td>
+                        <td style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+                          {row.playerNo !== undefined ? (
+                            <span
+                              className="tabular-nums"
+                              style={{
+                                color: 'var(--color-text-muted)',
+                                fontSize: '0.78rem',
+                                marginRight: 6,
+                              }}
+                            >
+                              {row.playerNo}
+                            </span>
+                          ) : null}
+                          {row.playerName}
+                        </td>
+                        <td className="tabular-nums">{row.played}</td>
+                        <td
+                          className="tabular-nums"
+                          style={{
+                            color: 'var(--color-text-secondary)',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {row.wins}/{row.draws}/{row.losses}
+                        </td>
+                        <td className="tabular-nums" style={{ fontWeight: 800 }}>
+                          {row.points}
+                        </td>
+                        {tiebreakers.map((tb) => (
+                          <td key={tb} className="tabular-nums">
+                            {getTiebreakerValue(row, tb)}
+                          </td>
+                        ))}
                       </tr>
-                    ) : null}
-                  </Fragment>
-                );
-              })}
-            </tbody>
-          </table>
+                      {showCutoffLine ? (
+                        <tr className="cutoff-row">
+                          <td colSpan={5 + tiebreakers.length}>
+                            <div className="cutoff-divider">
+                              <span className="cutoff-pill">录取线</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : null}
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
           {tournament?.rulesText ? (
             <section className="rules-section">
