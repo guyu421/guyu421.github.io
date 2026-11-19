@@ -142,7 +142,6 @@ export function PublishArticlePage() {
     null,
   );
   const [wxRawHtml, setWxRawHtml] = useState('');
-  const [wxImportError, setWxImportError] = useState<string | null>(null);
   const [tableRows, setTableRows] = useState(3);
   const [tableCols, setTableCols] = useState(3);
   const [tableMenuPos, setTableMenuPos] = useState<{ top: number; left: number } | null>(
@@ -485,7 +484,6 @@ export function PublishArticlePage() {
   }
 
   function handleWechatPaste(e: ClipboardEvent<HTMLTextAreaElement>) {
-    setWxImportError(null);
     const html = e.clipboardData.getData('text/html');
     if (html && html.trim()) {
       e.preventDefault();
@@ -496,17 +494,6 @@ export function PublishArticlePage() {
   function handleWechatImportConfirm() {
     const raw = wxRawHtml.trim();
     if (!raw) return;
-
-    if (/^https?:\/\/\S+$/i.test(raw)) {
-      if (!sourceUrl.trim()) {
-        setSourceUrl(raw);
-      }
-      setWxRawHtml('');
-      setWxImportError(
-        '此处需要粘贴文章内容而非网址。已帮您将该链接填入上方“公众号文章链接”；请在微信文章页按 Ctrl+A 全选、Ctrl+C 复制正文（或复制网页源代码），再粘贴到下方框内。',
-      );
-      return;
-    }
 
     const looksLikeHtml = /<[a-z][\s\S]*>/i.test(raw);
     let importedTitle: string | undefined;
@@ -529,11 +516,6 @@ export function PublishArticlePage() {
         .join('');
     }
 
-    if (!bodyHtml) {
-      setWxImportError('未能识别到有效正文内容，请重新全选复制微信文章正文后再粘贴。');
-      return;
-    }
-
     if (importedTitle && !title.trim()) {
       setTitle(importedTitle);
     }
@@ -543,12 +525,11 @@ export function PublishArticlePage() {
     if (importedPublishedAt) {
       setPublishedAt(importedPublishedAt);
     }
-    if (editorRef.current) {
+    if (editorRef.current && bodyHtml) {
       editorRef.current.innerHTML = bodyHtml;
       syncEditorStats();
     }
 
-    setWxImportError(null);
     setWxRawHtml('');
     setActivePopover(null);
   }
@@ -1150,37 +1131,18 @@ export function PublishArticlePage() {
 
               <div>
                 <label htmlFor="wx-content" style={labelStyle}>
-                  粘贴公众号文章正文或网页 HTML 源码 *（请勿只粘贴网址）
+                  粘贴公众号文章内容或网页 HTML 源码 *
                 </label>
                 <textarea
                   id="wx-content"
                   rows={8}
                   value={wxRawHtml}
                   onPaste={handleWechatPaste}
-                  onChange={(e) => {
-                    setWxImportError(null);
-                    setWxRawHtml(e.target.value);
-                  }}
-                  placeholder="请在微信文章页面按 Ctrl+A 全选、Ctrl+C 复制正文后直接粘贴到这里..."
+                  onChange={(e) => setWxRawHtml(e.target.value)}
+                  placeholder="请在微信文章页面全选复制后直接粘贴到这里，或粘贴网页源码..."
                   style={{ ...fieldStyle, resize: 'vertical', lineHeight: 1.6 }}
                 />
               </div>
-
-              {wxImportError ? (
-                <div
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: 'var(--radius-sm)',
-                    background: '#fef2f2',
-                    color: '#dc2626',
-                    fontSize: '0.82rem',
-                    lineHeight: 1.5,
-                    fontWeight: 600,
-                  }}
-                >
-                  {wxImportError}
-                </div>
-              ) : null}
             </div>
 
             <div className="wx-modal-footer">
