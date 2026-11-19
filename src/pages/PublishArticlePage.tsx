@@ -3,6 +3,7 @@ import {
   AlignLeft,
   ArrowLeft,
   Bold,
+  Download,
   Eye,
   Heading2,
   ImagePlus,
@@ -16,13 +17,14 @@ import {
   X,
 } from 'lucide-react';
 import katex from 'katex';
-import { type ChangeEvent, useMemo, useRef, useState } from 'react';
+import { type ChangeEvent, type ClipboardEvent, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/common/Badge';
 import { newsService } from '@/services/newsService';
 import { useAuth } from '@/store/AuthContext';
 import type { ArticleContentBlock } from '@/types/news';
 import { renderTextWithMath } from '@/utils/math';
+import { parseWechatHtml } from '@/utils/wechatImport';
 
 function extractInlineText(node: Node): string {
   if (node.nodeType === Node.TEXT_NODE) {
@@ -128,11 +130,15 @@ export function PublishArticlePage() {
   const [category, setCategory] = useState<'renju' | 'football'>('renju');
   const [summary, setSummary] = useState('');
   const [coverImage, setCoverImage] = useState('');
+  const [sourceUrl, setSourceUrl] = useState('');
   const [tagsText, setTagsText] = useState('');
   const [charCount, setCharCount] = useState(0);
   const [previewBlocks, setPreviewBlocks] = useState<ArticleContentBlock[]>([]);
 
-  const [activePopover, setActivePopover] = useState<'table' | 'formula' | null>(null);
+  const [activePopover, setActivePopover] = useState<'table' | 'formula' | 'wechat' | null>(
+    null,
+  );
+  const [wxRawHtml, setWxRawHtml] = useState('');
   const [tableRows, setTableRows] = useState(3);
   const [tableCols, setTableCols] = useState(3);
   const [tableMenuPos, setTableMenuPos] = useState<{ top: number; left: number } | null>(
@@ -386,6 +392,52 @@ export function PublishArticlePage() {
     setActivePopover(null);
   }
 
+  function handleWechatPaste(e: ClipboardEvent<HTMLTextAreaElement>) {
+    const html = e.clipboardData.getData('text/html');
+    if (html && html.trim()) {
+      e.preventDefault();
+      setWxRawHtml(html);
+    }
+  }
+
+  function handleWechatImportConfirm() {
+    const raw = wxRawHtml.trim();
+    if (!raw) return;
+
+    const looksLikeHtml = /<[a-z][\s\S]*>/i.test(raw);
+    let importedTitle: string | undefined;
+    let importedCover: string | undefined;
+    let bodyHtml = '';
+
+    if (looksLikeHtml) {
+      const parsed = parseWechatHtml(raw);
+      importedTitle = parsed.title;
+      importedCover = parsed.coverImage;
+      bodyHtml = parsed.bodyHtml;
+    } else {
+      bodyHtml = raw
+        .split(/\r?\n+/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => `<p>${line.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>`)
+        .join('');
+    }
+
+    if (importedTitle && !title.trim()) {
+      setTitle(importedTitle);
+    }
+    if (importedCover && !coverImage.trim()) {
+      setCoverImage(importedCover);
+    }
+    if (editorRef.current && bodyHtml) {
+      editorRef.current.innerHTML = bodyHtml;
+      syncEditorStats();
+    }
+
+    setWxRawHtml('');
+    setActivePopover(null);
+  }
+
   function handleEditorDoubleClick(e: React.MouseEvent<HTMLDivElement>) {
     const formulaEl = (e.target as HTMLElement).closest(
       '.wx-inline-formula',
@@ -497,6 +549,7 @@ export function PublishArticlePage() {
         content: contentBlocks,
         category,
         coverImage: coverImage.trim() || undefined,
+        sourceUrl: sourceUrl.trim() || undefined,
         tags,
       });
       navigate(`/article/${created.id}`);
@@ -663,6 +716,16 @@ export function PublishArticlePage() {
             >
               <Minus size={14} />
               分割线
+            </button>
+            <button
+              type="button"
+              className="wx-toolbar-btn"
+              onClick={() =>
+                setActivePopover((prev) => (prev === 'wechat' ? null : 'wechat'))
+              }
+            >
+              <Download size={14} />
+              公众号导入
             </button>
           </div>
         ) : (
@@ -908,6 +971,92 @@ export function PublishArticlePage() {
                 style={{ padding: '6px 16px', fontSize: '0.84rem' }}
               >
                 {editingFormulaElRef.current ? '保存修改' : '插入公式'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* 微信公众号导入弹窗 */}
+      {mode === 'edit' && activePopover === 'wechat' ? (
+        <div
+          className="wx-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label="从微信公众号导入"
+          onClick={() => setActivePopover(null)}
+        >
+          <div
+            className="wx-modal-dialog"
+            style={{ maxWidth: 540 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="wx-modal-header">
+              <strong style={{ fontSize: '1.02rem' }}>从微信公众号导入文章</strong>
+              <button
+                type="button"
+                aria-label="关闭弹窗"
+                onClick={() => setActivePopover(null)}
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--color-text-muted)',
+                  padding: 4,
+                  cursor: 'pointer',
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label htmlFor="wx-url" style={labelStyle}>
+                  公众号文章链接（选填，用于保留原文链接）
+                </label>
+                <input
+                  id="wx-url"
+                  type="url"
+                  value={sourceUrl}
+                  onChange={(e) => setSourceUrl(e.target.value)}
+                  placeholder="请输入微信公众号文章链接..."
+                  style={fieldStyle}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="wx-content" style={labelStyle}>
+                  粘贴公众号文章内容或网页 HTML 源码 *
+                </label>
+                <textarea
+                  id="wx-content"
+                  rows={8}
+                  value={wxRawHtml}
+                  onPaste={handleWechatPaste}
+                  onChange={(e) => setWxRawHtml(e.target.value)}
+                  placeholder="请在微信文章页面全选复制后直接粘贴到这里，或粘贴网页源码..."
+                  style={{ ...fieldStyle, resize: 'vertical', lineHeight: 1.6 }}
+                />
+              </div>
+            </div>
+
+            <div className="wx-modal-footer">
+              <button
+                type="button"
+                className="category-pill"
+                onClick={() => setActivePopover(null)}
+                style={{ padding: '6px 14px', fontSize: '0.84rem' }}
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                className="category-pill active"
+                onClick={handleWechatImportConfirm}
+                disabled={!wxRawHtml.trim()}
+                style={{ padding: '6px 16px', fontSize: '0.84rem' }}
+              >
+                确认导入
               </button>
             </div>
           </div>

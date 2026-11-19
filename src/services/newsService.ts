@@ -149,6 +149,7 @@ export const newsService = {
     content: ArticleContentBlock[];
     category: 'renju' | 'football';
     coverImage?: string;
+    sourceUrl?: string;
     tags?: string[];
   }): Promise<NewsArticle> {
     const supabase = requireSupabase();
@@ -174,6 +175,7 @@ export const newsService = {
         category: input.category,
         category_label: categoryLabel,
         cover_image: input.coverImage?.trim() || null,
+        source_url: input.sourceUrl?.trim() || null,
         author_name: input.authorName,
         author_role: '创作者',
         read_time_minutes: readTimeMinutes,
