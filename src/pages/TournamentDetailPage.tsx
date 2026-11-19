@@ -794,9 +794,11 @@ export function TournamentDetailPage() {
       ) : activeTab === 'standings' ? (
         <>
           {finalsInfo?.champion ? (
-            <div style={{ padding: '16px 16px 6px' }}>
-              <div className="v-stage-label" style={{ textAlign: 'left', marginBottom: 10 }}>
-                决赛
+            <>
+              <div style={{ padding: '16px 16px 8px' }}>
+                <div className="v-stage-label" style={{ textAlign: 'left', marginBottom: 0 }}>
+                  决赛
+                </div>
               </div>
               <div className="table-scroll">
                 <table className="standings-table">
@@ -832,10 +834,12 @@ export function TournamentDetailPage() {
                   </tbody>
                 </table>
               </div>
-              <div className="v-stage-label" style={{ textAlign: 'left', margin: '14px 0 0' }}>
-                预赛
+              <div style={{ padding: '14px 16px 0' }}>
+                <div className="v-stage-label" style={{ textAlign: 'left', marginBottom: 0 }}>
+                  预赛
+                </div>
               </div>
-            </div>
+            </>
           ) : null}
 
           <div
