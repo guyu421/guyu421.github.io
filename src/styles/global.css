@@ -1177,6 +1177,19 @@ a.fixture-row:hover {
   margin-top: 18px;
 }
 
+.wx-table-float-bar {
+  position: fixed;
+  z-index: 60;
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.14);
+  padding: 4px 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
 @media (max-width: 640px) {
   .wx-editor-paper {
     padding: 24px 18px;

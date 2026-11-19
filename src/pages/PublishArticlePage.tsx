@@ -135,7 +135,9 @@ export function PublishArticlePage() {
   const [activePopover, setActivePopover] = useState<'table' | 'formula' | null>(null);
   const [tableRows, setTableRows] = useState(3);
   const [tableCols, setTableCols] = useState(3);
-  const [inTable, setInTable] = useState(false);
+  const [tableMenuPos, setTableMenuPos] = useState<{ top: number; left: number } | null>(
+    null,
+  );
   const [formulaTex, setFormulaTex] = useState('');
 
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -214,6 +216,17 @@ export function PublishArticlePage() {
     setCharCount(text.length);
   }
 
+  function positionTableMenu(cell: HTMLTableCellElement | null) {
+    if (!cell) {
+      setTableMenuPos(null);
+      return;
+    }
+    const rect = cell.getBoundingClientRect();
+    const top = rect.top > 96 ? rect.top - 40 : rect.bottom + 6;
+    const left = Math.max(12, Math.min(rect.left, window.innerWidth - 280));
+    setTableMenuPos({ top, left });
+  }
+
   function updateTableSelection() {
     const sel = window.getSelection();
     const anchor = sel?.anchorNode;
@@ -222,10 +235,10 @@ export function PublishArticlePage() {
     const cell = anchorEl?.closest('td, th') as HTMLTableCellElement | null;
     if (cell && editorRef.current?.contains(cell)) {
       activeTableCellRef.current = cell;
-      setInTable(true);
+      positionTableMenu(cell);
     } else {
       activeTableCellRef.current = null;
-      setInTable(false);
+      setTableMenuPos(null);
     }
   }
 
@@ -242,7 +255,7 @@ export function PublishArticlePage() {
     if (action === 'delTable') {
       table.remove();
       activeTableCellRef.current = null;
-      setInTable(false);
+      setTableMenuPos(null);
       syncEditorStats();
       return;
     }
@@ -259,7 +272,6 @@ export function PublishArticlePage() {
       if (table.rows.length <= 1) {
         table.remove();
         activeTableCellRef.current = null;
-        setInTable(false);
       } else {
         table.deleteRow(rowIndex);
         const nextRow = table.rows[Math.min(rowIndex, table.rows.length - 1)];
@@ -275,7 +287,6 @@ export function PublishArticlePage() {
       if (tr.cells.length <= 1) {
         table.remove();
         activeTableCellRef.current = null;
-        setInTable(false);
       } else {
         for (const row of Array.from(table.rows)) {
           if (colIndex < row.cells.length) {
@@ -287,6 +298,7 @@ export function PublishArticlePage() {
       }
     }
 
+    positionTableMenu(activeTableCellRef.current);
     syncEditorStats();
   }
 
@@ -691,36 +703,23 @@ export function PublishArticlePage() {
 
       </header>
 
-      {mode === 'edit' && inTable ? (
+      {mode === 'edit' && tableMenuPos ? (
         <div
-          style={{
-            position: 'sticky',
-            top: 52,
-            zIndex: 25,
-            background: '#ffffff',
-            borderBottom: '1px solid var(--color-border)',
-            padding: '6px 20px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexWrap: 'wrap',
-            gap: 8,
-          }}
+          className="wx-table-float-bar"
+          style={{ top: tableMenuPos.top, left: tableMenuPos.left }}
+          onMouseDown={(e) => e.preventDefault()}
         >
-          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--color-text-muted)' }}>
-            表格编辑：
-          </span>
           <button type="button" className="wx-toolbar-btn" onClick={() => mutateTable('addRow')}>
-            + 插入行
+            +行
           </button>
           <button type="button" className="wx-toolbar-btn" onClick={() => mutateTable('delRow')}>
-            - 删除行
+            -行
           </button>
           <button type="button" className="wx-toolbar-btn" onClick={() => mutateTable('addCol')}>
-            + 插入列
+            +列
           </button>
           <button type="button" className="wx-toolbar-btn" onClick={() => mutateTable('delCol')}>
-            - 删除列
+            -列
           </button>
           <button
             type="button"
@@ -728,7 +727,7 @@ export function PublishArticlePage() {
             style={{ color: '#dc2626' }}
             onClick={() => mutateTable('delTable')}
           >
-            删除表格
+            删表
           </button>
         </div>
       ) : null}
