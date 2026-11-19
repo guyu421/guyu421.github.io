@@ -92,12 +92,12 @@ insert into public.tournaments (
 )
 values (
   1,
-  '“山海杯”2026年全国五子棋业余棋王争霸赛线下总决赛',
-  '公开组（1-8台）',
+  '“山海杯”2026年全国五子棋业余棋王争霸赛',
+  '公开组 · 塔拉山口-10',
   '浙江杭州淳安县下姜村',
-  '2026-11-16',
+  '2026-11-14',
   'finished',
-  '全国五子棋业余棋王争霸赛线下总决赛公开组1-8台对局与棋谱记录。'
+  '公开组第1轮（共23台），包含假先/假后棋手编号与等级分。'
 )
 on conflict (id) do update set
   title = excluded.title,
@@ -118,8 +118,12 @@ create table if not exists public.renju_matches (
   round_name text not null,
   board_no integer not null,
   status text not null default 'finished' check (status in ('live', 'upcoming', 'finished')),
+  black_no integer,
   black_player text not null,
+  black_rating numeric(6,1),
+  white_no integer,
   white_player text not null,
+  white_rating numeric(6,1),
   black_score numeric(3,1),
   white_score numeric(3,1),
   result_text text not null default '待定',
@@ -130,7 +134,61 @@ create table if not exists public.renju_matches (
 );
 
 alter table public.renju_matches
-  add column if not exists tournament_id bigint references public.tournaments(id) on delete cascade default 1;
+  add column if not exists tournament_id bigint references public.tournaments(id) on delete cascade default 1,
+  add column if not exists black_no integer,
+  add column if not exists black_rating numeric(6,1),
+  add column if not exists white_no integer,
+  add column if not exists white_rating numeric(6,1);
+
+-- 预置“山海杯”2026年全国五子棋业余棋王争霸赛 公开组第1轮（1-23台）
+insert into public.renju_matches (
+  id, tournament_id, tournament, group_name, round_name, board_no, status,
+  black_no, black_player, black_rating, white_no, white_player, white_rating,
+  black_score, white_score, result_text, opening, played_at
+) values
+  (1,  1, '“山海杯”2026年全国五子棋业余棋王争霸赛', '公开组', '第1轮', 1,  'upcoming', 1,  '王俊锴', 2347.3, 24, '马子轩', 2164.7, null, null, '待定', '塔拉山口-10', '2026-11-14T09:00:00+08:00'),
+  (2,  1, '“山海杯”2026年全国五子棋业余棋王争霸赛', '公开组', '第1轮', 2,  'finished', 25, '许逸豪', 1900.0, 2,  '钟煜阳', 2663.0, 0.0,  1.0,  'BF（假后胜）', '塔拉山口-10', '2026-11-14T09:00:00+08:00'),
+  (3,  1, '“山海杯”2026年全国五子棋业余棋王争霸赛', '公开组', '第1轮', 3,  'upcoming', 3,  '韦振强', 2766.7, 26, '蔡子扬', 2608.9, null, null, '待定', '塔拉山口-10', '2026-11-14T09:00:00+08:00'),
+  (4,  1, '“山海杯”2026年全国五子棋业余棋王争霸赛', '公开组', '第1轮', 4,  'upcoming', 27, '梁中',   2287.9, 4,  '廖俊豪', 2224.9, null, null, '待定', '塔拉山口-10', '2026-11-14T09:00:00+08:00'),
+  (5,  1, '“山海杯”2026年全国五子棋业余棋王争霸赛', '公开组', '第1轮', 5,  'upcoming', 5,  '彭维刚', 2116.6, 28, '肖伊康', 2108.6, null, null, '待定', '塔拉山口-10', '2026-11-14T09:00:00+08:00'),
+  (6,  1, '“山海杯”2026年全国五子棋业余棋王争霸赛', '公开组', '第1轮', 6,  'upcoming', 29, '庄义翔', 2158.0, 6,  '章小剑', 2701.7, null, null, '待定', '塔拉山口-10', '2026-11-14T09:00:00+08:00'),
+  (7,  1, '“山海杯”2026年全国五子棋业余棋王争霸赛', '公开组', '第1轮', 7,  'upcoming', 7,  '张硕',   1900.0, 30, '黄大兴', 2390.7, null, null, '待定', '塔拉山口-10', '2026-11-14T09:00:00+08:00'),
+  (8,  1, '“山海杯”2026年全国五子棋业余棋王争霸赛', '公开组', '第1轮', 8,  'upcoming', 31, '陈超',   2459.4, 8,  '徐嘉琦', 2593.9, null, null, '待定', '塔拉山口-10', '2026-11-14T09:00:00+08:00'),
+  (9,  1, '“山海杯”2026年全国五子棋业余棋王争霸赛', '公开组', '第1轮', 9,  'upcoming', 9,  '康庭瑞', 2508.5, 32, '夏建晋', 2533.5, null, null, '待定', '塔拉山口-10', '2026-11-14T09:00:00+08:00'),
+  (10, 1, '“山海杯”2026年全国五子棋业余棋王争霸赛', '公开组', '第1轮', 10, 'upcoming', 33, '李嘉骏', 2453.3, 10, '文英',   2194.0, null, null, '待定', '塔拉山口-10', '2026-11-14T09:00:00+08:00'),
+  (11, 1, '“山海杯”2026年全国五子棋业余棋王争霸赛', '公开组', '第1轮', 11, 'upcoming', 11, '童晨',   2293.8, 34, '袁攀峰', 1900.0, null, null, '待定', '塔拉山口-10', '2026-11-14T09:00:00+08:00'),
+  (12, 1, '“山海杯”2026年全国五子棋业余棋王争霸赛', '公开组', '第1轮', 12, 'upcoming', 35, '万俊宏', 2596.1, 12, '邢家辉', 1900.0, null, null, '待定', '塔拉山口-10', '2026-11-14T09:00:00+08:00'),
+  (13, 1, '“山海杯”2026年全国五子棋业余棋王争霸赛', '公开组', '第1轮', 13, 'upcoming', 13, '康哲铭', 2655.8, 36, '王嘉欣', 2390.0, null, null, '待定', '塔拉山口-10', '2026-11-14T09:00:00+08:00'),
+  (14, 1, '“山海杯”2026年全国五子棋业余棋王争霸赛', '公开组', '第1轮', 14, 'upcoming', 37, '周楠',   2588.8, 14, '张欣怡', 2420.0, null, null, '待定', '塔拉山口-10', '2026-11-14T09:00:00+08:00'),
+  (15, 1, '“山海杯”2026年全国五子棋业余棋王争霸赛', '公开组', '第1轮', 15, 'upcoming', 15, '艾颖翔', 2076.8, 38, '黄健光', 2626.4, null, null, '待定', '塔拉山口-10', '2026-11-14T09:00:00+08:00'),
+  (16, 1, '“山海杯”2026年全国五子棋业余棋王争霸赛', '公开组', '第1轮', 16, 'upcoming', 39, '潘为',   2031.5, 16, '于宁',   1866.6, null, null, '待定', '塔拉山口-10', '2026-11-14T09:00:00+08:00'),
+  (17, 1, '“山海杯”2026年全国五子棋业余棋王争霸赛', '公开组', '第1轮', 17, 'upcoming', 17, '王端国', 2069.0, 40, '何舒军', 2719.1, null, null, '待定', '塔拉山口-10', '2026-11-14T09:00:00+08:00'),
+  (18, 1, '“山海杯”2026年全国五子棋业余棋王争霸赛', '公开组', '第1轮', 18, 'upcoming', 41, '许业鹏', 2164.7, 18, '焦政瑞', 2660.5, null, null, '待定', '塔拉山口-10', '2026-11-14T09:00:00+08:00'),
+  (19, 1, '“山海杯”2026年全国五子棋业余棋王争霸赛', '公开组', '第1轮', 19, 'upcoming', 19, '赵云',   2726.6, 42, '钟保贵', 2236.4, null, null, '待定', '塔拉山口-10', '2026-11-14T09:00:00+08:00'),
+  (20, 1, '“山海杯”2026年全国五子棋业余棋王争霸赛', '公开组', '第1轮', 20, 'upcoming', 43, '陈浩源', 2650.8, 20, '周鹏',   1900.0, null, null, '待定', '塔拉山口-10', '2026-11-14T09:00:00+08:00'),
+  (21, 1, '“山海杯”2026年全国五子棋业余棋王争霸赛', '公开组', '第1轮', 21, 'upcoming', 21, '王思淼', 2190.3, 44, '崔展铭', 2058.4, null, null, '待定', '塔拉山口-10', '2026-11-14T09:00:00+08:00'),
+  (22, 1, '“山海杯”2026年全国五子棋业余棋王争霸赛', '公开组', '第1轮', 22, 'upcoming', 45, '朱佳颐', 2449.7, 22, '刘沁',   2542.6, null, null, '待定', '塔拉山口-10', '2026-11-14T09:00:00+08:00'),
+  (23, 1, '“山海杯”2026年全国五子棋业余棋王争霸赛', '公开组', '第1轮', 23, 'upcoming', 23, '蒙杰焕', 2526.3, 46, '鲁益',   2467.5, null, null, '待定', '塔拉山口-10', '2026-11-14T09:00:00+08:00')
+on conflict (id) do update set
+  tournament_id = excluded.tournament_id,
+  tournament = excluded.tournament,
+  group_name = excluded.group_name,
+  round_name = excluded.round_name,
+  board_no = excluded.board_no,
+  status = excluded.status,
+  black_no = excluded.black_no,
+  black_player = excluded.black_player,
+  black_rating = excluded.black_rating,
+  white_no = excluded.white_no,
+  white_player = excluded.white_player,
+  white_rating = excluded.white_rating,
+  black_score = excluded.black_score,
+  white_score = excluded.white_score,
+  result_text = excluded.result_text,
+  opening = excluded.opening,
+  played_at = excluded.played_at;
+
+select setval(pg_get_serial_sequence('public.renju_matches', 'id'), coalesce((select max(id) from public.renju_matches), 1), true);
 
 create index if not exists idx_renju_matches_order on public.renju_matches(id desc);
 

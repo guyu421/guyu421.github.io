@@ -19,8 +19,12 @@ interface RenjuMatchRow {
   round_name: string;
   board_no: number;
   status: RenjuMatchStatus;
+  black_no: number | null;
   black_player: string;
+  black_rating: number | null;
+  white_no: number | null;
   white_player: string;
+  white_rating: number | null;
   black_score: number | null;
   white_score: number | null;
   result_text: string;
@@ -51,8 +55,12 @@ function mapMatch(row: RenjuMatchRow): RenjuMatch {
     roundName: row.round_name,
     boardNo: row.board_no,
     status: row.status,
+    blackNo: row.black_no ?? undefined,
     blackPlayer: row.black_player,
+    blackRating: row.black_rating ?? undefined,
+    whiteNo: row.white_no ?? undefined,
     whitePlayer: row.white_player,
+    whiteRating: row.white_rating ?? undefined,
     blackScore: row.black_score,
     whiteScore: row.white_score,
     resultText: row.result_text,

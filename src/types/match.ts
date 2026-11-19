@@ -18,8 +18,12 @@ export interface RenjuMatch {
   roundName: string;
   boardNo: number;
   status: RenjuMatchStatus;
+  blackNo?: number;
   blackPlayer: string;
+  blackRating?: number;
+  whiteNo?: number;
   whitePlayer: string;
+  whiteRating?: number;
   blackScore: number | null;
   whiteScore: number | null;
   resultText: string;

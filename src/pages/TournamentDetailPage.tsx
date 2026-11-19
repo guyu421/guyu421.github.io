@@ -139,7 +139,7 @@ export function TournamentDetailPage() {
       ) : matches.length === 0 ? (
         <EmptyState
           title="暂无该赛事的棋谱对局数据"
-          description="将公开组棋谱（1-8台）每场对局写入 Supabase 的 renju_matches 表后，将在此展示假先、假后、比分与棋谱。"
+          description="将公开组对局写入 Supabase 的 renju_matches 表后，将在此展示假先、假后、等级分与赛果。"
         />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -163,18 +163,38 @@ export function TournamentDetailPage() {
                 </div>
 
                 <div className="match-score-body">
-                  <div className="match-player home">
-                    <span>{match.blackPlayer}</span>
-                    <span
-                      className="badge"
-                      style={{
-                        backgroundColor: '#0f172a',
-                        color: '#ffffff',
-                        flexShrink: 0,
-                      }}
-                    >
-                      假先
-                    </span>
+                  <div style={{ textAlign: 'right' }}>
+                    <div className="match-player home">
+                      <span>{match.blackPlayer}</span>
+                      <span
+                        className="badge"
+                        style={{
+                          backgroundColor: '#0f172a',
+                          color: '#ffffff',
+                          flexShrink: 0,
+                        }}
+                      >
+                        假先
+                      </span>
+                    </div>
+                    {match.blackNo !== undefined || match.blackRating !== undefined ? (
+                      <div
+                        className="tabular-nums"
+                        style={{
+                          fontSize: '0.75rem',
+                          color: 'var(--color-text-muted)',
+                          marginTop: 2,
+                        }}
+                      >
+                        {match.blackNo !== undefined ? `#${match.blackNo}` : ''}
+                        {match.blackNo !== undefined && match.blackRating !== undefined
+                          ? ' · '
+                          : ''}
+                        {match.blackRating !== undefined
+                          ? `等级分 ${match.blackRating.toFixed(1)}`
+                          : ''}
+                      </div>
+                    ) : null}
                   </div>
 
                   <div className="score-pill tabular-nums">
@@ -183,19 +203,39 @@ export function TournamentDetailPage() {
                       : 'VS'}
                   </div>
 
-                  <div className="match-player">
-                    <span
-                      className="badge"
-                      style={{
-                        backgroundColor: '#ffffff',
-                        color: '#0f172a',
-                        border: '1px solid #cbd5e1',
-                        flexShrink: 0,
-                      }}
-                    >
-                      假后
-                    </span>
-                    <span>{match.whitePlayer}</span>
+                  <div style={{ textAlign: 'left' }}>
+                    <div className="match-player">
+                      <span
+                        className="badge"
+                        style={{
+                          backgroundColor: '#ffffff',
+                          color: '#0f172a',
+                          border: '1px solid #cbd5e1',
+                          flexShrink: 0,
+                        }}
+                      >
+                        假后
+                      </span>
+                      <span>{match.whitePlayer}</span>
+                    </div>
+                    {match.whiteNo !== undefined || match.whiteRating !== undefined ? (
+                      <div
+                        className="tabular-nums"
+                        style={{
+                          fontSize: '0.75rem',
+                          color: 'var(--color-text-muted)',
+                          marginTop: 2,
+                        }}
+                      >
+                        {match.whiteNo !== undefined ? `#${match.whiteNo}` : ''}
+                        {match.whiteNo !== undefined && match.whiteRating !== undefined
+                          ? ' · '
+                          : ''}
+                        {match.whiteRating !== undefined
+                          ? `等级分 ${match.whiteRating.toFixed(1)}`
+                          : ''}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
 
