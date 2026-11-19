@@ -1126,6 +1126,15 @@ a.fixture-row:hover {
   padding: 0 3px;
 }
 
+.wx-editor-body .wx-inline-formula {
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.wx-editor-body .wx-inline-formula:hover {
+  background: rgba(225, 29, 72, 0.08);
+}
+
 .article-formula {
   margin: 18px 0;
   padding: 8px 0;

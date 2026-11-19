@@ -145,6 +145,7 @@ export function PublishArticlePage() {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const savedHtmlRef = useRef<string>('');
   const savedRangeRef = useRef<Range | null>(null);
+  const editingFormulaElRef = useRef<HTMLElement | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
   const inlineImgInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -273,14 +274,37 @@ export function PublishArticlePage() {
       displayMode: false,
       throwOnError: false,
     });
+
+    const targetEl = editingFormulaElRef.current;
+    if (targetEl && editorRef.current?.contains(targetEl)) {
+      targetEl.dataset.tex = tex;
+      targetEl.innerHTML = rendered;
+      syncEditorStats();
+      editingFormulaElRef.current = null;
+      setFormulaTex('');
+      setActivePopover(null);
+      return;
+    }
+
     const escapedTex = tex.replace(/"/g, '&quot;');
-    const html = `<span class="wx-inline-formula" data-tex="${escapedTex}" contenteditable="false">${rendered}</span>&nbsp;`;
+    const html = `<span class="wx-inline-formula" data-tex="${escapedTex}" title="双击编辑公式" contenteditable="false">${rendered}</span>&nbsp;`;
 
     restoreSelection();
     document.execCommand('insertHTML', false, html);
     syncEditorStats();
     setFormulaTex('');
     setActivePopover(null);
+  }
+
+  function handleEditorDoubleClick(e: React.MouseEvent<HTMLDivElement>) {
+    const formulaEl = (e.target as HTMLElement).closest(
+      '.wx-inline-formula',
+    ) as HTMLElement | null;
+    if (!formulaEl || formulaEl.dataset.tex === undefined) return;
+    e.preventDefault();
+    editingFormulaElRef.current = formulaEl;
+    setFormulaTex(formulaEl.dataset.tex);
+    setActivePopover('formula');
   }
 
   async function handleCoverFileChange(e: ChangeEvent<HTMLInputElement>) {
@@ -534,6 +558,8 @@ export function PublishArticlePage() {
               className="wx-toolbar-btn"
               onClick={() => {
                 saveSelection();
+                editingFormulaElRef.current = null;
+                setFormulaTex('');
                 setActivePopover((prev) => (prev === 'formula' ? null : 'formula'));
               }}
             >
@@ -674,14 +700,17 @@ export function PublishArticlePage() {
         </div>
       ) : null}
 
-      {/* 插入公式弹窗 */}
+      {/* 插入/编辑公式弹窗 */}
       {mode === 'edit' && activePopover === 'formula' ? (
         <div
           className="wx-modal-backdrop"
           role="dialog"
           aria-modal="true"
-          aria-label="插入公式"
-          onClick={() => setActivePopover(null)}
+          aria-label={editingFormulaElRef.current ? '编辑行内公式' : '插入行内公式'}
+          onClick={() => {
+            editingFormulaElRef.current = null;
+            setActivePopover(null);
+          }}
         >
           <div
             className="wx-modal-dialog"
@@ -689,11 +718,16 @@ export function PublishArticlePage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="wx-modal-header">
-              <strong style={{ fontSize: '1.02rem' }}>插入行内公式</strong>
+              <strong style={{ fontSize: '1.02rem' }}>
+                {editingFormulaElRef.current ? '编辑行内公式' : '插入行内公式'}
+              </strong>
               <button
                 type="button"
                 aria-label="关闭弹窗"
-                onClick={() => setActivePopover(null)}
+                onClick={() => {
+                  editingFormulaElRef.current = null;
+                  setActivePopover(null);
+                }}
                 style={{
                   border: 'none',
                   background: 'transparent',
@@ -739,7 +773,10 @@ export function PublishArticlePage() {
               <button
                 type="button"
                 className="category-pill"
-                onClick={() => setActivePopover(null)}
+                onClick={() => {
+                  editingFormulaElRef.current = null;
+                  setActivePopover(null);
+                }}
                 style={{ padding: '6px 14px', fontSize: '0.84rem' }}
               >
                 取消
@@ -751,7 +788,7 @@ export function PublishArticlePage() {
                 disabled={!formulaTex.trim()}
                 style={{ padding: '6px 16px', fontSize: '0.84rem' }}
               >
-                插入公式
+                {editingFormulaElRef.current ? '保存修改' : '插入公式'}
               </button>
             </div>
           </div>
@@ -964,6 +1001,7 @@ export function PublishArticlePage() {
               suppressContentEditableWarning
               data-placeholder="请输入正文内容..."
               onInput={syncEditorStats}
+              onDoubleClick={handleEditorDoubleClick}
             />
 
             <div
