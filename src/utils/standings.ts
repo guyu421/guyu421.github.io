@@ -6,6 +6,7 @@ export interface StandingEntry {
   playerName: string;
   played: number;
   wins: number;
+  tiebreakWins: number;
   draws: number;
   losses: number;
   points: number;
@@ -20,6 +21,7 @@ interface PlayerAccumulator {
   playerName: string;
   played: number;
   wins: number;
+  tiebreakWins: number;
   draws: number;
   losses: number;
   points: number;
@@ -60,6 +62,7 @@ export function computeStandings(
         playerName: name,
         played: 0,
         wins: 0,
+        tiebreakWins: 0,
         draws: 0,
         losses: 0,
         points: 0,
@@ -100,6 +103,7 @@ export function computeStandings(
       if (black) {
         black.played += 1;
         black.wins += 1;
+        black.tiebreakWins += 1;
         black.points += winPts;
       }
       if (white) {
@@ -116,6 +120,7 @@ export function computeStandings(
       if (white) {
         white.played += 1;
         white.wins += 1;
+        white.tiebreakWins += 1;
         white.points += winPts;
       }
     } else if (m.result === 'D' || m.result === '0.5:0.5') {
@@ -196,6 +201,7 @@ export function computeStandings(
       playerName: acc.playerName,
       played: acc.played,
       wins: acc.wins,
+      tiebreakWins: acc.tiebreakWins,
       draws: acc.draws,
       losses: acc.losses,
       points: acc.points,
@@ -216,8 +222,8 @@ export function computeStandings(
       if (key === 'median_buchholz' && b.medianBuchholz !== a.medianBuchholz) {
         return b.medianBuchholz - a.medianBuchholz;
       }
-      if (key === 'wins' && b.wins !== a.wins) {
-        return b.wins - a.wins;
+      if (key === 'wins' && b.tiebreakWins !== a.tiebreakWins) {
+        return b.tiebreakWins - a.tiebreakWins;
       }
     }
     return 0;

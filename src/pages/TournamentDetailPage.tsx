@@ -15,7 +15,7 @@ const TIEBREAKER_HEADER: Record<TiebreakerKey, string> = {
 function getTiebreakerValue(row: StandingEntry, key: TiebreakerKey): number {
   if (key === 'buchholz') return row.buchholz;
   if (key === 'median_buchholz') return row.medianBuchholz;
-  return row.wins;
+  return row.tiebreakWins;
 }
 
 function formatScheduleLines(iso: string): { date: string; time: string } {
