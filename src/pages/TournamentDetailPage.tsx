@@ -207,6 +207,26 @@ export function TournamentDetailPage() {
     };
   }, [numericId]);
 
+  useEffect(() => {
+    if (!tournament || tournament.sport !== 'football') return;
+    let active = true;
+    const intervalId = window.setInterval(() => {
+      setFootballMatches((prev) => {
+        if (prev.length === 0) return prev;
+        void overlayEspnLiveScores(numericId, tournament.name, prev)
+          .then((merged) => {
+            if (active && merged !== prev) setFootballMatches(merged);
+          })
+          .catch(() => {});
+        return prev;
+      });
+    }, 60_000);
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+    };
+  }, [numericId, tournament]);
+
   const isFootball = tournament?.sport === 'football';
 
   const rounds = useMemo(() => {
