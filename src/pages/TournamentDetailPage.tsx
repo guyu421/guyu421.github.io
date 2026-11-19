@@ -115,6 +115,22 @@ export function TournamentDetailPage() {
     [matches, selectedRound],
   );
 
+  const prevScores = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const m of matches) {
+      if (m.roundNo >= selectedRound || !m.result) continue;
+      if (m.result === 'B' || m.result === '+' || m.result === 'WF' || m.result === '1:0') {
+        map.set(m.blackId, (map.get(m.blackId) ?? 0) + 1);
+      } else if (m.result === 'W' || m.result === '-' || m.result === 'BF' || m.result === '0:1') {
+        map.set(m.whiteId, (map.get(m.whiteId) ?? 0) + 1);
+      } else if (m.result === 'D' || m.result === '0.5:0.5') {
+        map.set(m.blackId, (map.get(m.blackId) ?? 0) + 0.5);
+        map.set(m.whiteId, (map.get(m.whiteId) ?? 0) + 0.5);
+      }
+    }
+    return map;
+  }, [matches, selectedRound]);
+
   return (
     <div className="tournament-page">
       <div className="league-banner">
@@ -195,10 +211,16 @@ export function TournamentDetailPage() {
                   <div className="fixture-players">
                     <div className="fixture-player-line">
                       <span>{match.blackName}</span>
+                      <span className="fixture-player-id tabular-nums">
+                        {prevScores.get(match.blackId) ?? 0}
+                      </span>
                     </div>
 
                     <div className="fixture-player-line">
                       <span>{match.whiteName}</span>
+                      <span className="fixture-player-id tabular-nums">
+                        {prevScores.get(match.whiteId) ?? 0}
+                      </span>
                     </div>
                   </div>
 
