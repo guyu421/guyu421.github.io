@@ -59,6 +59,13 @@ create policy "comments_owner_delete"
   to authenticated
   using (auth.uid() = user_id);
 
+-- 授予 anon / authenticated 角色基础表权限
+grant usage on schema public to anon, authenticated;
+grant select on public.articles to anon, authenticated;
+grant select on public.comments to anon, authenticated;
+grant insert, delete on public.comments to authenticated;
+grant usage, select on all sequences in schema public to authenticated;
+
 -- 3. 预置第 1 篇五子棋公众号文章
 insert into public.articles (
   id, title, summary, content, category, category_label, cover_image,
