@@ -123,7 +123,7 @@ values
     3,
     1,
     0,
-    '[]'::jsonb,
+    '["h2h_points","h2h_gd","h2h_gf","gd","gf"]'::jsonb,
     2,
     '降级',
     '[{"fromRank":1,"toRank":1,"bgColor":"#ffe4e6","cutoffLabel":"亚冠精英正赛","cutoffBefore":true,"cutoffColor":"#f43f5e","cutoffLineColor":"#fda4af"},{"fromRank":2,"toRank":2,"bgColor":"#fff1f2","cutoffLabel":"亚冠精英小组赛","cutoffBefore":true,"cutoffColor":"#f43f5e","cutoffLineColor":"#fda4af"},{"fromRank":15,"toRank":16,"bgColor":"#f1f5f9","cutoffLabel":"降级","cutoffBefore":true,"cutoffColor":"#64748b","cutoffLineColor":"#cbd5e1"}]'::jsonb,

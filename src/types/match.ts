@@ -1,4 +1,12 @@
-export type TiebreakerKey = 'buchholz' | 'median_buchholz' | 'wins';
+export type TiebreakerKey =
+  | 'buchholz'
+  | 'median_buchholz'
+  | 'wins'
+  | 'h2h_points'
+  | 'h2h_gd'
+  | 'h2h_gf'
+  | 'gd'
+  | 'gf';
 export type TournamentSport = 'renju' | 'football';
 
 export interface StandingsZone {

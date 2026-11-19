@@ -257,9 +257,18 @@ export function computeStandings(
 export function computeFootballStandings(
   matches: FootballMatch[],
   deductions: Map<string, number>,
+  tournament: TournamentItem | null,
   upToRound?: number,
 ): FootballStanding[] {
   if (matches.length === 0) return [];
+
+  const winPts = tournament?.winPoints ?? 3;
+  const drawPts = tournament?.drawPoints ?? 1;
+  const lossPts = tournament?.lossPoints ?? 0;
+  const tiebreakers: TiebreakerKey[] =
+    tournament?.tiebreakers && tournament.tiebreakers.length > 0
+      ? tournament.tiebreakers
+      : ['h2h_points', 'h2h_gd', 'h2h_gf', 'gd', 'gf'];
 
   const maxRound = Math.max(1, ...matches.map((m) => m.roundNo));
   const limitRound = upToRound ?? maxRound;
@@ -306,17 +315,19 @@ export function computeFootballStandings(
 
     if (hs > as) {
       home.wins += 1;
-      home.points += 3;
+      home.points += winPts;
       away.losses += 1;
+      away.points += lossPts;
     } else if (hs < as) {
       away.wins += 1;
-      away.points += 3;
+      away.points += winPts;
       home.losses += 1;
+      home.points += lossPts;
     } else {
       home.draws += 1;
       away.draws += 1;
-      home.points += 1;
-      away.points += 1;
+      home.points += drawPts;
+      away.points += drawPts;
     }
   }
 
@@ -329,56 +340,77 @@ export function computeFootballStandings(
 
   const sortedPoints = Array.from(byPoints.keys()).sort((a, b) => b - a);
   const ordered: Omit<FootballStanding, 'rank'>[] = [];
+  const usesH2H = tiebreakers.some((k) => k.startsWith('h2h_'));
 
   for (const pts of sortedPoints) {
     const group = byPoints.get(pts)!;
     if (group.length > 1) {
-      const groupNames = new Set(group.map((g) => g.teamName));
-      const pairsPlayed = new Set<string>();
       const h2h = new Map<string, { pts: number; gd: number; gf: number }>();
-      for (const name of groupNames) {
-        h2h.set(name, { pts: 0, gd: 0, gf: 0 });
-      }
+      let allMet = false;
 
-      for (const m of scopedMatches) {
-        if (!groupNames.has(m.homeTeam) || !groupNames.has(m.awayTeam)) continue;
-        const hs = m.homeScore!;
-        const as = m.awayScore!;
-        const key =
-          m.homeTeam < m.awayTeam
-            ? `${m.homeTeam}|${m.awayTeam}`
-            : `${m.awayTeam}|${m.homeTeam}`;
-        pairsPlayed.add(key);
-
-        const hStat = h2h.get(m.homeTeam)!;
-        const aStat = h2h.get(m.awayTeam)!;
-        hStat.gf += hs;
-        hStat.gd += hs - as;
-        aStat.gf += as;
-        aStat.gd += as - hs;
-
-        if (hs > as) hStat.pts += 3;
-        else if (hs < as) aStat.pts += 3;
-        else {
-          hStat.pts += 1;
-          aStat.pts += 1;
+      if (usesH2H) {
+        const groupNames = new Set(group.map((g) => g.teamName));
+        const pairsPlayed = new Set<string>();
+        for (const name of groupNames) {
+          h2h.set(name, { pts: 0, gd: 0, gf: 0 });
         }
-      }
 
-      const expectedPairs = (group.length * (group.length - 1)) / 2;
-      const allMet = pairsPlayed.size === expectedPairs;
+        for (const m of scopedMatches) {
+          if (!groupNames.has(m.homeTeam) || !groupNames.has(m.awayTeam)) continue;
+          const hs = m.homeScore!;
+          const as = m.awayScore!;
+          const key =
+            m.homeTeam < m.awayTeam
+              ? `${m.homeTeam}|${m.awayTeam}`
+              : `${m.awayTeam}|${m.homeTeam}`;
+          pairsPlayed.add(key);
+
+          const hStat = h2h.get(m.homeTeam)!;
+          const aStat = h2h.get(m.awayTeam)!;
+          hStat.gf += hs;
+          hStat.gd += hs - as;
+          aStat.gf += as;
+          aStat.gd += as - hs;
+
+          if (hs > as) {
+            hStat.pts += winPts;
+            aStat.pts += lossPts;
+          } else if (hs < as) {
+            aStat.pts += winPts;
+            hStat.pts += lossPts;
+          } else {
+            hStat.pts += drawPts;
+            aStat.pts += drawPts;
+          }
+        }
+
+        const expectedPairs = (group.length * (group.length - 1)) / 2;
+        allMet = pairsPlayed.size === expectedPairs;
+      }
 
       group.sort((a, b) => {
-        if (allMet) {
-          const ha = h2h.get(a.teamName)!;
-          const hb = h2h.get(b.teamName)!;
-          if (hb.pts !== ha.pts) return hb.pts - ha.pts;
-          if (hb.gd !== ha.gd) return hb.gd - ha.gd;
-          if (hb.gf !== ha.gf) return hb.gf - ha.gf;
+        for (const key of tiebreakers) {
+          if (key === 'h2h_points' && allMet) {
+            const diff = h2h.get(b.teamName)!.pts - h2h.get(a.teamName)!.pts;
+            if (diff !== 0) return diff;
+          } else if (key === 'h2h_gd' && allMet) {
+            const diff = h2h.get(b.teamName)!.gd - h2h.get(a.teamName)!.gd;
+            if (diff !== 0) return diff;
+          } else if (key === 'h2h_gf' && allMet) {
+            const diff = h2h.get(b.teamName)!.gf - h2h.get(a.teamName)!.gf;
+            if (diff !== 0) return diff;
+          } else if (key === 'gd') {
+            const diff =
+              b.goalsFor - b.goalsAgainst - (a.goalsFor - a.goalsAgainst);
+            if (diff !== 0) return diff;
+          } else if (key === 'gf') {
+            const diff = b.goalsFor - a.goalsFor;
+            if (diff !== 0) return diff;
+          } else if (key === 'wins') {
+            const diff = b.wins - a.wins;
+            if (diff !== 0) return diff;
+          }
         }
-        const gdDiff = b.goalsFor - b.goalsAgainst - (a.goalsFor - a.goalsAgainst);
-        if (gdDiff !== 0) return gdDiff;
-        if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
         return a.teamName.localeCompare(b.teamName, 'zh-CN');
       });
     }

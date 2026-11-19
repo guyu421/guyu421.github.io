@@ -16,7 +16,7 @@ import {
   type StandingEntry,
 } from '@/utils/standings';
 
-const TIEBREAKER_HEADER: Record<TiebreakerKey, string> = {
+const TIEBREAKER_HEADER: Partial<Record<TiebreakerKey, string>> = {
   buchholz: '对手分',
   median_buchholz: '中间对手分',
   wins: '胜局数',
@@ -257,9 +257,10 @@ export function TournamentDetailPage() {
       computeFootballStandings(
         footballMatches,
         footballDeductions,
+        tournament,
         currentRound,
       ),
-    [footballMatches, footballDeductions, currentRound],
+    [footballMatches, footballDeductions, tournament, currentRound],
   );
 
   const zones = tournament?.standingsZones ?? [];
