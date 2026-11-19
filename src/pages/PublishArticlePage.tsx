@@ -17,7 +17,7 @@ import {
   X,
 } from 'lucide-react';
 import katex from 'katex';
-import { type ChangeEvent, type ClipboardEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/common/Badge';
 import { newsService } from '@/services/newsService';
@@ -141,7 +141,6 @@ export function PublishArticlePage() {
   const [activePopover, setActivePopover] = useState<'table' | 'formula' | 'wechat' | null>(
     null,
   );
-  const [wxRawHtml, setWxRawHtml] = useState('');
   const [importingWechat, setImportingWechat] = useState(false);
   const [wxImportStatus, setWxImportStatus] = useState<string | null>(null);
   const [tableRows, setTableRows] = useState(3);
@@ -485,61 +484,25 @@ export function PublishArticlePage() {
     setActivePopover(null);
   }
 
-  function handleWechatPaste(e: ClipboardEvent<HTMLTextAreaElement>) {
-    const html = e.clipboardData.getData('text/html');
-    if (html && html.trim()) {
-      e.preventDefault();
-      setWxRawHtml(html);
-    }
-  }
-
   function applyWechatImportResult(raw: string) {
-    const looksLikeHtml = /<[a-z][\s\S]*>/i.test(raw);
-    let importedTitle: string | undefined;
-    let importedCover: string | undefined;
-    let importedPublishedAt: string | undefined;
-    let bodyHtml = '';
-
-    if (looksLikeHtml) {
-      const parsed = parseWechatHtml(raw);
-      importedTitle = parsed.title;
-      importedCover = parsed.coverImage;
-      importedPublishedAt = parsed.publishedAt;
-      bodyHtml = parsed.bodyHtml;
-    } else {
-      bodyHtml = raw
-        .split(/\r?\n+/)
-        .map((line) => line.trim())
-        .filter(Boolean)
-        .map((line) => `<p>${line.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>`)
-        .join('');
+    const parsed = parseWechatHtml(raw);
+    if (parsed.title && !title.trim()) {
+      setTitle(parsed.title);
     }
-
-    if (importedTitle && !title.trim()) {
-      setTitle(importedTitle);
+    if (parsed.coverImage && !coverImage.trim()) {
+      setCoverImage(parsed.coverImage);
     }
-    if (importedCover && !coverImage.trim()) {
-      setCoverImage(importedCover);
+    if (parsed.publishedAt) {
+      setPublishedAt(parsed.publishedAt);
     }
-    if (importedPublishedAt) {
-      setPublishedAt(importedPublishedAt);
-    }
-    if (editorRef.current && bodyHtml) {
-      editorRef.current.innerHTML = bodyHtml;
+    if (editorRef.current && parsed.bodyHtml) {
+      editorRef.current.innerHTML = parsed.bodyHtml;
       syncEditorStats();
     }
   }
 
   async function handleWechatImportConfirm() {
     setWxImportStatus(null);
-    const raw = wxRawHtml.trim();
-    if (raw) {
-      applyWechatImportResult(raw);
-      setWxRawHtml('');
-      setActivePopover(null);
-      return;
-    }
-
     const url = sourceUrl.trim();
     if (!url) return;
 
@@ -552,7 +515,7 @@ export function PublishArticlePage() {
       const html = await resp.text();
       if (html.includes('wappoc_appmsgcaptcha') || !html.includes('js_content')) {
         setWxImportStatus(
-          '微信页面触发安全验证或未返回正文，无法仅凭链接自动抓取，请展开下方手动粘贴正文或源码导入。',
+          '微信页面触发安全验证或未返回正文，无法通过链接直接导入。',
         );
         return;
       }
@@ -560,7 +523,7 @@ export function PublishArticlePage() {
       setActivePopover(null);
     } catch {
       setWxImportStatus(
-        '浏览器跨域限制（CORS）拦截了直接抓取微信链接，请展开下方手动粘贴正文或网页源码导入。',
+        '浏览器跨域限制（CORS）拦截了直接抓取微信链接，需要通过后端代理接口才可仅凭链接导入。',
       );
     } finally {
       setImportingWechat(false);
@@ -1181,30 +1144,6 @@ export function PublishArticlePage() {
                   {wxImportStatus}
                 </div>
               ) : null}
-
-              <details>
-                <summary
-                  style={{
-                    fontSize: '0.82rem',
-                    color: 'var(--color-text-muted)',
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                  }}
-                >
-                  无法直接抓取时，点此粘贴公众号正文或源码
-                </summary>
-                <div style={{ marginTop: 10 }}>
-                  <textarea
-                    id="wx-content"
-                    rows={6}
-                    value={wxRawHtml}
-                    onPaste={handleWechatPaste}
-                    onChange={(e) => setWxRawHtml(e.target.value)}
-                    placeholder="请粘贴微信公众号正文或网页源码..."
-                    style={{ ...fieldStyle, resize: 'vertical', lineHeight: 1.6 }}
-                  />
-                </div>
-              </details>
             </div>
 
             <div className="wx-modal-footer">
@@ -1220,7 +1159,7 @@ export function PublishArticlePage() {
                 type="button"
                 className="category-pill active"
                 onClick={handleWechatImportConfirm}
-                disabled={importingWechat || (!sourceUrl.trim() && !wxRawHtml.trim())}
+                disabled={importingWechat || !sourceUrl.trim()}
                 style={{ padding: '6px 16px', fontSize: '0.84rem' }}
               >
                 {importingWechat ? '导入中...' : '确认导入'}
