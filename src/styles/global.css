@@ -1197,7 +1197,129 @@ a.fixture-row:hover {
   }
 }
 
-/* 淘汰赛对阵图（决赛阶段） */
+/* 竖向汇聚淘汰赛对阵图 */
+.v-bracket-card {
+  max-width: 540px;
+  margin: 0 auto;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 24px 18px;
+  box-shadow: var(--shadow-sm);
+}
+
+.v-stage-label {
+  text-align: center;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  margin-bottom: 10px;
+}
+
+.v-match-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.v-player {
+  font-size: 0.96rem;
+  font-weight: 600;
+  color: var(--color-text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.v-player.winner {
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.v-player.loser {
+  color: #cbd5e1;
+  font-weight: 500;
+}
+
+.v-score {
+  font-size: 0.96rem;
+  font-weight: 800;
+  color: var(--color-text);
+  padding: 0 8px;
+}
+
+.v-fork-down,
+.v-fork-up {
+  position: relative;
+  height: 34px;
+  margin: 4px 0;
+}
+
+.v-fork-down::before {
+  content: '';
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  top: 0;
+  height: 16px;
+  border-left: 2px solid #2563eb;
+  border-right: 2px solid #2563eb;
+  border-bottom: 2px solid #2563eb;
+}
+
+.v-fork-down::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 16px;
+  bottom: 0;
+  width: 2px;
+  transform: translateX(-50%);
+  background: #2563eb;
+}
+
+.v-fork-up::before {
+  content: '';
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  bottom: 0;
+  height: 16px;
+  border-left: 2px solid #ef4444;
+  border-right: 2px solid #ef4444;
+  border-top: 2px solid #ef4444;
+}
+
+.v-fork-up::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 16px;
+  width: 2px;
+  transform: translateX(-50%);
+  background: #ef4444;
+}
+
+.v-final-box {
+  border-radius: var(--radius-md);
+  background: #f8fafc;
+  border: 1px solid var(--color-border);
+  padding: 14px 12px;
+  margin: 4px 0;
+}
+
+.v-third-card {
+  max-width: 540px;
+  margin: 16px auto 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+}
 .bracket-section {
   padding: 20px 16px 32px;
   background: var(--color-bg);

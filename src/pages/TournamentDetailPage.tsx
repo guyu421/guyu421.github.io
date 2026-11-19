@@ -700,60 +700,52 @@ export function TournamentDetailPage() {
               : thirdMatch.player1Name
             : null;
 
-          const renderCard = (m: RenjuBracketMatch) => {
-            const dt = formatScheduleLines(m.matchTime);
-            return (
-              <div key={m.id} className="bracket-match-card">
-                <div className="bracket-match-meta">
-                  <span>{m.roundLabel}</span>
-                  <span className="tabular-nums">
-                    {dt.date} {dt.time}
+          const semi1 = semis[0];
+          const semi2 = semis[1];
+
+          const renderPair = (m: RenjuBracketMatch) => (
+            <div className="v-match-row">
+              <span
+                className={`v-player ${
+                  m.winnerSlot === 1 ? 'winner' : 'loser'
+                }`}
+              >
+                {m.player1Seed !== undefined ? (
+                  <span className="bracket-seed tabular-nums">
+                    预#{m.player1Seed}
                   </span>
-                </div>
-                <div
-                  className={`bracket-player-row ${
-                    m.winnerSlot === 1 ? 'winner' : ''
-                  }`}
-                >
-                  <span className="bracket-player-name">
-                    {m.player1Seed !== undefined ? (
-                      <span className="bracket-seed tabular-nums">
-                        预#{m.player1Seed}
-                      </span>
-                    ) : null}
-                    <span>{m.player1Name}</span>
+                ) : null}
+                <span>{m.player1Name}</span>
+              </span>
+              <span className="v-score tabular-nums">
+                {m.player1Score}-{m.player2Score}
+              </span>
+              <span
+                className={`v-player ${
+                  m.winnerSlot === 2 ? 'winner' : 'loser'
+                }`}
+              >
+                <span>{m.player2Name}</span>
+                {m.player2Seed !== undefined ? (
+                  <span className="bracket-seed tabular-nums">
+                    预#{m.player2Seed}
                   </span>
-                  <span className="bracket-score tabular-nums">
-                    {m.player1Score}
-                  </span>
-                </div>
-                <div
-                  className={`bracket-player-row ${
-                    m.winnerSlot === 2 ? 'winner' : ''
-                  }`}
-                >
-                  <span className="bracket-player-name">
-                    {m.player2Seed !== undefined ? (
-                      <span className="bracket-seed tabular-nums">
-                        预#{m.player2Seed}
-                      </span>
-                    ) : null}
-                    <span>{m.player2Name}</span>
-                  </span>
-                  <span className="bracket-score tabular-nums">
-                    {m.player2Score}
-                  </span>
-                </div>
-              </div>
-            );
-          };
+                ) : null}
+              </span>
+            </div>
+          );
 
           return (
             <div className="bracket-section">
               {champion ? (
                 <div className="podium-grid">
-                  <div className="podium-item" style={{ background: '#fff1f2', borderColor: '#fda4af' }}>
-                    <div className="podium-rank" style={{ color: '#e11d48' }}>🏆 冠军</div>
+                  <div
+                    className="podium-item"
+                    style={{ background: '#fff1f2', borderColor: '#fda4af' }}
+                  >
+                    <div className="podium-rank" style={{ color: '#e11d48' }}>
+                      🏆 冠军
+                    </div>
                     <div className="podium-name">{champion}</div>
                   </div>
                   <div className="podium-item">
@@ -775,34 +767,53 @@ export function TournamentDetailPage() {
                 </div>
               ) : null}
 
-              <div className="bracket-tree-scroll">
-                <div className="bracket-tree">
-                  <div className="bracket-col">
-                    <div className="bracket-col-title">半决赛</div>
-                    {semis.map(renderCard)}
-                  </div>
+              <div className="v-bracket-card">
+                {semi1 ? (
+                  <>
+                    <div className="v-stage-label">半决赛 上半区</div>
+                    {renderPair(semi1)}
+                    <div className="v-fork-down" aria-hidden="true" />
+                  </>
+                ) : null}
 
-                  {finalMatch ? (
-                    <>
-                      <div className="bracket-connectors" aria-hidden="true" />
-                      <div className="bracket-col">
-                        <div className="bracket-col-title">冠亚军决赛</div>
-                        {renderCard(finalMatch)}
-                      </div>
-                    </>
-                  ) : null}
-                </div>
+                {finalMatch ? (
+                  <div className="v-final-box">
+                    <div
+                      className="v-stage-label"
+                      style={{ color: 'var(--color-primary)', marginBottom: 8 }}
+                    >
+                      决赛
+                    </div>
+                    {renderPair(finalMatch)}
+                  </div>
+                ) : null}
+
+                {semi2 ? (
+                  <>
+                    <div className="v-fork-up" aria-hidden="true" />
+                    {renderPair(semi2)}
+                    <div
+                      className="v-stage-label"
+                      style={{ marginTop: 10, marginBottom: 0 }}
+                    >
+                      半决赛 下半区
+                    </div>
+                  </>
+                ) : null}
               </div>
 
               {thirdMatch ? (
-                <div className="bracket-third-wrap">
-                  <div className="bracket-col-title">三四名决赛</div>
-                  {renderCard(thirdMatch)}
+                <div className="v-third-card">
+                  <div className="v-stage-label">三四名决赛</div>
+                  {renderPair(thirdMatch)}
                 </div>
               ) : null}
 
               {tournament?.rulesText ? (
-                <section className="rules-section" style={{ marginTop: 24, borderRadius: 10 }}>
+                <section
+                  className="rules-section"
+                  style={{ marginTop: 24, borderRadius: 10 }}
+                >
                   <h2 className="rules-section-title">赛制说明</h2>
                   <p className="rules-section-body">{tournament.rulesText}</p>
                 </section>
