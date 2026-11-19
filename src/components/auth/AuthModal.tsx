@@ -5,6 +5,7 @@ import { useAuth } from '@/store/AuthContext';
 export function AuthModal() {
   const { authModalOpen, closeAuthModal, login, register } = useAuth();
   const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -19,10 +20,11 @@ export function AuthModal() {
 
     try {
       if (mode === 'login') {
-        await login(username, password);
+        await login(email, password);
       } else {
-        await register(username, password);
+        await register(email, password, username);
       }
+      setEmail('');
       setUsername('');
       setPassword('');
     } catch (err: unknown) {
@@ -83,20 +85,18 @@ export function AuthModal() {
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
             <label
-              htmlFor="auth-username"
+              htmlFor="auth-email"
               style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}
             >
-              用户名
+              邮箱
             </label>
             <input
-              id="auth-username"
-              type="text"
+              id="auth-email"
+              type="email"
               required
-              minLength={2}
-              maxLength={24}
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="2-24 个字符"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@example.com"
               style={{
                 width: '100%',
                 height: 38,
@@ -107,6 +107,35 @@ export function AuthModal() {
               }}
             />
           </div>
+
+          {mode === 'register' ? (
+            <div>
+              <label
+                htmlFor="auth-username"
+                style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}
+              >
+                昵称
+              </label>
+              <input
+                id="auth-username"
+                type="text"
+                required
+                minLength={2}
+                maxLength={24}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="2-24 个字符"
+                style={{
+                  width: '100%',
+                  height: 38,
+                  padding: '0 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid var(--color-border)',
+                  fontSize: '0.92rem',
+                }}
+              />
+            </div>
+          ) : null}
 
           <div>
             <label

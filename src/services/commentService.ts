@@ -1,25 +1,43 @@
+import { requireSupabase } from '@/lib/supabase';
 import type { CommentItem } from '@/types/auth';
-import { ApiError, apiRequest } from './apiClient';
 
-const USE_STATIC_DB_EXPORT =
-  import.meta.env.PROD && !import.meta.env.VITE_API_BASE_URL;
-const DISPATCH_ENDPOINT = import.meta.env.VITE_DISPATCH_ENDPOINT ?? '';
+interface CommentRow {
+  id: number;
+  article_id: number;
+  user_id: string;
+  username: string;
+  content: string;
+  created_at: string;
+}
+
+function mapComment(row: CommentRow): CommentItem {
+  return {
+    id: row.id,
+    articleId: row.article_id,
+    userId: row.user_id,
+    username: row.username,
+    content: row.content,
+    createdAt: row.created_at,
+  };
+}
 
 export const commentService = {
   async getComments(articleId: string): Promise<CommentItem[]> {
-    if (USE_STATIC_DB_EXPORT) {
-      try {
-        return await apiRequest<CommentItem[]>(
-          `/static-api/comments/${encodeURIComponent(articleId)}.json`,
-        );
-      } catch {
-        return [];
-      }
+    const numericId = Number(articleId);
+    if (!Number.isInteger(numericId) || numericId <= 0) return [];
+
+    const supabase = requireSupabase();
+    const { data, error } = await supabase
+      .from('comments')
+      .select('*')
+      .eq('article_id', numericId)
+      .order('id', { ascending: false });
+
+    if (error) {
+      throw new Error(error.message);
     }
 
-    return apiRequest<CommentItem[]>(
-      `/api/news/${encodeURIComponent(articleId)}/comments`,
-    );
+    return (data as CommentRow[]).map(mapComment);
   },
 
   async createComment(
@@ -27,53 +45,44 @@ export const commentService = {
     content: string,
     username?: string,
   ): Promise<CommentItem> {
-    if (USE_STATIC_DB_EXPORT) {
-      if (!DISPATCH_ENDPOINT) {
-        throw new ApiError(
-          '当前为纯静态站点，尚未配置异步写入转发层（VITE_DISPATCH_ENDPOINT）或后端 API（VITE_API_BASE_URL）',
-          503,
-        );
-      }
+    const supabase = requireSupabase();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-      const res = await fetch(DISPATCH_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          event_type: 'add-comment',
-          client_payload: {
-            articleId: Number(articleId),
-            username: username || '匿名棋友',
-            content,
-          },
-        }),
-      });
-
-      if (!res.ok) {
-        throw new ApiError('提交异步写入任务失败，请稍后重试', res.status);
-      }
-
-      return {
-        id: Date.now(),
-        articleId: Number(articleId),
-        userId: 'pending',
-        username: username || '匿名棋友',
-        content,
-        createdAt: new Date().toISOString(),
-      };
+    if (!user) {
+      throw new Error('请先登录账号');
     }
 
-    return apiRequest<CommentItem>(
-      `/api/news/${encodeURIComponent(articleId)}/comments`,
-      {
-        method: 'POST',
-        body: JSON.stringify({ content }),
-      },
-    );
+    const displayName =
+      username ||
+      (user.user_metadata?.username as string | undefined) ||
+      user.email?.split('@')[0] ||
+      '棋友';
+
+    const { data, error } = await supabase
+      .from('comments')
+      .insert({
+        article_id: Number(articleId),
+        user_id: user.id,
+        username: displayName,
+        content,
+      })
+      .select('*')
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return mapComment(data as CommentRow);
   },
 
-  async deleteComment(commentId: number): Promise<{ ok: boolean }> {
-    return apiRequest<{ ok: boolean }>(`/api/comments/${commentId}`, {
-      method: 'DELETE',
-    });
+  async deleteComment(commentId: number): Promise<void> {
+    const supabase = requireSupabase();
+    const { error } = await supabase.from('comments').delete().eq('id', commentId);
+    if (error) {
+      throw new Error(error.message);
+    }
   },
 };

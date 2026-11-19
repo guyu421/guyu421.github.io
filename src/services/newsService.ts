@@ -1,54 +1,101 @@
-import type { NewsArticle, NewsQueryParams } from '@/types/news';
-import { apiRequest } from './apiClient';
+import { requireSupabase } from '@/lib/supabase';
+import type { ArticleContentBlock, NewsArticle, NewsQueryParams } from '@/types/news';
 
-const USE_STATIC_DB_EXPORT =
-  import.meta.env.PROD && !import.meta.env.VITE_API_BASE_URL;
+interface ArticleRow {
+  id: number;
+  title: string;
+  summary: string;
+  content: ArticleContentBlock[];
+  category: NewsArticle['category'];
+  category_label: string;
+  cover_image: string | null;
+  author_name: string;
+  author_role: string;
+  published_at: string;
+  read_time_minutes: number;
+  views: number;
+  is_featured: boolean;
+  is_breaking: boolean;
+  source_url: string | null;
+  tags: string[];
+}
+
+function mapArticle(row: ArticleRow): NewsArticle {
+  return {
+    id: String(row.id),
+    slug: String(row.id),
+    title: row.title,
+    summary: row.summary,
+    content: Array.isArray(row.content) ? row.content : [],
+    category: row.category,
+    categoryLabel: row.category_label,
+    coverImage: row.cover_image ?? undefined,
+    author: {
+      id: 'author',
+      name: row.author_name,
+      role: row.author_role,
+    },
+    publishedAt: row.published_at,
+    readTimeMinutes: row.read_time_minutes,
+    views: row.views,
+    isFeatured: row.is_featured,
+    isBreaking: row.is_breaking,
+    sourceUrl: row.source_url ?? undefined,
+    tags: Array.isArray(row.tags) ? row.tags : [],
+  };
+}
 
 export const newsService = {
   async getArticles(params: NewsQueryParams = {}): Promise<NewsArticle[]> {
-    if (USE_STATIC_DB_EXPORT) {
-      const all = await apiRequest<NewsArticle[]>('/static-api/news.json');
-      const { category = 'all', search = '', limit } = params;
-      const normalized = search.trim().toLowerCase();
+    const supabase = requireSupabase();
+    let query = supabase
+      .from('articles')
+      .select('*')
+      .order('id', { ascending: false });
 
-      const filtered = all.filter((article) => {
-        const matchCategory = category === 'all' || article.category === category;
-        const matchSearch =
-          !normalized ||
-          article.title.toLowerCase().includes(normalized) ||
-          article.summary.toLowerCase().includes(normalized) ||
-          article.tags.some((t) => t.toLowerCase().includes(normalized));
-        return matchCategory && matchSearch;
-      });
-
-      return typeof limit === 'number' ? filtered.slice(0, limit) : filtered;
-    }
-
-    const query = new URLSearchParams();
     if (params.category && params.category !== 'all') {
-      query.set('category', params.category);
-    }
-    if (params.search?.trim()) {
-      query.set('search', params.search.trim());
-    }
-    if (typeof params.limit === 'number') {
-      query.set('limit', String(params.limit));
+      query = query.eq('category', params.category);
     }
 
-    const qs = query.toString();
-    return apiRequest<NewsArticle[]>(`/api/news${qs ? `?${qs}` : ''}`);
+    const { data, error } = await query;
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const mapped = (data as ArticleRow[]).map(mapArticle);
+    const search = params.search?.trim().toLowerCase() ?? '';
+    const filtered = search
+      ? mapped.filter(
+          (item) =>
+            item.title.toLowerCase().includes(search) ||
+            item.summary.toLowerCase().includes(search) ||
+            item.tags.some((t) => t.toLowerCase().includes(search)),
+        )
+      : mapped;
+
+    return typeof params.limit === 'number'
+      ? filtered.slice(0, params.limit)
+      : filtered;
   },
 
   async getArticleById(id: string): Promise<NewsArticle | null> {
-    if (USE_STATIC_DB_EXPORT) {
-      try {
-        return await apiRequest<NewsArticle>(`/static-api/news/${encodeURIComponent(id)}.json`);
-      } catch {
-        return null;
-      }
+    const numericId = Number(id);
+    if (!Number.isInteger(numericId) || numericId <= 0) {
+      return null;
     }
 
-    return apiRequest<NewsArticle | null>(`/api/news/${encodeURIComponent(id)}`);
+    const supabase = requireSupabase();
+    const { data, error } = await supabase
+      .from('articles')
+      .select('*')
+      .eq('id', numericId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data ? mapArticle(data as ArticleRow) : null;
   },
 
   async getRelatedArticles(
@@ -56,19 +103,20 @@ export const newsService = {
     category: NewsArticle['category'],
     limit = 3,
   ): Promise<NewsArticle[]> {
-    if (USE_STATIC_DB_EXPORT) {
-      const all = await apiRequest<NewsArticle[]>('/static-api/news.json');
-      return all
-        .filter((item) => item.id !== currentId && item.category === category)
-        .slice(0, limit);
+    const numericId = Number(currentId);
+    const supabase = requireSupabase();
+    const { data, error } = await supabase
+      .from('articles')
+      .select('*')
+      .neq('id', numericId)
+      .eq('category', category)
+      .order('id', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      throw new Error(error.message);
     }
 
-    const query = new URLSearchParams({
-      category,
-      limit: String(limit),
-    });
-    return apiRequest<NewsArticle[]>(
-      `/api/news/${encodeURIComponent(currentId)}/related?${query.toString()}`,
-    );
+    return (data as ArticleRow[]).map(mapArticle);
   },
 };
