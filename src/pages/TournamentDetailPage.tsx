@@ -259,6 +259,7 @@ export function TournamentDetailPage() {
                     <th>赛</th>
                     <th>胜/平/负</th>
                     <th>进/失</th>
+                    <th>净胜</th>
                     <th>积分</th>
                   </tr>
                 </thead>
@@ -267,6 +268,8 @@ export function TournamentDetailPage() {
                     const isTopTwo = idx < 2;
                     const showRelegationLine =
                       idx === 13 && footballStandings.length >= 16;
+                    const gd = row.goalsFor - row.goalsAgainst;
+                    const gdText = gd > 0 ? `+${gd}` : `${gd}`;
 
                     return (
                       <Fragment key={row.teamName}>
@@ -285,13 +288,14 @@ export function TournamentDetailPage() {
                           <td className="tabular-nums">
                             {row.goalsFor}/{row.goalsAgainst}
                           </td>
+                          <td className="tabular-nums">{gdText}</td>
                           <td className="tabular-nums" style={{ fontWeight: 800 }}>
                             {row.points}
                           </td>
                         </tr>
                         {showRelegationLine ? (
                           <tr className="cutoff-row">
-                            <td colSpan={6}>
+                            <td colSpan={7}>
                               <div className="cutoff-divider">
                                 <span className="cutoff-pill">
                                   {tournament?.qualifyLabel || '降级'}
