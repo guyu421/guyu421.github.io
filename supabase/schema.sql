@@ -1124,6 +1124,12 @@ on conflict (id) do update set
   source_url = excluded.source_url,
   tags = excluded.tags;
 
+update public.articles
+set user_id = (
+  select id from auth.users where email = '3242002510@qq.com' limit 1
+)
+where id = 1;
+
 -- 10. 允许已登录用户上传文章图片到 media 存储桶
 drop policy if exists "media_authenticated_upload" on storage.objects;
 create policy "media_authenticated_upload"

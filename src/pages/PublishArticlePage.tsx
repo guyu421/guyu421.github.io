@@ -1113,7 +1113,7 @@ export function PublishArticlePage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
                 <label htmlFor="wx-url" style={labelStyle}>
-                  公众号文章链接 *
+                  公众号文章链接
                 </label>
                 <input
                   id="wx-url"
