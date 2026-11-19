@@ -1,8 +1,19 @@
 import { requireSupabase } from '@/lib/supabase';
-import type { RenjuMatch, RenjuMatchStatus } from '@/types/match';
+import type { RenjuMatch, RenjuMatchStatus, TournamentItem } from '@/types/match';
+
+interface TournamentRow {
+  id: number;
+  title: string;
+  group_name: string;
+  location: string;
+  date_range: string;
+  status: RenjuMatchStatus;
+  summary: string;
+}
 
 interface RenjuMatchRow {
   id: number;
+  tournament_id: number | null;
   tournament: string;
   group_name: string;
   round_name: string;
@@ -19,9 +30,22 @@ interface RenjuMatchRow {
   played_at: string;
 }
 
+function mapTournament(row: TournamentRow): TournamentItem {
+  return {
+    id: row.id,
+    title: row.title,
+    groupName: row.group_name,
+    location: row.location,
+    dateRange: row.date_range,
+    status: row.status,
+    summary: row.summary,
+  };
+}
+
 function mapMatch(row: RenjuMatchRow): RenjuMatch {
   return {
     id: row.id,
+    tournamentId: row.tournament_id ?? 1,
     tournament: row.tournament,
     groupName: row.group_name,
     roundName: row.round_name,
@@ -40,11 +64,44 @@ function mapMatch(row: RenjuMatchRow): RenjuMatch {
 }
 
 export const matchService = {
-  async getMatches(status?: RenjuMatchStatus): Promise<RenjuMatch[]> {
+  async getTournaments(): Promise<TournamentItem[]> {
+    const supabase = requireSupabase();
+    const { data, error } = await supabase
+      .from('tournaments')
+      .select('*')
+      .order('id', { ascending: false });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data as TournamentRow[]).map(mapTournament);
+  },
+
+  async getTournamentById(tournamentId: number): Promise<TournamentItem | null> {
+    const supabase = requireSupabase();
+    const { data, error } = await supabase
+      .from('tournaments')
+      .select('*')
+      .eq('id', tournamentId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data ? mapTournament(data as TournamentRow) : null;
+  },
+
+  async getMatchesByTournament(
+    tournamentId: number,
+    status?: RenjuMatchStatus,
+  ): Promise<RenjuMatch[]> {
     const supabase = requireSupabase();
     let query = supabase
       .from('renju_matches')
       .select('*')
+      .eq('tournament_id', tournamentId)
       .order('round_name', { ascending: true })
       .order('board_no', { ascending: true });
 

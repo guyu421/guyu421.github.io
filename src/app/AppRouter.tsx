@@ -5,6 +5,7 @@ import { CategoryPage } from '@/pages/CategoryPage';
 import { MatchesPage } from '@/pages/MatchesPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { ProfilePage } from '@/pages/ProfilePage';
+import { TournamentDetailPage } from '@/pages/TournamentDetailPage';
 
 export function AppRouter() {
   return (
@@ -12,6 +13,7 @@ export function AppRouter() {
       <Routes>
         <Route path="/" element={<Navigate to="/category/renju" replace />} />
         <Route path="/matches" element={<MatchesPage />} />
+        <Route path="/matches/:tournamentId" element={<TournamentDetailPage />} />
         <Route path="/category/:categoryId" element={<CategoryPage />} />
         <Route path="/article/:id" element={<ArticleDetailPage />} />
         <Route path="/profile" element={<ProfilePage />} />

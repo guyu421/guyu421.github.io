@@ -284,7 +284,7 @@ export function ProfilePage() {
           }}
         >
           <Award size={15} color="#10b981" />
-          <span>已连续签到 {streak} 天 · 每次签到固定增加 10 源点</span>
+          <span>已连续签到 {streak} 天</span>
         </div>
 
         {message ? (

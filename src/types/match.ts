@@ -1,7 +1,18 @@
 export type RenjuMatchStatus = 'live' | 'upcoming' | 'finished';
 
+export interface TournamentItem {
+  id: number;
+  title: string;
+  groupName: string;
+  location: string;
+  dateRange: string;
+  status: RenjuMatchStatus;
+  summary: string;
+}
+
 export interface RenjuMatch {
   id: number;
+  tournamentId: number;
   tournament: string;
   groupName: string;
   roundName: string;
