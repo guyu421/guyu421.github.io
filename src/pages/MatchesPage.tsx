@@ -129,7 +129,16 @@ export function MatchesPage() {
                 <div className="match-score-body">
                   <div className="match-player home">
                     <span>{match.blackPlayer}</span>
-                    <span className="stone-dot black" title="黑方" />
+                    <span
+                      className="badge"
+                      style={{
+                        backgroundColor: '#0f172a',
+                        color: '#ffffff',
+                        flexShrink: 0,
+                      }}
+                    >
+                      假先
+                    </span>
                   </div>
 
                   <div className="score-pill tabular-nums">
@@ -139,7 +148,17 @@ export function MatchesPage() {
                   </div>
 
                   <div className="match-player">
-                    <span className="stone-dot white" title="白方" />
+                    <span
+                      className="badge"
+                      style={{
+                        backgroundColor: '#ffffff',
+                        color: '#0f172a',
+                        border: '1px solid #cbd5e1',
+                        flexShrink: 0,
+                      }}
+                    >
+                      假后
+                    </span>
                     <span>{match.whitePlayer}</span>
                   </div>
                 </div>
