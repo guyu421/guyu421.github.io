@@ -7,12 +7,17 @@ export interface NewsAuthor {
   avatarUrl?: string;
 }
 
+export type ArticleContentBlock =
+  | string
+  | { type: 'text'; text: string }
+  | { type: 'image'; src: string; alt?: string };
+
 export interface NewsArticle {
   id: string;
   slug: string;
   title: string;
   summary: string;
-  content: string[];
+  content: ArticleContentBlock[];
   category: Exclude<SportCategoryId, 'all'>;
   categoryLabel: string;
   coverImage?: string;

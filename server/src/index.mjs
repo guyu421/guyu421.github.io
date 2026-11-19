@@ -24,6 +24,7 @@ function mapArticle(row) {
     content: JSON.parse(row.content_json),
     category: row.category,
     categoryLabel: row.category_label,
+    coverImage: row.cover_image || undefined,
     author: {
       id: 'author',
       name: row.author_name,

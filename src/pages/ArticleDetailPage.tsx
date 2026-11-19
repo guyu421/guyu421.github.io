@@ -154,15 +154,42 @@ export function ArticleDetailPage() {
           src={article.coverImage}
           alt={article.title}
           className="article-cover"
+          referrerPolicy="no-referrer"
         />
       ) : null}
 
       <div>
-        {article.content.map((paragraph, idx) => (
-          <p key={idx} className="article-paragraph">
-            {paragraph}
-          </p>
-        ))}
+        {article.content.map((block, idx) => {
+          if (typeof block === 'string') {
+            return (
+              <p key={idx} className="article-paragraph">
+                {block}
+              </p>
+            );
+          }
+          if (block.type === 'image') {
+            return (
+              <figure key={idx} style={{ margin: '20px 0' }}>
+                <img
+                  src={block.src}
+                  alt={block.alt || article.title}
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                  style={{
+                    width: '100%',
+                    borderRadius: 'var(--radius-md)',
+                    display: 'block',
+                  }}
+                />
+              </figure>
+            );
+          }
+          return (
+            <p key={idx} className="article-paragraph">
+              {block.text}
+            </p>
+          );
+        })}
       </div>
 
       {related.length > 0 ? (

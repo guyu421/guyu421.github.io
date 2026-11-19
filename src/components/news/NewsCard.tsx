@@ -24,6 +24,7 @@ export function NewsCard({ article }: NewsCardProps) {
             alt={article.title}
             className="news-card-cover"
             loading="lazy"
+            referrerPolicy="no-referrer"
           />
         </Link>
       ) : null}
