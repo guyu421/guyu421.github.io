@@ -1,0 +1,61 @@
+name: Write to SQLite DB
+
+on:
+  repository_dispatch:
+    types:
+      - add-comment
+      - register-user
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action (add-comment | register-user)'
+        required: true
+        default: 'add-comment'
+      article_id:
+        description: 'Article ID (for add-comment)'
+        required: false
+        default: '1'
+      username:
+        description: 'Username'
+        required: true
+      content:
+        description: 'Comment content (for add-comment)'
+        required: false
+      password:
+        description: 'Password (for register-user)'
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: write-db
+  cancel-in-progress: false
+
+jobs:
+  update-db:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Apply change to saiyuan.db
+        env:
+          DISPATCH_ACTION: ${{ github.event.action || github.event.inputs.action }}
+          PAYLOAD_ARTICLE_ID: ${{ github.event.client_payload.articleId || github.event.inputs.article_id }}
+          PAYLOAD_USERNAME: ${{ github.event.client_payload.username || github.event.inputs.username }}
+          PAYLOAD_CONTENT: ${{ github.event.client_payload.content || github.event.inputs.content }}
+          PAYLOAD_PASSWORD: ${{ github.event.client_payload.password || github.event.inputs.password }}
+        run: node server/scripts/apply-dispatch.mjs
+
+      - name: Commit and push updated .db
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add server/data/saiyuan.db
+          git diff --cached --quiet || (git commit -m "chore(db): async update via GitHub Actions" && git push)

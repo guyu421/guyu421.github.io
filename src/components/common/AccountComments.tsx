@@ -45,7 +45,11 @@ export function AccountComments({ articleId }: AccountCommentsProps) {
     setError(null);
     setSubmitting(true);
     try {
-      const created = await commentService.createComment(articleId, trimmed);
+      const created = await commentService.createComment(
+        articleId,
+        trimmed,
+        user?.username,
+      );
       setComments((prev) => [created, ...prev]);
       setContent('');
     } catch (err: unknown) {
