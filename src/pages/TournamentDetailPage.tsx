@@ -229,6 +229,7 @@ export function TournamentDetailPage() {
                       }`}
                     >
                       <span>{score.whiteText}</span>
+                      <span aria-hidden="true" />
                     </div>
                   </div>
                 </div>
