@@ -9,6 +9,7 @@ export interface CommentItem {
   articleId: number;
   userId: string;
   username: string;
+  level: number;
   content: string;
   createdAt: string;
 }

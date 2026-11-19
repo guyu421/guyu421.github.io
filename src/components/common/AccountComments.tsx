@@ -178,8 +178,9 @@ export function AccountComments({ articleId }: AccountCommentsProps) {
                   fontSize: '0.82rem',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <strong style={{ color: 'var(--color-text)' }}>{item.username}</strong>
+                  <span className="badge badge-breaking">Lv.{item.level}</span>
                   <span style={{ color: 'var(--color-text-muted)' }}>
                     {formatRelativeTime(item.createdAt)}
                   </span>

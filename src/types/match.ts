@@ -29,6 +29,7 @@ export interface UserProfile {
   sourcePoints: number;
   streakDays: number;
   lastCheckinDate: string | null;
+  lastCommentRewardDate: string | null;
 }
 
 export interface CheckInResult {

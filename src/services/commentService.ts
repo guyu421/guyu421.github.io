@@ -1,5 +1,6 @@
 import { requireSupabase } from '@/lib/supabase';
 import type { CommentItem } from '@/types/auth';
+import { getLevelInfo } from '@/utils/level';
 
 interface CommentRow {
   id: number;
@@ -10,12 +11,13 @@ interface CommentRow {
   created_at: string;
 }
 
-function mapComment(row: CommentRow): CommentItem {
+function mapComment(row: CommentRow, level: number): CommentItem {
   return {
     id: row.id,
     articleId: row.article_id,
     userId: row.user_id,
     username: row.username,
+    level,
     content: row.content,
     createdAt: row.created_at,
   };
@@ -37,7 +39,25 @@ export const commentService = {
       throw new Error(error.message);
     }
 
-    return (data as CommentRow[]).map(mapComment);
+    const rows = data as CommentRow[];
+    const userIds = Array.from(new Set(rows.map((r) => r.user_id)));
+    const levelMap = new Map<string, number>();
+
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('user_profiles')
+        .select('user_id, source_points')
+        .in('user_id', userIds);
+
+      if (profiles) {
+        for (const p of profiles) {
+          const pts = (p.source_points as number) ?? 0;
+          levelMap.set(p.user_id as string, getLevelInfo(pts).level);
+        }
+      }
+    }
+
+    return rows.map((row) => mapComment(row, levelMap.get(row.user_id) ?? 1));
   },
 
   async createComment(
@@ -75,7 +95,14 @@ export const commentService = {
       throw new Error(error.message);
     }
 
-    return mapComment(data as CommentRow);
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('source_points')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    const level = getLevelInfo((profile?.source_points as number) ?? 0).level;
+    return mapComment(data as CommentRow, level);
   },
 
   async deleteComment(commentId: number): Promise<void> {

@@ -1,52 +1,23 @@
-import { Award, CalendarCheck, LogOut, Sparkles, User as UserIcon } from 'lucide-react';
+import {
+  Award,
+  CalendarCheck,
+  CheckCircle2,
+  LogOut,
+  MessageSquare,
+  Sparkles,
+  User as UserIcon,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { profileService } from '@/services/profileService';
 import { useAuth } from '@/store/AuthContext';
 import type { UserProfile } from '@/types/match';
+import { getLevelInfo, LEVEL_THRESHOLDS } from '@/utils/level';
 
 function getTodayBeijingDate(): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Shanghai',
   }).format(new Date());
-}
-
-const LEVEL_THRESHOLDS = [
-  { level: 1, minPoints: 0 },
-  { level: 2, minPoints: 200 },
-  { level: 3, minPoints: 1500 },
-  { level: 4, minPoints: 4500 },
-  { level: 5, minPoints: 10800 },
-  { level: 6, minPoints: 28800 },
-];
-
-function getLevelInfo(points: number) {
-  let current = LEVEL_THRESHOLDS[0];
-  let next: (typeof LEVEL_THRESHOLDS)[number] | null = LEVEL_THRESHOLDS[1];
-
-  for (let i = 0; i < LEVEL_THRESHOLDS.length; i += 1) {
-    if (points >= LEVEL_THRESHOLDS[i].minPoints) {
-      current = LEVEL_THRESHOLDS[i];
-      next = LEVEL_THRESHOLDS[i + 1] ?? null;
-    }
-  }
-
-  if (!next) {
-    return {
-      level: current.level,
-      progressPercent: 100,
-      progressLabel: `已达最高等级（累计 ${points.toLocaleString()} 源点）`,
-    };
-  }
-
-  const span = next.minPoints - current.minPoints;
-  const gained = points - current.minPoints;
-  const progressPercent = Math.min(100, Math.max(0, (gained / span) * 100));
-
-  return {
-    level: current.level,
-    progressPercent,
-    progressLabel: `${points.toLocaleString()} / ${next.minPoints.toLocaleString()} 源点升级 Lv.${next.level}`,
-  };
 }
 
 export function ProfilePage() {
@@ -77,6 +48,7 @@ export function ProfilePage() {
             sourcePoints: 0,
             streakDays: 0,
             lastCheckinDate: null,
+            lastCommentRewardDate: null,
           });
         }
       })
@@ -110,6 +82,7 @@ export function ProfilePage() {
               sourcePoints: res.sourcePoints,
               streakDays: res.streakDays,
               lastCheckinDate: res.checkinDate,
+              lastCommentRewardDate: null,
             },
       );
       setMessage(
@@ -160,14 +133,16 @@ export function ProfilePage() {
     );
   }
 
+  const todayStr = getTodayBeijingDate();
   const points = profile?.sourcePoints ?? 0;
   const streak = profile?.streakDays ?? 0;
-  const todayCheckedIn = profile?.lastCheckinDate === getTodayBeijingDate();
+  const todayCheckedIn = profile?.lastCheckinDate === todayStr;
+  const todayCommented = profile?.lastCommentRewardDate === todayStr;
   const { level, progressPercent, progressLabel } = getLevelInfo(points);
 
   return (
     <div className="container" style={{ maxWidth: 680 }}>
-      <div className="card" style={{ padding: 24, marginBottom: 18 }}>
+      <div className="card" style={{ padding: 24, marginBottom: 16 }}>
         <div
           style={{
             display: 'flex',
@@ -217,7 +192,7 @@ export function ProfilePage() {
         </div>
       </div>
 
-      <div className="card" style={{ padding: 24 }}>
+      <div className="card" style={{ padding: 24, marginBottom: 16 }}>
         <div
           style={{
             display: 'flex',
@@ -330,6 +305,114 @@ export function ProfilePage() {
             {message}
           </p>
         ) : null}
+      </div>
+
+      {/* 等级任务 */}
+      <div className="card" style={{ padding: 24 }}>
+        <h2 className="section-title" style={{ marginBottom: 14 }}>
+          等级任务
+        </h2>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '12px 14px',
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--color-surface-muted)',
+              gap: 12,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <CalendarCheck size={18} color="#e11d48" />
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '0.92rem' }}>每日签到</div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
+                  奖励 +10 源点
+                </div>
+              </div>
+            </div>
+            {todayCheckedIn ? (
+              <span
+                className="badge"
+                style={{ background: '#dcfce7', color: '#15803d', gap: 4 }}
+              >
+                <CheckCircle2 size={13} />
+                已完成
+              </span>
+            ) : (
+              <button
+                type="button"
+                className="category-pill active"
+                onClick={handleCheckIn}
+                disabled={checkingIn}
+                style={{ padding: '5px 12px', fontSize: '0.8rem' }}
+              >
+                去签到
+              </button>
+            )}
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '12px 14px',
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--color-surface-muted)',
+              gap: 12,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <MessageSquare size={18} color="#2563eb" />
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '0.92rem' }}>每日发表评论</div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
+                  每日首评奖励 +5 源点
+                </div>
+              </div>
+            </div>
+            {todayCommented ? (
+              <span
+                className="badge"
+                style={{ background: '#dcfce7', color: '#15803d', gap: 4 }}
+              >
+                <CheckCircle2 size={13} />
+                已完成
+              </span>
+            ) : (
+              <Link
+                to="/category/renju"
+                className="category-pill"
+                style={{ padding: '5px 12px', fontSize: '0.8rem' }}
+              >
+                去评论
+              </Link>
+            )}
+          </div>
+        </div>
+
+        <div
+          style={{
+            marginTop: 18,
+            paddingTop: 14,
+            borderTop: '1px solid var(--color-surface-muted)',
+            fontSize: '0.78rem',
+            color: 'var(--color-text-muted)',
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '6px 14px',
+          }}
+        >
+          {LEVEL_THRESHOLDS.map((item) => (
+            <span key={item.level} className="tabular-nums">
+              Lv.{item.level}: {item.minPoints.toLocaleString()}
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -204,10 +204,10 @@ alter table public.user_profiles
 alter table public.user_profiles enable row level security;
 
 drop policy if exists "profiles_owner_read" on public.user_profiles;
-create policy "profiles_owner_read"
+drop policy if exists "profiles_public_read" on public.user_profiles;
+create policy "profiles_public_read"
   on public.user_profiles for select
-  to authenticated
-  using (auth.uid() = user_id);
+  using (true);
 
 drop policy if exists "profiles_owner_insert" on public.user_profiles;
 create policy "profiles_owner_insert"
@@ -215,7 +215,8 @@ create policy "profiles_owner_insert"
   to authenticated
   with check (auth.uid() = user_id);
 
-grant select, insert on public.user_profiles to authenticated;
+grant select on public.user_profiles to anon, authenticated;
+grant insert on public.user_profiles to authenticated;
 
 -- 6. 每日签到记录表（每天仅可签到一次，每次 +10 源点）
 create table if not exists public.check_ins (
