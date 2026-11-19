@@ -1,33 +1,83 @@
 import {
-  ArrowDown,
+  AlignCenter,
+  AlignLeft,
   ArrowLeft,
-  ArrowUp,
+  Bold,
   Eye,
   Heading2,
   ImagePlus,
+  Italic,
   Minus,
-  PenLine,
   Pilcrow,
   Quote,
-  Trash2,
   Upload,
 } from 'lucide-react';
-import { type ChangeEvent, type FormEvent, useMemo, useRef, useState } from 'react';
+import { type ChangeEvent, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/common/Badge';
 import { newsService } from '@/services/newsService';
 import { useAuth } from '@/store/AuthContext';
 import type { ArticleContentBlock } from '@/types/news';
 
-type EditorBlock =
-  | { id: string; type: 'text'; text: string }
-  | { id: string; type: 'heading'; text: string }
-  | { id: string; type: 'quote'; text: string }
-  | { id: string; type: 'divider' }
-  | { id: string; type: 'image'; src: string; alt: string };
+function serializeEditorDom(root: HTMLElement): ArticleContentBlock[] {
+  const blocks: ArticleContentBlock[] = [];
 
-function uid(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  function walk(node: Node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const txt = node.textContent?.trim();
+      if (txt) blocks.push(txt);
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+    const el = node as HTMLElement;
+    const tag = el.tagName.toLowerCase();
+
+    if (tag === 'img') {
+      const src = el.getAttribute('src')?.trim();
+      if (src) {
+        blocks.push({
+          type: 'image',
+          src,
+          alt: el.getAttribute('alt')?.trim() || undefined,
+        });
+      }
+      return;
+    }
+
+    if (tag === 'hr') {
+      blocks.push({ type: 'divider' });
+      return;
+    }
+
+    if (tag === 'h1' || tag === 'h2' || tag === 'h3') {
+      const txt = el.textContent?.trim();
+      if (txt) blocks.push({ type: 'heading', text: txt });
+      return;
+    }
+
+    if (tag === 'blockquote') {
+      const txt = el.textContent?.trim();
+      if (txt) blocks.push({ type: 'quote', text: txt });
+      return;
+    }
+
+    if (tag === 'p' || tag === 'div' || tag === 'li') {
+      const imgs = el.querySelectorAll('img');
+      if (imgs.length > 0) {
+        Array.from(el.childNodes).forEach(walk);
+        return;
+      }
+      const txt = el.textContent?.trim();
+      if (txt) blocks.push(txt);
+      return;
+    }
+
+    Array.from(el.childNodes).forEach(walk);
+  }
+
+  Array.from(root.childNodes).forEach(walk);
+  return blocks;
 }
 
 export function PublishArticlePage() {
@@ -40,36 +90,45 @@ export function PublishArticlePage() {
   const [summary, setSummary] = useState('');
   const [coverImage, setCoverImage] = useState('');
   const [tagsText, setTagsText] = useState('');
-  const [blocks, setBlocks] = useState<EditorBlock[]>([
-    { id: uid(), type: 'text', text: '' },
-  ]);
+  const [charCount, setCharCount] = useState(0);
+  const [previewBlocks, setPreviewBlocks] = useState<ArticleContentBlock[]>([]);
 
   const [uploadingCover, setUploadingCover] = useState(false);
-  const [uploadingBlockId, setUploadingBlockId] = useState<string | null>(null);
+  const [uploadingInline, setUploadingInline] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const editorRef = useRef<HTMLDivElement | null>(null);
+  const savedHtmlRef = useRef<string>('');
   const coverInputRef = useRef<HTMLInputElement | null>(null);
   const inlineImgInputRef = useRef<HTMLInputElement | null>(null);
-  const pendingImageBlockIdRef = useRef<string | null>(null);
 
-  const totalChars = useMemo(
-    () =>
-      blocks.reduce((sum, b) => {
-        if (b.type === 'text' || b.type === 'heading' || b.type === 'quote') {
-          return sum + b.text.trim().length;
-        }
-        return sum;
-      }, 0),
-    [blocks],
-  );
-  const readMinutes = Math.max(1, Math.ceil(totalChars / 400));
+  const readMinutes = Math.max(1, Math.ceil(charCount / 400));
 
   if (!user) {
     return (
-      <div className="container" style={{ maxWidth: 680 }}>
-        <div className="card" style={{ padding: '40px 24px', textAlign: 'center' }}>
-          <h1 style={{ margin: '0 0 8px', fontSize: '1.2rem' }}>发布文章</h1>
+      <div className="wx-editor-shell">
+        <div className="wx-editor-topbar">
+          <Link
+            to="/category/renju"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: '0.9rem',
+              fontWeight: 600,
+              color: 'var(--color-text-secondary)',
+            }}
+          >
+            <ArrowLeft size={16} />
+            返回资讯
+          </Link>
+        </div>
+        <div
+          className="wx-editor-paper"
+          style={{ textAlign: 'center', padding: '48px 24px' }}
+        >
+          <h1 style={{ margin: '0 0 8px', fontSize: '1.25rem' }}>发布文章</h1>
           <p
             style={{
               margin: '0 0 20px',
@@ -77,7 +136,7 @@ export function PublishArticlePage() {
               fontSize: '0.9rem',
             }}
           >
-            登录后即可使用文章编辑器发布内容，每日首次发布可获得 +50 源点奖励
+            登录后即可进入全屏文章编辑器发布内容，每日首次发布可获得 +50 源点奖励
           </p>
           <button
             type="button"
@@ -92,50 +151,33 @@ export function PublishArticlePage() {
     );
   }
 
-  function addBlock(type: EditorBlock['type']) {
-    const newBlock: EditorBlock =
-      type === 'divider'
-        ? { id: uid(), type: 'divider' }
-        : type === 'image'
-          ? { id: uid(), type: 'image', src: '', alt: '' }
-          : { id: uid(), type, text: '' };
-    setBlocks((prev) => [...prev, newBlock]);
+  function syncEditorStats() {
+    if (!editorRef.current) return;
+    savedHtmlRef.current = editorRef.current.innerHTML;
+    const text = editorRef.current.innerText.replace(/\s+/g, '');
+    setCharCount(text.length);
   }
 
-  function updateBlockText(id: string, text: string) {
-    setBlocks((prev) =>
-      prev.map((b) =>
-        b.id === id && (b.type === 'text' || b.type === 'heading' || b.type === 'quote')
-          ? { ...b, text }
-          : b,
-      ),
+  function execFormat(command: string, value?: string) {
+    editorRef.current?.focus();
+    document.execCommand(command, false, value);
+    syncEditorStats();
+  }
+
+  function insertDivider() {
+    editorRef.current?.focus();
+    document.execCommand('insertHTML', false, '<hr /><p><br /></p>');
+    syncEditorStats();
+  }
+
+  function insertImageHtml(url: string) {
+    editorRef.current?.focus();
+    document.execCommand(
+      'insertHTML',
+      false,
+      `<p><img src="${url}" alt="" /></p><p><br /></p>`,
     );
-  }
-
-  function updateImageField(id: string, field: 'src' | 'alt', value: string) {
-    setBlocks((prev) =>
-      prev.map((b) =>
-        b.id === id && b.type === 'image' ? { ...b, [field]: value } : b,
-      ),
-    );
-  }
-
-  function moveBlock(index: number, delta: -1 | 1) {
-    const target = index + delta;
-    if (target < 0 || target >= blocks.length) return;
-    setBlocks((prev) => {
-      const next = [...prev];
-      const [item] = next.splice(index, 1);
-      next.splice(target, 0, item);
-      return next;
-    });
-  }
-
-  function removeBlock(id: string) {
-    setBlocks((prev) => {
-      const next = prev.filter((b) => b.id !== id);
-      return next.length > 0 ? next : [{ id: uid(), type: 'text', text: '' }];
-    });
+    syncEditorStats();
   }
 
   async function handleCoverFileChange(e: ChangeEvent<HTMLInputElement>) {
@@ -154,71 +196,54 @@ export function PublishArticlePage() {
     }
   }
 
-  function triggerInlineImageUpload(blockId: string) {
-    pendingImageBlockIdRef.current = blockId;
-    inlineImgInputRef.current?.click();
-  }
-
   async function handleInlineFileChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    const targetId = pendingImageBlockIdRef.current;
     e.target.value = '';
-    if (!file || !user || !targetId) return;
-
-    setUploadingBlockId(targetId);
+    if (!file || !user) return;
+    setUploadingInline(true);
     setError(null);
     try {
       const url = await newsService.uploadArticleImage(user.id, file);
-      updateImageField(targetId, 'src', url);
+      insertImageHtml(url);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : '图片上传失败');
     } finally {
-      setUploadingBlockId(null);
-      pendingImageBlockIdRef.current = null;
+      setUploadingInline(false);
     }
   }
 
-  function buildPublishBlocks(): ArticleContentBlock[] {
-    const result: ArticleContentBlock[] = [];
-    for (const b of blocks) {
-      if (b.type === 'text') {
-        const lines = b.text
-          .split(/\r?\n+/)
-          .map((l) => l.trim())
-          .filter(Boolean);
-        result.push(...lines);
-      } else if (b.type === 'heading' || b.type === 'quote') {
-        if (b.text.trim()) {
-          result.push({ type: b.type, text: b.text.trim() });
-        }
-      } else if (b.type === 'image') {
-        if (b.src.trim()) {
-          result.push({
-            type: 'image',
-            src: b.src.trim(),
-            alt: b.alt.trim() || undefined,
-          });
-        }
-      } else if (b.type === 'divider') {
-        result.push({ type: 'divider' });
+  function togglePreview() {
+    if (mode === 'edit') {
+      if (editorRef.current) {
+        savedHtmlRef.current = editorRef.current.innerHTML;
+        setPreviewBlocks(serializeEditorDom(editorRef.current));
       }
+      setMode('preview');
+    } else {
+      setMode('edit');
+      requestAnimationFrame(() => {
+        if (editorRef.current) {
+          editorRef.current.innerHTML = savedHtmlRef.current;
+        }
+      });
     }
-    return result;
   }
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  async function handlePublish() {
     if (!user || submitting) return;
 
     const cleanTitle = title.trim();
-    const contentBlocks = buildPublishBlocks();
+    const contentBlocks =
+      mode === 'edit' && editorRef.current
+        ? serializeEditorDom(editorRef.current)
+        : previewBlocks;
 
     if (!cleanTitle) {
       setError('请输入文章标题');
       return;
     }
     if (contentBlocks.length === 0) {
-      setError('请至少填写一段正文或插入一张图片');
+      setError('请输入正文内容');
       return;
     }
 
@@ -264,42 +289,27 @@ export function PublishArticlePage() {
     }
   }
 
-  const inputStyle = {
+  const fieldStyle = {
     width: '100%',
-    padding: '10px 12px',
+    padding: '9px 12px',
     borderRadius: 'var(--radius-sm)',
     border: '1px solid var(--color-border)',
     background: 'var(--color-surface)',
     color: 'var(--color-text)',
-    fontSize: '0.92rem',
+    fontSize: '0.9rem',
     fontFamily: 'inherit',
   } as const;
 
   const labelStyle = {
     display: 'block',
-    fontSize: '0.84rem',
+    fontSize: '0.82rem',
     fontWeight: 700,
     marginBottom: 6,
     color: 'var(--color-text-secondary)',
   } as const;
 
-  const toolBtnStyle = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 5,
-    padding: '6px 10px',
-    fontSize: '0.8rem',
-    fontWeight: 600,
-    borderRadius: 'var(--radius-sm)',
-    border: '1px solid var(--color-border)',
-    background: 'var(--color-surface)',
-    color: 'var(--color-text)',
-  } as const;
-
-  const previewBlocks = buildPublishBlocks();
-
   return (
-    <div className="container" style={{ maxWidth: 820 }}>
+    <div className="wx-editor-shell">
       <input
         ref={coverInputRef}
         type="file"
@@ -315,107 +325,173 @@ export function PublishArticlePage() {
         onChange={handleInlineFileChange}
       />
 
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 10,
-          marginBottom: 14,
-        }}
-      >
-        <Link
-          to="/profile"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            fontSize: '0.88rem',
-            color: 'var(--color-text-muted)',
-          }}
-        >
-          <ArrowLeft size={15} />
-          返回我的主页
-        </Link>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      {/* 顶部固定工具栏 */}
+      <header className="wx-editor-topbar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <Link
+            to="/category/renju"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              fontSize: '0.88rem',
+              fontWeight: 600,
+              color: 'var(--color-text-secondary)',
+            }}
+          >
+            <ArrowLeft size={16} />
+            返回资讯
+          </Link>
           <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-            {totalChars} 字 · 预计阅读 {readMinutes} 分钟
+            {charCount} 字 · 约 {readMinutes} 分钟
           </span>
+        </div>
+
+        {mode === 'edit' ? (
+          <div className="wx-editor-toolbar" role="toolbar" aria-label="文章排版工具栏">
+            <button
+              type="button"
+              className="wx-toolbar-btn"
+              onClick={() => execFormat('formatBlock', 'p')}
+            >
+              <Pilcrow size={14} />
+              正文
+            </button>
+            <button
+              type="button"
+              className="wx-toolbar-btn"
+              onClick={() => execFormat('formatBlock', 'h2')}
+            >
+              <Heading2 size={14} />
+              小标题
+            </button>
+            <button
+              type="button"
+              className="wx-toolbar-btn"
+              onClick={() => execFormat('bold')}
+            >
+              <Bold size={14} />
+              加粗
+            </button>
+            <button
+              type="button"
+              className="wx-toolbar-btn"
+              onClick={() => execFormat('italic')}
+            >
+              <Italic size={14} />
+              斜体
+            </button>
+            <button
+              type="button"
+              className="wx-toolbar-btn"
+              onClick={() => execFormat('formatBlock', 'blockquote')}
+            >
+              <Quote size={14} />
+              引用
+            </button>
+            <button
+              type="button"
+              className="wx-toolbar-btn"
+              onClick={() => execFormat('justifyLeft')}
+              title="左对齐"
+            >
+              <AlignLeft size={14} />
+            </button>
+            <button
+              type="button"
+              className="wx-toolbar-btn"
+              onClick={() => execFormat('justifyCenter')}
+              title="居中对齐"
+            >
+              <AlignCenter size={14} />
+            </button>
+            <button
+              type="button"
+              className="wx-toolbar-btn"
+              disabled={uploadingInline}
+              onClick={() => inlineImgInputRef.current?.click()}
+            >
+              <ImagePlus size={14} />
+              {uploadingInline ? '上传中...' : '图片'}
+            </button>
+            <button
+              type="button"
+              className="wx-toolbar-btn"
+              onClick={insertDivider}
+            >
+              <Minus size={14} />
+              分割线
+            </button>
+          </div>
+        ) : (
+          <span style={{ fontSize: '0.86rem', fontWeight: 600, color: 'var(--color-text-muted)' }}>
+            文章预览模式
+          </span>
+        )}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span className="badge" style={{ background: '#ede9fe', color: '#6d28d9' }}>
             每日首篇 +50 源点
           </span>
-        </div>
-      </div>
-
-      <div className="card" style={{ padding: 24 }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 12,
-            paddingBottom: 14,
-            marginBottom: 18,
-            borderBottom: '1px solid var(--color-border)',
-          }}
-        >
-          <h1
+          <button
+            type="button"
+            className="category-pill"
+            onClick={togglePreview}
             style={{
-              margin: 0,
-              fontSize: '1.22rem',
+              padding: '6px 13px',
+              fontSize: '0.84rem',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 8,
+              gap: 4,
             }}
           >
-            <PenLine size={19} color="var(--color-primary)" />
-            文章编辑器
-          </h1>
-
-          <div style={{ display: 'inline-flex', gap: 6 }}>
-            <button
-              type="button"
-              className={`category-pill ${mode === 'edit' ? 'active' : ''}`}
-              onClick={() => setMode('edit')}
-              style={{ padding: '5px 14px', fontSize: '0.82rem' }}
-            >
-              编辑
-            </button>
-            <button
-              type="button"
-              className={`category-pill ${mode === 'preview' ? 'active' : ''}`}
-              onClick={() => setMode('preview')}
-              style={{
-                padding: '5px 14px',
-                fontSize: '0.82rem',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
-              }}
-            >
-              <Eye size={13} />
-              预览
-            </button>
-          </div>
+            <Eye size={14} />
+            {mode === 'edit' ? '预览' : '返回编辑'}
+          </button>
+          <button
+            type="button"
+            disabled={submitting}
+            className="category-pill active"
+            onClick={handlePublish}
+            style={{ padding: '6px 18px', fontSize: '0.86rem' }}
+          >
+            {submitting ? '发布中...' : '发布文章'}
+          </button>
         </div>
+      </header>
+
+      {/* 居中稿纸编辑区 */}
+      <main className="wx-editor-paper">
+        {error ? (
+          <div
+            style={{
+              marginBottom: 16,
+              padding: '10px 14px',
+              borderRadius: 'var(--radius-sm)',
+              background: '#fef2f2',
+              color: '#dc2626',
+              fontSize: '0.86rem',
+              fontWeight: 600,
+            }}
+          >
+            {error}
+          </div>
+        ) : null}
 
         {mode === 'preview' ? (
           <div>
             <div style={{ marginBottom: 10 }}>
               <Badge>{category === 'football' ? '足球' : '五子棋'}</Badge>
             </div>
-            <h2 style={{ margin: '0 0 12px', fontSize: '1.7rem', lineHeight: 1.35 }}>
+            <h1 style={{ margin: '0 0 12px', fontSize: '1.75rem', lineHeight: 1.35 }}>
               {title.trim() || '（未填写标题）'}
-            </h2>
+            </h1>
             <div
               style={{
                 fontSize: '0.84rem',
                 color: 'var(--color-text-muted)',
-                marginBottom: 18,
-                paddingBottom: 12,
+                marginBottom: 20,
+                paddingBottom: 14,
                 borderBottom: '1px solid var(--color-border)',
               }}
             >
@@ -441,12 +517,12 @@ export function PublishArticlePage() {
                 }
                 if (block.type === 'heading') {
                   return (
-                    <h3
+                    <h2
                       key={idx}
-                      style={{ margin: '22px 0 10px', fontSize: '1.2rem', fontWeight: 700 }}
+                      style={{ margin: '24px 0 12px', fontSize: '1.24rem', fontWeight: 700 }}
                     >
                       {block.text}
-                    </h3>
+                    </h2>
                   );
                 }
                 if (block.type === 'quote') {
@@ -454,7 +530,7 @@ export function PublishArticlePage() {
                     <blockquote
                       key={idx}
                       style={{
-                        margin: '16px 0',
+                        margin: '18px 0',
                         padding: '10px 16px',
                         borderLeft: '3px solid var(--color-primary)',
                         background: 'var(--color-surface-muted)',
@@ -471,7 +547,7 @@ export function PublishArticlePage() {
                     <hr
                       key={idx}
                       style={{
-                        margin: '20px 0',
+                        margin: '24px 0',
                         border: 'none',
                         borderTop: '1px solid var(--color-border)',
                       }}
@@ -498,356 +574,154 @@ export function PublishArticlePage() {
             )}
           </div>
         ) : (
-          <form
-            onSubmit={handleSubmit}
-            style={{ display: 'flex', flexDirection: 'column', gap: 18 }}
-          >
-            <div>
-              <label htmlFor="pub-title" style={labelStyle}>
-                文章标题 *
-              </label>
-              <input
-                id="pub-title"
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="请输入文章标题..."
-                maxLength={120}
-                style={{ ...inputStyle, fontSize: '1.06rem', fontWeight: 700 }}
-              />
-            </div>
+          <>
+            <input
+              type="text"
+              className="wx-editor-title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="请输入文章标题..."
+              maxLength={120}
+            />
 
             <div
               style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                gap: 14,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 10,
+                paddingBottom: 16,
+                marginBottom: 20,
+                borderBottom: '1px solid var(--color-border)',
+                fontSize: '0.84rem',
+                color: 'var(--color-text-muted)',
+              }}
+            >
+              <span>作者：{user.username}</span>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span>频道：</span>
+                <button
+                  type="button"
+                  className={`category-pill ${category === 'renju' ? 'active' : ''}`}
+                  onClick={() => setCategory('renju')}
+                  style={{ padding: '4px 12px', fontSize: '0.78rem' }}
+                >
+                  五子棋
+                </button>
+                <button
+                  type="button"
+                  className={`category-pill ${category === 'football' ? 'active' : ''}`}
+                  onClick={() => setCategory('football')}
+                  style={{ padding: '4px 12px', fontSize: '0.78rem' }}
+                >
+                  足球
+                </button>
+              </div>
+            </div>
+
+            <div
+              ref={editorRef}
+              className="wx-editor-body"
+              contentEditable
+              suppressContentEditableWarning
+              data-placeholder="请输入正文内容..."
+              onInput={syncEditorStats}
+            />
+
+            <div
+              style={{
+                marginTop: 28,
+                paddingTop: 22,
+                borderTop: '1px dashed var(--color-border)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 16,
               }}
             >
               <div>
-                <label style={labelStyle}>所属频道 *</label>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <label style={labelStyle}>封面图（选填）</label>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <input
+                    type="url"
+                    value={coverImage}
+                    onChange={(e) => setCoverImage(e.target.value)}
+                    placeholder="请输入封面图链接..."
+                    style={{ ...fieldStyle, flex: '1 1 240px' }}
+                  />
                   <button
                     type="button"
-                    className={`category-pill ${category === 'renju' ? 'active' : ''}`}
-                    onClick={() => setCategory('renju')}
+                    className="category-pill"
+                    disabled={uploadingCover}
+                    onClick={() => coverInputRef.current?.click()}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      padding: '6px 14px',
+                      fontSize: '0.82rem',
+                    }}
                   >
-                    五子棋
+                    <Upload size={14} />
+                    {uploadingCover ? '上传中...' : '上传封面'}
                   </button>
-                  <button
-                    type="button"
-                    className={`category-pill ${category === 'football' ? 'active' : ''}`}
-                    onClick={() => setCategory('football')}
-                  >
-                    足球
-                  </button>
+                  {coverImage ? (
+                    <button
+                      type="button"
+                      className="category-pill"
+                      onClick={() => setCoverImage('')}
+                      style={{ padding: '6px 12px', fontSize: '0.82rem' }}
+                    >
+                      移除
+                    </button>
+                  ) : null}
                 </div>
+                {coverImage ? (
+                  <img
+                    src={coverImage}
+                    alt="封面预览"
+                    style={{
+                      marginTop: 10,
+                      maxHeight: 180,
+                      borderRadius: 'var(--radius-sm)',
+                      objectFit: 'cover',
+                    }}
+                  />
+                ) : null}
+              </div>
+
+              <div>
+                <label htmlFor="pub-summary" style={labelStyle}>
+                  文章摘要（选填，留空则自动截取首段文字）
+                </label>
+                <input
+                  id="pub-summary"
+                  type="text"
+                  value={summary}
+                  onChange={(e) => setSummary(e.target.value)}
+                  placeholder="请输入文章摘要..."
+                  maxLength={200}
+                  style={fieldStyle}
+                />
               </div>
 
               <div>
                 <label htmlFor="pub-tags" style={labelStyle}>
-                  标签（选填，逗号或空格分隔）
+                  文章标签（选填，多个标签用逗号或空格分隔）
                 </label>
                 <input
                   id="pub-tags"
                   type="text"
                   value={tagsText}
                   onChange={(e) => setTagsText(e.target.value)}
-                  placeholder="例如：中超 战术复盘"
-                  style={inputStyle}
+                  placeholder="请输入文章标签..."
+                  style={fieldStyle}
                 />
               </div>
             </div>
-
-            <div>
-              <label htmlFor="pub-summary" style={labelStyle}>
-                文章摘要（选填，留空则自动截取首段文字）
-              </label>
-              <input
-                id="pub-summary"
-                type="text"
-                value={summary}
-                onChange={(e) => setSummary(e.target.value)}
-                placeholder="一句话概括文章核心内容"
-                maxLength={200}
-                style={inputStyle}
-              />
-            </div>
-
-            <div>
-              <label style={labelStyle}>封面图（选填）</label>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <input
-                  type="url"
-                  value={coverImage}
-                  onChange={(e) => setCoverImage(e.target.value)}
-                  placeholder="粘贴图片链接，或点击右侧上传本地图片"
-                  style={{ ...inputStyle, flex: '1 1 240px' }}
-                />
-                <button
-                  type="button"
-                  style={toolBtnStyle}
-                  disabled={uploadingCover}
-                  onClick={() => coverInputRef.current?.click()}
-                >
-                  <Upload size={14} />
-                  {uploadingCover ? '上传中...' : '上传封面'}
-                </button>
-                {coverImage ? (
-                  <button
-                    type="button"
-                    style={toolBtnStyle}
-                    onClick={() => setCoverImage('')}
-                  >
-                    移除
-                  </button>
-                ) : null}
-              </div>
-              {coverImage ? (
-                <img
-                  src={coverImage}
-                  alt="封面预览"
-                  style={{
-                    marginTop: 10,
-                    maxHeight: 200,
-                    borderRadius: 'var(--radius-sm)',
-                    objectFit: 'cover',
-                  }}
-                />
-              ) : null}
-            </div>
-
-            <div>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  flexWrap: 'wrap',
-                  gap: 8,
-                  marginBottom: 10,
-                }}
-              >
-                <label style={{ ...labelStyle, marginBottom: 0 }}>
-                  正文排版块 *
-                </label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  <button
-                    type="button"
-                    style={toolBtnStyle}
-                    onClick={() => addBlock('text')}
-                  >
-                    <Pilcrow size={14} />
-                    段落
-                  </button>
-                  <button
-                    type="button"
-                    style={toolBtnStyle}
-                    onClick={() => addBlock('heading')}
-                  >
-                    <Heading2 size={14} />
-                    小标题
-                  </button>
-                  <button
-                    type="button"
-                    style={toolBtnStyle}
-                    onClick={() => addBlock('quote')}
-                  >
-                    <Quote size={14} />
-                    引用
-                  </button>
-                  <button
-                    type="button"
-                    style={toolBtnStyle}
-                    onClick={() => addBlock('image')}
-                  >
-                    <ImagePlus size={14} />
-                    图片
-                  </button>
-                  <button
-                    type="button"
-                    style={toolBtnStyle}
-                    onClick={() => addBlock('divider')}
-                  >
-                    <Minus size={14} />
-                    分割线
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {blocks.map((block, index) => (
-                  <div
-                    key={block.id}
-                    style={{
-                      padding: 12,
-                      borderRadius: 'var(--radius-sm)',
-                      background: 'var(--color-surface-muted)',
-                      border: '1px solid var(--color-border)',
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        marginBottom: block.type === 'divider' ? 0 : 8,
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: '0.76rem',
-                          fontWeight: 700,
-                          color: 'var(--color-text-muted)',
-                        }}
-                      >
-                        {block.type === 'text'
-                          ? '正文段落'
-                          : block.type === 'heading'
-                            ? '小标题'
-                            : block.type === 'quote'
-                              ? '引用块'
-                              : block.type === 'image'
-                                ? '图片块'
-                                : '分割线'}
-                      </span>
-                      <div style={{ display: 'inline-flex', gap: 4 }}>
-                        <button
-                          type="button"
-                          aria-label="上移"
-                          disabled={index === 0}
-                          onClick={() => moveBlock(index, -1)}
-                          style={{ ...toolBtnStyle, padding: '3px 6px' }}
-                        >
-                          <ArrowUp size={13} />
-                        </button>
-                        <button
-                          type="button"
-                          aria-label="下移"
-                          disabled={index === blocks.length - 1}
-                          onClick={() => moveBlock(index, 1)}
-                          style={{ ...toolBtnStyle, padding: '3px 6px' }}
-                        >
-                          <ArrowDown size={13} />
-                        </button>
-                        <button
-                          type="button"
-                          aria-label="删除"
-                          onClick={() => removeBlock(block.id)}
-                          style={{ ...toolBtnStyle, padding: '3px 6px', color: '#dc2626' }}
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    </div>
-
-                    {block.type === 'text' ? (
-                      <textarea
-                        rows={4}
-                        value={block.text}
-                        onChange={(e) => updateBlockText(block.id, e.target.value)}
-                        placeholder="输入正文段落内容（换行会自动分段）..."
-                        style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.65 }}
-                      />
-                    ) : block.type === 'heading' ? (
-                      <input
-                        type="text"
-                        value={block.text}
-                        onChange={(e) => updateBlockText(block.id, e.target.value)}
-                        placeholder="输入小标题..."
-                        style={{ ...inputStyle, fontWeight: 700 }}
-                      />
-                    ) : block.type === 'quote' ? (
-                      <textarea
-                        rows={2}
-                        value={block.text}
-                        onChange={(e) => updateBlockText(block.id, e.target.value)}
-                        placeholder="输入引用文字..."
-                        style={{
-                          ...inputStyle,
-                          borderLeft: '3px solid var(--color-primary)',
-                          resize: 'vertical',
-                        }}
-                      />
-                    ) : block.type === 'image' ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                          <input
-                            type="url"
-                            value={block.src}
-                            onChange={(e) =>
-                              updateImageField(block.id, 'src', e.target.value)
-                            }
-                            placeholder="粘贴图片链接，或点击右侧上传"
-                            style={{ ...inputStyle, flex: '1 1 220px' }}
-                          />
-                          <button
-                            type="button"
-                            style={toolBtnStyle}
-                            disabled={uploadingBlockId === block.id}
-                            onClick={() => triggerInlineImageUpload(block.id)}
-                          >
-                            <Upload size={13} />
-                            {uploadingBlockId === block.id ? '上传中...' : '上传图片'}
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          value={block.alt}
-                          onChange={(e) =>
-                            updateImageField(block.id, 'alt', e.target.value)
-                          }
-                          placeholder="图片说明 / Alt（选填）"
-                          style={inputStyle}
-                        />
-                        {block.src ? (
-                          <img
-                            src={block.src}
-                            alt={block.alt || '配图预览'}
-                            style={{
-                              maxHeight: 200,
-                              borderRadius: 'var(--radius-sm)',
-                              objectFit: 'contain',
-                              alignSelf: 'flex-start',
-                            }}
-                          />
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {error ? (
-              <p
-                style={{
-                  margin: 0,
-                  color: '#dc2626',
-                  fontSize: '0.86rem',
-                  fontWeight: 600,
-                }}
-              >
-                {error}
-              </p>
-            ) : null}
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-              <Link to="/profile" className="category-pill">
-                取消
-              </Link>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="category-pill active"
-                style={{ padding: '8px 22px', fontSize: '0.92rem' }}
-              >
-                {submitting ? '发布中...' : '发布文章'}
-              </button>
-            </div>
-          </form>
+          </>
         )}
-      </div>
+      </main>
     </div>
   );
 }

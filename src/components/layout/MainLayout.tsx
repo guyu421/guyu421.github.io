@@ -10,10 +10,15 @@ export function MainLayout({ children }: { children: ReactNode }) {
   const { searchQuery, setSearchQuery } = useAppStore();
   const location = useLocation();
   const hasSearch = searchQuery.trim().length > 0;
+  const isFullscreenEditor = location.pathname === '/publish';
 
   useEffect(() => {
     setSearchQuery('');
   }, [location.pathname, setSearchQuery]);
+
+  if (isFullscreenEditor) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="app-shell">
