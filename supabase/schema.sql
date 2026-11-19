@@ -18,8 +18,12 @@ create table if not exists public.articles (
   is_featured boolean not null default false,
   is_breaking boolean not null default false,
   source_url text,
-  tags jsonb not null default '[]'::jsonb
+  tags jsonb not null default '[]'::jsonb,
+  user_id uuid references auth.users(id) on delete set null
 );
+
+alter table public.articles
+  add column if not exists user_id uuid references auth.users(id) on delete set null;
 
 alter table public.articles enable row level security;
 
@@ -27,6 +31,12 @@ drop policy if exists "articles_public_read" on public.articles;
 create policy "articles_public_read"
   on public.articles for select
   using (true);
+
+drop policy if exists "articles_auth_insert" on public.articles;
+create policy "articles_auth_insert"
+  on public.articles for insert
+  to authenticated
+  with check (auth.uid() = user_id);
 
 -- 2. 评论表（关联 Supabase Auth 用户）
 create table if not exists public.comments (
@@ -62,6 +72,7 @@ create policy "comments_owner_delete"
 -- 授予 anon / authenticated 角色基础表权限
 grant usage on schema public to anon, authenticated;
 grant select on public.articles to anon, authenticated;
+grant insert on public.articles to authenticated;
 grant select on public.comments to anon, authenticated;
 grant insert, delete on public.comments to authenticated;
 grant usage, select on all sequences in schema public to authenticated;
@@ -834,11 +845,15 @@ create table if not exists public.user_profiles (
   streak_days integer not null default 0,
   last_checkin_date date,
   last_comment_reward_date date,
+  last_article_reward_date date,
   updated_at timestamptz not null default now()
 );
 
 alter table public.user_profiles
   add column if not exists last_comment_reward_date date;
+
+alter table public.user_profiles
+  add column if not exists last_article_reward_date date;
 
 alter table public.user_profiles enable row level security;
 
@@ -996,6 +1011,50 @@ create trigger trg_comments_daily_points
   after insert on public.comments
   for each row
   execute function public.grant_daily_comment_points();
+
+-- 9. 每日首次发布文章自动 +50 源点触发器
+create or replace function public.grant_daily_article_points()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  today_cn date := (now() at time zone 'Asia/Shanghai')::date;
+  prev_reward_date date;
+begin
+  if new.user_id is null then
+    return new;
+  end if;
+
+  select last_article_reward_date into prev_reward_date
+  from public.user_profiles
+  where user_id = new.user_id;
+
+  if not found then
+    insert into public.user_profiles (
+      user_id, username, source_points, last_article_reward_date, updated_at
+    )
+    values (new.user_id, new.author_name, 50, today_cn, now());
+  elsif prev_reward_date is null or prev_reward_date < today_cn then
+    update public.user_profiles
+    set
+      username = new.author_name,
+      source_points = source_points + 50,
+      last_article_reward_date = today_cn,
+      updated_at = now()
+    where user_id = new.user_id;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_articles_daily_points on public.articles;
+create trigger trg_articles_daily_points
+  after insert on public.articles
+  for each row
+  execute function public.grant_daily_article_points();
 
 -- 3. 预置第 1 篇五子棋公众号文章
 insert into public.articles (

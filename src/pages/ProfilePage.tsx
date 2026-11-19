@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   LogOut,
   MessageSquare,
+  PenLine,
   Sparkles,
   User as UserIcon,
 } from 'lucide-react';
@@ -49,6 +50,7 @@ export function ProfilePage() {
             streakDays: 0,
             lastCheckinDate: null,
             lastCommentRewardDate: null,
+            lastArticleRewardDate: null,
           });
         }
       })
@@ -83,6 +85,7 @@ export function ProfilePage() {
               streakDays: res.streakDays,
               lastCheckinDate: res.checkinDate,
               lastCommentRewardDate: null,
+              lastArticleRewardDate: null,
             },
       );
       setMessage(
@@ -138,6 +141,7 @@ export function ProfilePage() {
   const streak = profile?.streakDays ?? 0;
   const todayCheckedIn = profile?.lastCheckinDate === todayStr;
   const todayCommented = profile?.lastCommentRewardDate === todayStr;
+  const todayPublished = profile?.lastArticleRewardDate === todayStr;
   const { level, progressPercent, progressLabel } = getLevelInfo(points);
 
   return (
@@ -390,6 +394,45 @@ export function ProfilePage() {
                 style={{ padding: '5px 12px', fontSize: '0.8rem' }}
               >
                 去评论
+              </Link>
+            )}
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '12px 14px',
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--color-surface-muted)',
+              gap: 12,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <PenLine size={18} color="#8b5cf6" />
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '0.92rem' }}>每日发布文章</div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
+                  奖励 +50 源点
+                </div>
+              </div>
+            </div>
+            {todayPublished ? (
+              <span
+                className="badge"
+                style={{ background: '#dcfce7', color: '#15803d', gap: 4 }}
+              >
+                <CheckCircle2 size={13} />
+                已完成
+              </span>
+            ) : (
+              <Link
+                to="/publish"
+                className="category-pill"
+                style={{ padding: '5px 12px', fontSize: '0.8rem' }}
+              >
+                去发布
               </Link>
             )}
           </div>

@@ -7,7 +7,7 @@ export const profileService = {
     const { data, error } = await supabase
       .from('user_profiles')
       .select(
-        'user_id, username, source_points, streak_days, last_checkin_date, last_comment_reward_date',
+        'user_id, username, source_points, streak_days, last_checkin_date, last_comment_reward_date, last_article_reward_date',
       )
       .eq('user_id', userId)
       .maybeSingle();
@@ -24,6 +24,7 @@ export const profileService = {
         streakDays: 0,
         lastCheckinDate: null,
         lastCommentRewardDate: null,
+        lastArticleRewardDate: null,
       };
     }
 
@@ -35,6 +36,8 @@ export const profileService = {
       lastCheckinDate: (data.last_checkin_date as string | null) ?? null,
       lastCommentRewardDate:
         (data.last_comment_reward_date as string | null) ?? null,
+      lastArticleRewardDate:
+        (data.last_article_reward_date as string | null) ?? null,
     };
   },
 

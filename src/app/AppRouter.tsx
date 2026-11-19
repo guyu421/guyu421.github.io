@@ -5,6 +5,7 @@ import { CategoryPage } from '@/pages/CategoryPage';
 import { MatchesPage } from '@/pages/MatchesPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { ProfilePage } from '@/pages/ProfilePage';
+import { PublishArticlePage } from '@/pages/PublishArticlePage';
 import { TournamentDetailPage } from '@/pages/TournamentDetailPage';
 
 export function AppRouter() {
@@ -22,6 +23,7 @@ export function AppRouter() {
         />
         <Route path="/category/:categoryId" element={<CategoryPage />} />
         <Route path="/article/:id" element={<ArticleDetailPage />} />
+        <Route path="/publish" element={<PublishArticlePage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

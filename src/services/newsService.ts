@@ -119,4 +119,44 @@ export const newsService = {
 
     return (data as ArticleRow[]).map(mapArticle);
   },
+
+  async createArticle(input: {
+    userId: string;
+    authorName: string;
+    title: string;
+    summary: string;
+    content: string[];
+    category: 'renju' | 'football';
+    coverImage?: string;
+    tags?: string[];
+  }): Promise<NewsArticle> {
+    const supabase = requireSupabase();
+    const categoryLabel = input.category === 'football' ? '足球' : '五子棋';
+    const totalChars = input.content.join('').length;
+    const readTimeMinutes = Math.max(1, Math.ceil(totalChars / 400));
+
+    const { data, error } = await supabase
+      .from('articles')
+      .insert({
+        user_id: input.userId,
+        title: input.title.trim(),
+        summary: input.summary.trim(),
+        content: input.content,
+        category: input.category,
+        category_label: categoryLabel,
+        cover_image: input.coverImage?.trim() || null,
+        author_name: input.authorName,
+        author_role: '创作者',
+        read_time_minutes: readTimeMinutes,
+        tags: input.tags ?? [],
+      })
+      .select('*')
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return mapArticle(data as ArticleRow);
+  },
 };

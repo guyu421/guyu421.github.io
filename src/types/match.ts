@@ -85,6 +85,7 @@ export interface UserProfile {
   streakDays: number;
   lastCheckinDate: string | null;
   lastCommentRewardDate: string | null;
+  lastArticleRewardDate: string | null;
 }
 
 export interface CheckInResult {
