@@ -1,35 +1,35 @@
-import type { SportCategoryId } from './common';
+export type RenjuMatchStatus = 'live' | 'upcoming' | 'finished';
 
-export type MatchStatus = 'live' | 'upcoming' | 'finished';
-
-export interface MatchTeam {
-  id: string;
-  name: string;
-  shortName: string;
-  score: number | null;
-  badgeColor: string;
+export interface RenjuMatch {
+  id: number;
+  tournament: string;
+  groupName: string;
+  roundName: string;
+  boardNo: number;
+  status: RenjuMatchStatus;
+  blackPlayer: string;
+  whitePlayer: string;
+  blackScore: number | null;
+  whiteScore: number | null;
+  resultText: string;
+  opening?: string;
+  movesCount: number;
+  moves: string[];
+  playedAt: string;
 }
 
-export interface MatchItem {
-  id: string;
-  league: string;
-  category: Exclude<SportCategoryId, 'all'>;
-  status: MatchStatus;
-  statusText: string;
-  startTime: string;
-  venue: string;
-  homeTeam: MatchTeam;
-  awayTeam: MatchTeam;
+export interface UserProfile {
+  userId: string;
+  username: string;
+  sourcePoints: number;
+  streakDays: number;
+  lastCheckinDate: string | null;
 }
 
-export interface StandingRow {
-  rank: number;
-  teamId: string;
-  teamName: string;
-  played: number;
-  won: number;
-  drawn: number;
-  lost: number;
-  points: number;
-  form: ('W' | 'D' | 'L')[];
+export interface CheckInResult {
+  alreadyCheckedIn: boolean;
+  pointsEarned: number;
+  sourcePoints: number;
+  streakDays: number;
+  checkinDate: string;
 }

@@ -1,25 +1,62 @@
-import type { SportCategoryId } from '@/types/common';
-import type { MatchItem, MatchStatus, StandingRow } from '@/types/match';
-import { apiRequest } from './apiClient';
+import { requireSupabase } from '@/lib/supabase';
+import type { RenjuMatch, RenjuMatchStatus } from '@/types/match';
+
+interface RenjuMatchRow {
+  id: number;
+  tournament: string;
+  group_name: string;
+  round_name: string;
+  board_no: number;
+  status: RenjuMatchStatus;
+  black_player: string;
+  white_player: string;
+  black_score: number | null;
+  white_score: number | null;
+  result_text: string;
+  opening: string | null;
+  moves_count: number | null;
+  moves: string[] | null;
+  played_at: string;
+}
+
+function mapMatch(row: RenjuMatchRow): RenjuMatch {
+  return {
+    id: row.id,
+    tournament: row.tournament,
+    groupName: row.group_name,
+    roundName: row.round_name,
+    boardNo: row.board_no,
+    status: row.status,
+    blackPlayer: row.black_player,
+    whitePlayer: row.white_player,
+    blackScore: row.black_score,
+    whiteScore: row.white_score,
+    resultText: row.result_text,
+    opening: row.opening ?? undefined,
+    movesCount: row.moves_count ?? 0,
+    moves: Array.isArray(row.moves) ? row.moves : [],
+    playedAt: row.played_at,
+  };
+}
 
 export const matchService = {
-  async getMatches(
-    category: SportCategoryId = 'all',
-    status?: MatchStatus,
-  ): Promise<MatchItem[]> {
-    const query = new URLSearchParams();
-    if (category !== 'all') {
-      query.set('category', category);
-    }
+  async getMatches(status?: RenjuMatchStatus): Promise<RenjuMatch[]> {
+    const supabase = requireSupabase();
+    let query = supabase
+      .from('renju_matches')
+      .select('*')
+      .order('round_name', { ascending: true })
+      .order('board_no', { ascending: true });
+
     if (status) {
-      query.set('status', status);
+      query = query.eq('status', status);
     }
 
-    const qs = query.toString();
-    return apiRequest<MatchItem[]>(`/api/matches${qs ? `?${qs}` : ''}`);
-  },
+    const { data, error } = await query;
+    if (error) {
+      throw new Error(error.message);
+    }
 
-  async getStandings(): Promise<StandingRow[]> {
-    return apiRequest<StandingRow[]>('/api/standings');
+    return (data as RenjuMatchRow[]).map(mapMatch);
   },
 };
