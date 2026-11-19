@@ -120,19 +120,48 @@ export const newsService = {
     return (data as ArticleRow[]).map(mapArticle);
   },
 
+  async uploadArticleImage(userId: string, file: File): Promise<string> {
+    const supabase = requireSupabase();
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
+    const safeExt = /^[a-z0-9]+$/.test(ext) ? ext : 'png';
+    const path = `user-articles/${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExt}`;
+
+    const { error } = await supabase.storage
+      .from('media')
+      .upload(path, file, {
+        contentType: file.type || 'image/png',
+        upsert: false,
+      });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const { data } = supabase.storage.from('media').getPublicUrl(path);
+    return data.publicUrl;
+  },
+
   async createArticle(input: {
     userId: string;
     authorName: string;
     title: string;
     summary: string;
-    content: string[];
+    content: ArticleContentBlock[];
     category: 'renju' | 'football';
     coverImage?: string;
     tags?: string[];
   }): Promise<NewsArticle> {
     const supabase = requireSupabase();
     const categoryLabel = input.category === 'football' ? '足球' : '五子棋';
-    const totalChars = input.content.join('').length;
+    const totalChars = input.content
+      .map((b) =>
+        typeof b === 'string'
+          ? b
+          : b.type === 'text' || b.type === 'heading' || b.type === 'quote'
+            ? b.text
+            : '',
+      )
+      .join('').length;
     const readTimeMinutes = Math.max(1, Math.ceil(totalChars / 400));
 
     const { data, error } = await supabase

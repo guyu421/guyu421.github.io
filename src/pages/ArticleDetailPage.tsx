@@ -154,6 +154,51 @@ export function ArticleDetailPage() {
               </p>
             );
           }
+          if (block.type === 'heading') {
+            return (
+              <h2
+                key={idx}
+                style={{
+                  margin: '24px 0 12px',
+                  fontSize: '1.24rem',
+                  fontWeight: 700,
+                  lineHeight: 1.4,
+                }}
+              >
+                {block.text}
+              </h2>
+            );
+          }
+          if (block.type === 'quote') {
+            return (
+              <blockquote
+                key={idx}
+                style={{
+                  margin: '18px 0',
+                  padding: '10px 16px',
+                  borderLeft: '3px solid var(--color-primary)',
+                  background: 'var(--color-surface-muted)',
+                  borderRadius: '0 var(--radius-sm) var(--radius-sm) 0',
+                  color: 'var(--color-text-secondary)',
+                  lineHeight: 1.7,
+                }}
+              >
+                {block.text}
+              </blockquote>
+            );
+          }
+          if (block.type === 'divider') {
+            return (
+              <hr
+                key={idx}
+                style={{
+                  margin: '24px 0',
+                  border: 'none',
+                  borderTop: '1px solid var(--color-border)',
+                }}
+              />
+            );
+          }
           if (block.type === 'image') {
             return (
               <figure key={idx} style={{ margin: '20px 0' }}>

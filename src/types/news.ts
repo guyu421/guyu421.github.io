@@ -10,6 +10,9 @@ export interface NewsAuthor {
 export type ArticleContentBlock =
   | string
   | { type: 'text'; text: string }
+  | { type: 'heading'; text: string }
+  | { type: 'quote'; text: string }
+  | { type: 'divider' }
   | { type: 'image'; src: string; alt?: string };
 
 export interface NewsArticle {

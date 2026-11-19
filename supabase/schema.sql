@@ -1118,4 +1118,11 @@ on conflict (id) do update set
   source_url = excluded.source_url,
   tags = excluded.tags;
 
+-- 10. 允许已登录用户上传文章图片到 media 存储桶
+drop policy if exists "media_authenticated_upload" on storage.objects;
+create policy "media_authenticated_upload"
+  on storage.objects for insert
+  to authenticated
+  with check (bucket_id = 'media');
+
 select setval(pg_get_serial_sequence('public.articles', 'id'), coalesce((select max(id) from public.articles), 1), true);
