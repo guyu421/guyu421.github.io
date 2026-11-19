@@ -117,6 +117,9 @@ export function TournamentDetailPage() {
   const [footballDeductions, setFootballDeductions] = useState<Map<string, number>>(
     () => new Map(),
   );
+  const [footballTeamLogos, setFootballTeamLogos] = useState<Map<string, string>>(
+    () => new Map(),
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -138,13 +141,15 @@ export function TournamentDetailPage() {
         if (!tData) return;
 
         if (tData.sport === 'football') {
-          const [fMatches, fDeductions] = await Promise.all([
+          const [fMatches, fDeductions, fLogos] = await Promise.all([
             matchService.getFootballMatches(numericId),
             matchService.getFootballDeductions(numericId),
+            matchService.getFootballTeamLogos(numericId),
           ]);
           if (!active) return;
           setFootballMatches(fMatches);
           setFootballDeductions(fDeductions);
+          setFootballTeamLogos(fLogos);
         } else {
           const mData = await matchService.getMatchesByTournament(numericId);
           if (!active) return;
@@ -392,7 +397,19 @@ export function TournamentDetailPage() {
                           <td className="tabular-nums" style={{ fontWeight: 600 }}>
                             {row.rank}
                           </td>
-                          <td style={{ fontWeight: 600 }}>{row.teamName}</td>
+                          <td style={{ fontWeight: 600 }}>
+                            <span className="team-cell">
+                              {footballTeamLogos.get(row.teamName) ? (
+                                <img
+                                  className="team-logo"
+                                  src={footballTeamLogos.get(row.teamName)}
+                                  alt=""
+                                  loading="lazy"
+                                />
+                              ) : null}
+                              <span>{row.teamName}</span>
+                            </span>
+                          </td>
                           <td className="tabular-nums">{row.played}</td>
                           <td
                             className="tabular-nums"
@@ -481,9 +498,25 @@ export function TournamentDetailPage() {
 
                     <div className="fixture-players">
                       <div className="fixture-player-line">
+                        {footballTeamLogos.get(m.homeTeam) ? (
+                          <img
+                            className="team-logo"
+                            src={footballTeamLogos.get(m.homeTeam)}
+                            alt=""
+                            loading="lazy"
+                          />
+                        ) : null}
                         <span>{m.homeTeam}</span>
                       </div>
                       <div className="fixture-player-line">
+                        {footballTeamLogos.get(m.awayTeam) ? (
+                          <img
+                            className="team-logo"
+                            src={footballTeamLogos.get(m.awayTeam)}
+                            alt=""
+                            loading="lazy"
+                          />
+                        ) : null}
                         <span>{m.awayTeam}</span>
                       </div>
                     </div>

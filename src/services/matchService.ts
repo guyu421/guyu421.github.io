@@ -237,4 +237,24 @@ export const matchService = {
     }
     return map;
   },
+
+  async getFootballTeamLogos(tournamentId: number): Promise<Map<string, string>> {
+    const supabase = requireSupabase();
+    const { data, error } = await supabase
+      .from('football_teams')
+      .select('team_name, logo_url')
+      .eq('tournament_id', tournamentId);
+
+    const map = new Map<string, string>();
+    if (error || !data) {
+      return map;
+    }
+
+    for (const r of data as { team_name: string; logo_url: string }[]) {
+      if (r.logo_url) {
+        map.set(r.team_name, r.logo_url);
+      }
+    }
+    return map;
+  },
 };

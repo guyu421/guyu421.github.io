@@ -574,6 +574,19 @@ button {
   border-bottom: none;
 }
 
+.team-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.team-logo {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
 .standings-board tr.zone-row td {
   background-color: var(--zone-bg);
 }
