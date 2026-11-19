@@ -640,7 +640,7 @@ export function TournamentDetailPage() {
         <div style={{ padding: 16 }}>
           <EmptyState
             title="暂无对局数据"
-            description="请先在 Supabase 执行最新的 schema.sql 导入对局数据。"
+            description="暂无该赛事的对局数据。"
           />
         </div>
       ) : activeTab === 'standings' ? (
