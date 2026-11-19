@@ -14,8 +14,10 @@ export interface RenjuMatch {
   roundNo: number;
   boardNo: number;
   blackId: string;
+  blackNo?: number;
   blackName: string;
   whiteId: string;
+  whiteNo?: number;
   whiteName: string;
   matchTime: string;
   result: string | null;

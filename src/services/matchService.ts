@@ -32,15 +32,17 @@ function mapTournament(row: TournamentRow): TournamentItem {
   };
 }
 
-function mapMatch(row: RenjuMatchRow): RenjuMatch {
+function mapMatch(row: RenjuMatchRow, noMap: Map<string, number>): RenjuMatch {
   return {
     id: row.id,
     tournamentId: row.tournament_id,
     roundNo: row.round_no,
     boardNo: row.board_no,
     blackId: row.black_id,
+    blackNo: noMap.get(row.black_id),
     blackName: unwrapPlayer(row.black, row.black_id),
     whiteId: row.white_id,
+    whiteNo: noMap.get(row.white_id),
     whiteName: unwrapPlayer(row.white, row.white_id),
     matchTime: row.match_time,
     result: row.result,
@@ -79,19 +81,34 @@ export const matchService = {
 
   async getMatchesByTournament(tournamentId: number): Promise<RenjuMatch[]> {
     const supabase = requireSupabase();
-    const { data, error } = await supabase
-      .from('renju_matches')
-      .select(
-        'id, tournament_id, round_no, board_no, black_id, white_id, match_time, result, black:players!renju_matches_black_id_fkey(id, name), white:players!renju_matches_white_id_fkey(id, name)',
-      )
-      .eq('tournament_id', tournamentId)
-      .order('round_no', { ascending: true })
-      .order('board_no', { ascending: true });
+    const [matchesRes, playersRes] = await Promise.all([
+      supabase
+        .from('renju_matches')
+        .select(
+          'id, tournament_id, round_no, board_no, black_id, white_id, match_time, result, black:players!renju_matches_black_id_fkey(id, name), white:players!renju_matches_white_id_fkey(id, name)',
+        )
+        .eq('tournament_id', tournamentId)
+        .order('round_no', { ascending: true })
+        .order('board_no', { ascending: true }),
+      supabase
+        .from('tournament_players')
+        .select('player_id, player_no')
+        .eq('tournament_id', tournamentId),
+    ]);
 
-    if (error) {
-      throw new Error(error.message);
+    if (matchesRes.error) {
+      throw new Error(matchesRes.error.message);
     }
 
-    return (data as unknown as RenjuMatchRow[]).map(mapMatch);
+    const noMap = new Map<string, number>();
+    if (playersRes.data) {
+      for (const p of playersRes.data) {
+        noMap.set(p.player_id as string, p.player_no as number);
+      }
+    }
+
+    return (matchesRes.data as unknown as RenjuMatchRow[]).map((row) =>
+      mapMatch(row, noMap),
+    );
   },
 };

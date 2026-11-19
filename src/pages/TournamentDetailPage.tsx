@@ -210,6 +210,11 @@ export function TournamentDetailPage() {
 
                   <div className="fixture-players">
                     <div className="fixture-player-line">
+                      {match.blackId !== 'BYE' && match.blackNo !== undefined ? (
+                        <span className="fixture-player-id tabular-nums">
+                          {match.blackNo}
+                        </span>
+                      ) : null}
                       <span>{match.blackName}</span>
                       {match.blackId !== 'BYE' ? (
                         <span className="fixture-player-id tabular-nums">
@@ -219,6 +224,11 @@ export function TournamentDetailPage() {
                     </div>
 
                     <div className="fixture-player-line">
+                      {match.whiteId !== 'BYE' && match.whiteNo !== undefined ? (
+                        <span className="fixture-player-id tabular-nums">
+                          {match.whiteNo}
+                        </span>
+                      ) : null}
                       <span>{match.whiteName}</span>
                       {match.whiteId !== 'BYE' ? (
                         <span className="fixture-player-id tabular-nums">
