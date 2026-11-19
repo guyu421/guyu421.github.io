@@ -18,7 +18,7 @@ export function NewsCard({ article }: NewsCardProps) {
   return (
     <article className="card news-card">
       {article.coverImage ? (
-        <Link to={`/article/${article.slug}`}>
+        <Link to={`/article/${article.id}`}>
           <img
             src={article.coverImage}
             alt={article.title}
@@ -50,7 +50,7 @@ export function NewsCard({ article }: NewsCardProps) {
           </button>
         </div>
 
-        <Link to={`/article/${article.slug}`}>
+        <Link to={`/article/${article.id}`}>
           <h3 className="news-card-title">{article.title}</h3>
         </Link>
 

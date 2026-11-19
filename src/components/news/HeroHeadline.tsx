@@ -12,7 +12,7 @@ export function HeroHeadline({ article }: HeroHeadlineProps) {
   const categoryMeta = CATEGORY_MAP[article.category];
 
   return (
-    <Link to={`/article/${article.slug}`} className="hero-card">
+    <Link to={`/article/${article.id}`} className="hero-card">
       <img
         src={article.coverImage}
         alt={article.title}

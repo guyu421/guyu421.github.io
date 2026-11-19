@@ -37,12 +37,12 @@ export const newsService = {
     return typeof limit === 'number' ? filtered.slice(0, limit) : filtered;
   },
 
-  async getArticleBySlug(slug: string): Promise<NewsArticle | null> {
+  async getArticleById(id: string): Promise<NewsArticle | null> {
     if (HAS_BACKEND_API) {
-      return apiRequest<NewsArticle | null>(`/api/news/${encodeURIComponent(slug)}`);
+      return apiRequest<NewsArticle | null>(`/api/news/${encodeURIComponent(id)}`);
     }
 
-    return RENJU_NEWS.find((article) => article.slug === slug) ?? null;
+    return RENJU_NEWS.find((article) => article.id === id) ?? null;
   },
 
   async getRelatedArticles(

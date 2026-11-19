@@ -1,5 +1,4 @@
 import { useParams } from 'react-router-dom';
-import { GitHubComments } from '@/components/common/GitHubComments';
 import { NewsList } from '@/components/news/NewsList';
 import { CATEGORY_MAP } from '@/constants/categories';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -38,11 +37,6 @@ export function CategoryPage() {
         articles={newsState.data}
         loading={newsState.loading}
         error={newsState.error}
-      />
-
-      <GitHubComments
-        issueTerm={`channel-${validCategory}`}
-        title={`${meta.label}频道 · 棋友评价`}
       />
     </div>
   );

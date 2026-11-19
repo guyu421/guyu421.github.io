@@ -22,6 +22,7 @@ export interface NewsArticle {
   views: number;
   isFeatured?: boolean;
   isBreaking?: boolean;
+  sourceUrl?: string;
   tags: string[];
 }
 

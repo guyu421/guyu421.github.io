@@ -1,4 +1,4 @@
-import { ArrowLeft, Bookmark, Clock, Eye } from 'lucide-react';
+import { ArrowLeft, Bookmark, Clock, ExternalLink } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Badge } from '@/components/common/Badge';
@@ -13,7 +13,7 @@ import type { NewsArticle } from '@/types/news';
 import { formatRelativeTime } from '@/utils/formatDate';
 
 export function ArticleDetailPage() {
-  const { slug } = useParams<{ slug: string }>();
+  const { id } = useParams<{ id: string }>();
   const { isBookmarked, toggleBookmark } = useAppStore();
 
   const [article, setArticle] = useState<NewsArticle | null>(null);
@@ -21,12 +21,12 @@ export function ArticleDetailPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!slug) return;
+    if (!id) return;
     let active = true;
     setLoading(true);
 
     newsService
-      .getArticleBySlug(slug)
+      .getArticleById(id)
       .then(async (data) => {
         if (!active) return;
         setArticle(data);
@@ -47,7 +47,7 @@ export function ArticleDetailPage() {
     return () => {
       active = false;
     };
-  }, [slug]);
+  }, [id]);
 
   if (loading) {
     return (
@@ -62,7 +62,7 @@ export function ArticleDetailPage() {
       <div className="container article-container">
         <EmptyState
           title="未找到该篇资讯"
-          description="文章可能已下线或链接有误。"
+          description="文章可能已下线或编号有误。"
         />
       </div>
     );
@@ -106,22 +106,36 @@ export function ArticleDetailPage() {
           justifyContent: 'space-between',
           gap: 12,
           paddingBottom: 16,
+          marginBottom: 20,
           borderBottom: '1px solid var(--color-border)',
           fontSize: '0.86rem',
           color: 'var(--color-text-muted)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 14 }}>
           <strong style={{ color: 'var(--color-text)' }}>{article.author.name}</strong>
           <span>{article.author.role}</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             <Clock size={14} />
             {formatRelativeTime(article.publishedAt)}
           </span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-            <Eye size={14} />
-            {article.views.toLocaleString()}
-          </span>
+          {article.sourceUrl ? (
+            <a
+              href={article.sourceUrl}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                color: 'var(--color-primary)',
+                fontWeight: 600,
+              }}
+            >
+              查看公众号原文
+              <ExternalLink size={13} />
+            </a>
+          ) : null}
         </div>
 
         <button
@@ -143,17 +157,6 @@ export function ArticleDetailPage() {
         />
       ) : null}
 
-      <p
-        style={{
-          fontSize: '1.08rem',
-          fontWeight: 600,
-          color: 'var(--color-text-secondary)',
-          marginBottom: 20,
-        }}
-      >
-        {article.summary}
-      </p>
-
       <div>
         {article.content.map((paragraph, idx) => (
           <p key={idx} className="article-paragraph">
@@ -172,7 +175,7 @@ export function ArticleDetailPage() {
       ) : null}
 
       <GitHubComments
-        issueTerm={`article-${article.slug}`}
+        issueTerm={`article-${article.id}`}
         title="文章评价与讨论"
       />
     </div>
