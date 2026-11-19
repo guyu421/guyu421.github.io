@@ -216,4 +216,22 @@ export const matchService = {
       points: r.points,
     }));
   },
+
+  async getFootballDeductions(tournamentId: number): Promise<Map<string, number>> {
+    const supabase = requireSupabase();
+    const { data, error } = await supabase
+      .from('football_team_deductions')
+      .select('team_name, deduction')
+      .eq('tournament_id', tournamentId);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const map = new Map<string, number>();
+    for (const r of data as { team_name: string; deduction: number }[]) {
+      map.set(r.team_name, Number(r.deduction ?? 0));
+    }
+    return map;
+  },
 };

@@ -5,12 +5,15 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { matchService } from '@/services/matchService';
 import type {
   FootballMatch,
-  FootballStanding,
   RenjuMatch,
   TiebreakerKey,
   TournamentItem,
 } from '@/types/match';
-import { computeStandings, type StandingEntry } from '@/utils/standings';
+import {
+  computeFootballStandings,
+  computeStandings,
+  type StandingEntry,
+} from '@/utils/standings';
 
 const TIEBREAKER_HEADER: Record<TiebreakerKey, string> = {
   buchholz: '对手分',
@@ -84,7 +87,9 @@ export function TournamentDetailPage() {
   const [tournament, setTournament] = useState<TournamentItem | null>(null);
   const [matches, setMatches] = useState<RenjuMatch[]>([]);
   const [footballMatches, setFootballMatches] = useState<FootballMatch[]>([]);
-  const [footballStandings, setFootballStandings] = useState<FootballStanding[]>([]);
+  const [footballDeductions, setFootballDeductions] = useState<Map<string, number>>(
+    () => new Map(),
+  );
   const [activeTab, setActiveTab] = useState<'matches' | 'standings'>('matches');
   const [selectedRound, setSelectedRound] = useState<number>(1);
   const [standingsRound, setStandingsRound] = useState<number>(1);
@@ -109,15 +114,17 @@ export function TournamentDetailPage() {
         if (!tData) return;
 
         if (tData.sport === 'football') {
-          const [fMatches, fStandings] = await Promise.all([
+          const [fMatches, fDeductions] = await Promise.all([
             matchService.getFootballMatches(numericId),
-            matchService.getFootballStandings(numericId),
+            matchService.getFootballDeductions(numericId),
           ]);
           if (!active) return;
           setFootballMatches(fMatches);
-          setFootballStandings(fStandings);
+          setFootballDeductions(fDeductions);
           if (fMatches.length > 0) {
-            setSelectedRound(fMatches[fMatches.length - 1].roundNo);
+            const lastRound = fMatches[fMatches.length - 1].roundNo;
+            setSelectedRound(lastRound);
+            setStandingsRound(lastRound);
           }
         } else {
           const mData = await matchService.getMatchesByTournament(numericId);
@@ -191,6 +198,16 @@ export function TournamentDetailPage() {
     [matches, tournament, standingsRound],
   );
 
+  const footballStandings = useMemo(
+    () =>
+      computeFootballStandings(
+        footballMatches,
+        footballDeductions,
+        standingsRound,
+      ),
+    [footballMatches, footballDeductions, standingsRound],
+  );
+
   const qualifyCount = tournament?.qualifyCount ?? null;
 
   return (
@@ -250,6 +267,36 @@ export function TournamentDetailPage() {
       ) : isFootball ? (
         activeTab === 'standings' ? (
           <>
+            <div
+              className="round-bar"
+              style={{ borderBottom: '1px solid var(--color-surface-muted)', paddingBottom: 10 }}
+            >
+              <button
+                type="button"
+                className="round-btn left"
+                disabled={standingsRoundIndex <= 0}
+                onClick={() => setStandingsRound(rounds[standingsRoundIndex - 1])}
+              >
+                <ChevronLeft size={15} />
+                上一轮
+              </button>
+
+              <span>第{standingsRound}轮</span>
+
+              <button
+                type="button"
+                className="round-btn right"
+                disabled={
+                  standingsRoundIndex === -1 ||
+                  standingsRoundIndex >= rounds.length - 1
+                }
+                onClick={() => setStandingsRound(rounds[standingsRoundIndex + 1])}
+              >
+                下一轮
+                <ChevronRight size={15} />
+              </button>
+            </div>
+
             <div style={{ overflowX: 'auto' }}>
               <table className="standings-board">
                 <thead>
