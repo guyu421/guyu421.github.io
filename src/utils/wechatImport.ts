@@ -1,7 +1,17 @@
 export interface WechatImportResult {
   title?: string;
   coverImage?: string;
+  publishedAt?: string;
   bodyHtml: string;
+}
+
+function parseCnDateTimeToIso(raw: string): string | undefined {
+  const m = raw.match(/(\d{4})[-年/.](\d{1,2})[-月/.](\d{1,2})日?\s+(\d{1,2}):(\d{2})/);
+  if (!m) return undefined;
+  const [, y, mo, d, h, mi] = m;
+  const iso = `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}T${h.padStart(2, '0')}:${mi}:00+08:00`;
+  const parsed = new Date(iso);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
 }
 
 function escapeHtml(text: string): string {
@@ -35,6 +45,28 @@ export function parseWechatHtml(rawHtml: string): WechatImportResult {
   }
 
   const doc = new DOMParser().parseFromString(trimmed, 'text/html');
+
+  // Extract publish time from WeChat JS variable `ct` or `#publish_time` / meta text
+  let publishedAt: string | undefined;
+  const ctMatch =
+    trimmed.match(/\bvar\s+ct\s*=\s*["'](\d{10})["']/) ||
+    trimmed.match(/create_time\s*[:=]\s*["'](\d{10})["']/);
+  if (ctMatch?.[1]) {
+    const d = new Date(Number(ctMatch[1]) * 1000);
+    if (!Number.isNaN(d.getTime())) {
+      publishedAt = d.toISOString();
+    }
+  }
+  if (!publishedAt) {
+    const pubText = doc.querySelector('#publish_time')?.textContent?.trim();
+    if (pubText) {
+      publishedAt = parseCnDateTimeToIso(pubText);
+    }
+  }
+  if (!publishedAt) {
+    const metaText = doc.querySelector('#meta_content')?.textContent ?? doc.body.textContent ?? '';
+    publishedAt = parseCnDateTimeToIso(metaText.slice(0, 600));
+  }
 
   const activityTitle =
     doc.querySelector('#activity-name')?.textContent?.trim() ||
@@ -161,6 +193,7 @@ export function parseWechatHtml(rawHtml: string): WechatImportResult {
   return {
     title: activityTitle || undefined,
     coverImage,
+    publishedAt,
     bodyHtml: parts.join(''),
   };
 }

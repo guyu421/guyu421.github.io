@@ -131,6 +131,7 @@ export function PublishArticlePage() {
   const [summary, setSummary] = useState('');
   const [coverImage, setCoverImage] = useState('');
   const [sourceUrl, setSourceUrl] = useState('');
+  const [publishedAt, setPublishedAt] = useState('');
   const [tagsText, setTagsText] = useState('');
   const [charCount, setCharCount] = useState(0);
   const [bodyVersion, setBodyVersion] = useState(0);
@@ -178,6 +179,7 @@ export function PublishArticlePage() {
         summary?: string;
         coverImage?: string;
         sourceUrl?: string;
+        publishedAt?: string;
         tagsText?: string;
         bodyHtml?: string;
       };
@@ -188,6 +190,7 @@ export function PublishArticlePage() {
       if (draft.summary) setSummary(draft.summary);
       if (draft.coverImage) setCoverImage(draft.coverImage);
       if (draft.sourceUrl) setSourceUrl(draft.sourceUrl);
+      if (draft.publishedAt) setPublishedAt(draft.publishedAt);
       if (draft.tagsText) setTagsText(draft.tagsText);
       if (draft.bodyHtml) {
         savedHtmlRef.current = draft.bodyHtml;
@@ -234,6 +237,7 @@ export function PublishArticlePage() {
             summary,
             coverImage,
             sourceUrl,
+            publishedAt,
             tagsText,
             bodyHtml: savedHtmlRef.current,
             updatedAt: Date.now(),
@@ -246,7 +250,7 @@ export function PublishArticlePage() {
     }, 500);
 
     return () => window.clearTimeout(timer);
-  }, [draftKey, title, category, summary, coverImage, sourceUrl, tagsText, bodyVersion]);
+  }, [draftKey, title, category, summary, coverImage, sourceUrl, publishedAt, tagsText, bodyVersion]);
 
   const formulaPreviewHtml = useMemo(() => {
     if (!formulaTex.trim()) return '';
@@ -507,12 +511,14 @@ export function PublishArticlePage() {
     const looksLikeHtml = /<[a-z][\s\S]*>/i.test(raw);
     let importedTitle: string | undefined;
     let importedCover: string | undefined;
+    let importedPublishedAt: string | undefined;
     let bodyHtml = '';
 
     if (looksLikeHtml) {
       const parsed = parseWechatHtml(raw);
       importedTitle = parsed.title;
       importedCover = parsed.coverImage;
+      importedPublishedAt = parsed.publishedAt;
       bodyHtml = parsed.bodyHtml;
     } else {
       bodyHtml = raw
@@ -533,6 +539,9 @@ export function PublishArticlePage() {
     }
     if (importedCover && !coverImage.trim()) {
       setCoverImage(importedCover);
+    }
+    if (importedPublishedAt) {
+      setPublishedAt(importedPublishedAt);
     }
     if (editorRef.current) {
       editorRef.current.innerHTML = bodyHtml;
@@ -656,6 +665,7 @@ export function PublishArticlePage() {
         category,
         coverImage: coverImage.trim() || undefined,
         sourceUrl: sourceUrl.trim() || undefined,
+        publishedAt: publishedAt || undefined,
         tags,
       });
       if (draftKey) {
@@ -1485,6 +1495,21 @@ export function PublishArticlePage() {
                   style={fieldStyle}
                 />
               </div>
+
+              {publishedAt ? (
+                <div style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>
+                  已识别公众号发布时间：
+                  {new Intl.DateTimeFormat('zh-CN', {
+                    timeZone: 'Asia/Shanghai',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false,
+                  }).format(new Date(publishedAt))}
+                </div>
+              ) : null}
 
               <div>
                 <label htmlFor="pub-tags" style={labelStyle}>

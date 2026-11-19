@@ -150,6 +150,7 @@ export const newsService = {
     category: 'renju' | 'football';
     coverImage?: string;
     sourceUrl?: string;
+    publishedAt?: string;
     tags?: string[];
   }): Promise<NewsArticle> {
     const supabase = requireSupabase();
@@ -176,6 +177,7 @@ export const newsService = {
         category_label: categoryLabel,
         cover_image: input.coverImage?.trim() || null,
         source_url: input.sourceUrl?.trim() || null,
+        ...(input.publishedAt ? { published_at: input.publishedAt } : {}),
         author_name: input.authorName,
         author_role: '创作者',
         read_time_minutes: readTimeMinutes,
