@@ -34,6 +34,7 @@ export interface NewsArticle {
   isBreaking?: boolean;
   sourceUrl?: string;
   tags: string[];
+  userId?: string;
 }
 
 export interface NewsQueryParams {

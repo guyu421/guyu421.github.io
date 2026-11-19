@@ -1,7 +1,7 @@
-import { ArrowLeft, Clock, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Clock, ExternalLink, Trash2 } from 'lucide-react';
 import katex from 'katex';
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AccountComments } from '@/components/common/AccountComments';
 import { Badge } from '@/components/common/Badge';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -9,16 +9,20 @@ import { LoadingSkeleton } from '@/components/common/LoadingSkeleton';
 import { NewsList } from '@/components/news/NewsList';
 import { CATEGORY_MAP } from '@/constants/categories';
 import { newsService } from '@/services/newsService';
+import { useAuth } from '@/store/AuthContext';
 import type { NewsArticle } from '@/types/news';
 import { formatRelativeTime } from '@/utils/formatDate';
 import { renderTextWithMath } from '@/utils/math';
 
 export function ArticleDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [article, setArticle] = useState<NewsArticle | null>(null);
   const [related, setRelated] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -69,6 +73,19 @@ export function ArticleDetailPage() {
   }
 
   const categoryMeta = CATEGORY_MAP[article.category];
+  const isOwner = Boolean(user && article.userId && user.id === article.userId);
+
+  async function handleDelete() {
+    if (!article || !isOwner || deleting) return;
+    if (!window.confirm('确定要删除这篇文章吗？删除后无法恢复。')) return;
+    setDeleting(true);
+    try {
+      await newsService.deleteArticle(article.id);
+      navigate(`/category/${article.category}`, { replace: true });
+    } catch {
+      setDeleting(false);
+    }
+  }
 
   return (
     <div className="container article-container">
@@ -136,6 +153,30 @@ export function ArticleDetailPage() {
             </a>
           ) : null}
         </div>
+
+        {isOwner ? (
+          <button
+            type="button"
+            disabled={deleting}
+            onClick={handleDelete}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              border: '1px solid #fecaca',
+              background: '#fef2f2',
+              color: '#dc2626',
+              borderRadius: 'var(--radius-sm)',
+              padding: '4px 10px',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            <Trash2 size={13} />
+            {deleting ? '删除中...' : '删除文章'}
+          </button>
+        ) : null}
       </div>
 
       {article.coverImage ? (

@@ -18,6 +18,7 @@ interface ArticleRow {
   is_breaking: boolean;
   source_url: string | null;
   tags: string[];
+  user_id?: string | null;
 }
 
 function mapArticle(row: ArticleRow): NewsArticle {
@@ -42,6 +43,7 @@ function mapArticle(row: ArticleRow): NewsArticle {
     isBreaking: row.is_breaking,
     sourceUrl: row.source_url ?? undefined,
     tags: Array.isArray(row.tags) ? row.tags : [],
+    userId: row.user_id ?? undefined,
   };
 }
 
@@ -191,5 +193,21 @@ export const newsService = {
     }
 
     return mapArticle(data as ArticleRow);
+  },
+
+  async deleteArticle(id: string): Promise<void> {
+    const numericId = Number(id);
+    if (!Number.isInteger(numericId) || numericId <= 0) {
+      throw new Error('无效的文章编号');
+    }
+    const supabase = requireSupabase();
+    const { error } = await supabase
+      .from('articles')
+      .delete()
+      .eq('id', numericId);
+
+    if (error) {
+      throw new Error(error.message);
+    }
   },
 };
