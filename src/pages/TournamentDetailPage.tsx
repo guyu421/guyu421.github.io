@@ -241,6 +241,38 @@ export function TournamentDetailPage() {
     return map;
   }, [matches, currentRound]);
 
+  const prevFootballScores = useMemo(() => {
+    const map = new Map<string, number>();
+    const winPts = tournament?.winPoints ?? 3;
+    const drawPts = tournament?.drawPoints ?? 1;
+    const lossPts = tournament?.lossPoints ?? 0;
+
+    for (const m of footballMatches) {
+      if (!map.has(m.homeTeam)) {
+        map.set(m.homeTeam, -(footballDeductions.get(m.homeTeam) ?? 0));
+      }
+      if (!map.has(m.awayTeam)) {
+        map.set(m.awayTeam, -(footballDeductions.get(m.awayTeam) ?? 0));
+      }
+    }
+
+    for (const m of footballMatches) {
+      if (m.roundNo >= currentRound) continue;
+      if (m.homeScore === null || m.awayScore === null) continue;
+      if (m.homeScore > m.awayScore) {
+        map.set(m.homeTeam, (map.get(m.homeTeam) ?? 0) + winPts);
+        map.set(m.awayTeam, (map.get(m.awayTeam) ?? 0) + lossPts);
+      } else if (m.homeScore < m.awayScore) {
+        map.set(m.awayTeam, (map.get(m.awayTeam) ?? 0) + winPts);
+        map.set(m.homeTeam, (map.get(m.homeTeam) ?? 0) + lossPts);
+      } else {
+        map.set(m.homeTeam, (map.get(m.homeTeam) ?? 0) + drawPts);
+        map.set(m.awayTeam, (map.get(m.awayTeam) ?? 0) + drawPts);
+      }
+    }
+    return map;
+  }, [footballMatches, footballDeductions, tournament, currentRound]);
+
   const tiebreakers: TiebreakerKey[] = tournament?.tiebreakers ?? [
     'buchholz',
     'median_buchholz',
@@ -524,6 +556,9 @@ export function TournamentDetailPage() {
                           />
                         ) : null}
                         <span>{m.homeTeam}</span>
+                        <span className="fixture-player-id tabular-nums">
+                          {prevFootballScores.get(m.homeTeam) ?? 0}
+                        </span>
                       </div>
                       <div className="fixture-player-line">
                         {footballTeamLogos.get(m.awayTeam) ? (
@@ -535,6 +570,9 @@ export function TournamentDetailPage() {
                           />
                         ) : null}
                         <span>{m.awayTeam}</span>
+                        <span className="fixture-player-id tabular-nums">
+                          {prevFootballScores.get(m.awayTeam) ?? 0}
+                        </span>
                       </div>
                     </div>
 
