@@ -30,6 +30,12 @@ function getDisplayScores(match: RenjuMatch): {
   if (!match.result) {
     return { blackText: '-', whiteText: '-', blackOutcome: null };
   }
+  if (match.result === '+') {
+    return { blackText: '+', whiteText: '-', blackOutcome: 'win' };
+  }
+  if (match.result === '-') {
+    return { blackText: '-', whiteText: '+', blackOutcome: 'loss' };
+  }
   if (match.result === 'WF' || match.result === 'B' || match.result === '1:0') {
     return { blackText: '1', whiteText: '0', blackOutcome: 'win' };
   }
