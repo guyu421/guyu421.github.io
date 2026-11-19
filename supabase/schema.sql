@@ -112,7 +112,7 @@ values
     '["buchholz","median_buchholz","wins"]'::jsonb,
     16,
     '录取',
-    '[{"fromRank":1,"toRank":16,"bgColor":"#fff1f2","cutoffLabel":"录取","cutoffColor":"#f43f5e","cutoffLineColor":"#fda4af"}]'::jsonb,
+    '[{"fromRank":1,"toRank":16,"bgColor":"#fff1f2","cutoffLabel":"录取","cutoffColor":"#94a3b8","cutoffLineColor":"#cbd5e1"}]'::jsonb,
     9,
     E'积分排名规则\n1.每名棋手胜一场积1分，平一场积0.5分，负一场积0分\n2.比赛结束，积分多的名次靠前\n3.如果两名棋手或两名棋手以上积分相等，依下列顺序排列名次：\na)对手分：所遇对手积分之和\nb)中间对手分：对手分去掉最高和最低一个再求和\nc)胜局数\nd)并列'
   ),

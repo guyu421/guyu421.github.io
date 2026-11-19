@@ -81,25 +81,6 @@ const OUTCOME_LABEL: Record<'win' | 'draw' | 'loss', string> = {
   loss: 'L',
 };
 
-function getEffectiveZones(tournament: TournamentItem | null): StandingsZone[] {
-  if (tournament?.standingsZones && tournament.standingsZones.length > 0) {
-    return tournament.standingsZones;
-  }
-  if (tournament?.qualifyCount) {
-    return [
-      {
-        fromRank: 1,
-        toRank: tournament.qualifyCount,
-        bgColor: '#fff1f2',
-        cutoffLabel: tournament.qualifyLabel || '录取',
-        cutoffColor: '#f43f5e',
-        cutoffLineColor: '#fda4af',
-      },
-    ];
-  }
-  return [];
-}
-
 function renderCutoffRow(zone: StandingsZone | undefined, colSpan: number, key: string) {
   if (!zone?.cutoffLabel) return null;
   const dividerStyle = {
@@ -276,7 +257,7 @@ export function TournamentDetailPage() {
     [footballMatches, footballDeductions, currentRound],
   );
 
-  const zones = useMemo(() => getEffectiveZones(tournament), [tournament]);
+  const zones = tournament?.standingsZones ?? [];
 
   return (
     <div className="tournament-page">
