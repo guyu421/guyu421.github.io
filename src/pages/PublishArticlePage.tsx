@@ -17,7 +17,7 @@ import {
   X,
 } from 'lucide-react';
 import katex from 'katex';
-import { type ChangeEvent, type ClipboardEvent, useMemo, useRef, useState } from 'react';
+import { type ChangeEvent, type ClipboardEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/common/Badge';
 import { newsService } from '@/services/newsService';
@@ -133,6 +133,8 @@ export function PublishArticlePage() {
   const [sourceUrl, setSourceUrl] = useState('');
   const [tagsText, setTagsText] = useState('');
   const [charCount, setCharCount] = useState(0);
+  const [bodyVersion, setBodyVersion] = useState(0);
+  const [draftStatus, setDraftStatus] = useState<string | null>(null);
   const [previewBlocks, setPreviewBlocks] = useState<ArticleContentBlock[]>([]);
 
   const [activePopover, setActivePopover] = useState<'table' | 'formula' | 'wechat' | null>(
@@ -158,8 +160,98 @@ export function PublishArticlePage() {
   const activeTableCellRef = useRef<HTMLTableCellElement | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
   const inlineImgInputRef = useRef<HTMLInputElement | null>(null);
+  const draftRestoredRef = useRef(false);
 
+  const draftKey = user ? `saiyuan_article_draft_${user.id}` : null;
   const readMinutes = Math.max(1, Math.ceil(charCount / 400));
+
+  useEffect(() => {
+    if (!draftKey || draftRestoredRef.current) return;
+    draftRestoredRef.current = true;
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) return;
+      const draft = JSON.parse(raw) as {
+        title?: string;
+        category?: 'renju' | 'football';
+        summary?: string;
+        coverImage?: string;
+        sourceUrl?: string;
+        tagsText?: string;
+        bodyHtml?: string;
+      };
+      if (draft.title) setTitle(draft.title);
+      if (draft.category === 'renju' || draft.category === 'football') {
+        setCategory(draft.category);
+      }
+      if (draft.summary) setSummary(draft.summary);
+      if (draft.coverImage) setCoverImage(draft.coverImage);
+      if (draft.sourceUrl) setSourceUrl(draft.sourceUrl);
+      if (draft.tagsText) setTagsText(draft.tagsText);
+      if (draft.bodyHtml) {
+        savedHtmlRef.current = draft.bodyHtml;
+        requestAnimationFrame(() => {
+          if (editorRef.current) {
+            editorRef.current.innerHTML = draft.bodyHtml!;
+            const text = editorRef.current.innerText.replace(/\s+/g, '');
+            setCharCount(text.length);
+          }
+        });
+      }
+      if (draft.title || draft.bodyHtml || draft.summary || draft.coverImage) {
+        setDraftStatus('已恢复上次草稿');
+      }
+    } catch {
+      // Ignore malformed draft
+    }
+  }, [draftKey]);
+
+  useEffect(() => {
+    if (!draftKey) return;
+    const hasContent =
+      title.trim() ||
+      summary.trim() ||
+      coverImage.trim() ||
+      sourceUrl.trim() ||
+      tagsText.trim() ||
+      savedHtmlRef.current.replace(/<[^>]+>/g, '').trim() ||
+      savedHtmlRef.current.includes('<img') ||
+      savedHtmlRef.current.includes('<table');
+
+    const timer = window.setTimeout(() => {
+      try {
+        if (!hasContent) {
+          localStorage.removeItem(draftKey);
+          setDraftStatus(null);
+          return;
+        }
+        localStorage.setItem(
+          draftKey,
+          JSON.stringify({
+            title,
+            category,
+            summary,
+            coverImage,
+            sourceUrl,
+            tagsText,
+            bodyHtml: savedHtmlRef.current,
+            updatedAt: Date.now(),
+          }),
+        );
+        const nowText = new Intl.DateTimeFormat('zh-CN', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false,
+        }).format(new Date());
+        setDraftStatus(`草稿已自动保存 ${nowText}`);
+      } catch {
+        // Ignore storage quota error
+      }
+    }, 500);
+
+    return () => window.clearTimeout(timer);
+  }, [draftKey, title, category, summary, coverImage, sourceUrl, tagsText, bodyVersion]);
 
   const formulaPreviewHtml = useMemo(() => {
     if (!formulaTex.trim()) return '';
@@ -220,6 +312,26 @@ export function PublishArticlePage() {
     savedHtmlRef.current = editorRef.current.innerHTML;
     const text = editorRef.current.innerText.replace(/\s+/g, '');
     setCharCount(text.length);
+    setBodyVersion((v) => v + 1);
+  }
+
+  function handleClearDraft() {
+    if (draftKey) {
+      localStorage.removeItem(draftKey);
+    }
+    setTitle('');
+    setCategory('renju');
+    setSummary('');
+    setCoverImage('');
+    setSourceUrl('');
+    setTagsText('');
+    savedHtmlRef.current = '';
+    if (editorRef.current) {
+      editorRef.current.innerHTML = '';
+    }
+    setCharCount(0);
+    setTableMenuPos(null);
+    setDraftStatus(null);
   }
 
   function positionTableMenu(cell: HTMLTableCellElement | null) {
@@ -552,6 +664,9 @@ export function PublishArticlePage() {
         sourceUrl: sourceUrl.trim() || undefined,
         tags,
       });
+      if (draftKey) {
+        localStorage.removeItem(draftKey);
+      }
       navigate(`/article/${created.id}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : '发布失败，请稍后重试');
@@ -616,6 +731,26 @@ export function PublishArticlePage() {
           <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
             {charCount} 字 · 约 {readMinutes} 分钟
           </span>
+          {draftStatus ? (
+            <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
+              {draftStatus}
+              <button
+                type="button"
+                onClick={handleClearDraft}
+                style={{
+                  marginLeft: 8,
+                  border: 'none',
+                  background: 'transparent',
+                  color: '#dc2626',
+                  fontSize: '0.76rem',
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
+              >
+                清空草稿
+              </button>
+            </span>
+          ) : null}
         </div>
 
         {mode === 'edit' ? (
