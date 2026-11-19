@@ -1105,9 +1105,6 @@ export function TournamentDetailPage() {
 
               {finalsInfo.thirdMatch ? (
                 <div className="v-third-clean">
-                  <div className="v-stage-label" style={{ marginBottom: 8 }}>
-                    季军赛
-                  </div>
                   <div className="v-match-row v-final-row">
                     <span
                       className={`v-player ${
