@@ -284,8 +284,24 @@ export function TournamentDetailPage() {
           >
             <ChevronLeft size={22} />
           </Link>
-          <div style={{ fontSize: '1.02rem', fontWeight: 700, lineHeight: 1.35 }}>
-            {tournament?.name || '赛事对局'}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              fontSize: '1.02rem',
+              fontWeight: 700,
+              lineHeight: 1.35,
+            }}
+          >
+            {tournament?.logoUrl ? (
+              <img
+                className="league-logo"
+                src={tournament.logoUrl}
+                alt=""
+              />
+            ) : null}
+            <span>{tournament?.name || '赛事对局'}</span>
           </div>
         </div>
       </div>

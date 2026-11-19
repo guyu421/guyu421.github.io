@@ -29,6 +29,7 @@ export interface TournamentItem {
   tiebreakers: TiebreakerKey[];
   qualifyCount: number | null;
   qualifyLabel: string;
+  logoUrl?: string;
   standingsZones: StandingsZone[];
   totalRounds: number;
   rulesText: string;

@@ -69,7 +69,15 @@ export function MatchesPage() {
             >
               <div className="fixture-players">
                 <div className="fixture-player-line" style={{ whiteSpace: 'normal' }}>
-                  {item.name}
+                  {item.logoUrl ? (
+                    <img
+                      className="league-logo"
+                      src={item.logoUrl}
+                      alt=""
+                      loading="lazy"
+                    />
+                  ) : null}
+                  <span>{item.name}</span>
                 </div>
               </div>
 

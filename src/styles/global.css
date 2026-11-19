@@ -587,6 +587,16 @@ button {
   flex-shrink: 0;
 }
 
+.league-logo {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 4px;
+  background: #ffffff;
+  padding: 2px;
+}
+
 .standings-board tr.zone-row td {
   background-color: var(--zone-bg);
 }
