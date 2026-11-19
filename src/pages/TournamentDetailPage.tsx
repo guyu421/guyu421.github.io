@@ -298,6 +298,7 @@ export function TournamentDetailPage() {
       thirdPlace,
       fourthPlace,
       finalsRows,
+      playerNoByName,
     };
   }, [hasBracket, bracketMatches, matches]);
 
@@ -769,8 +770,8 @@ export function TournamentDetailPage() {
                   决赛
                 </div>
               </div>
-              <div className="table-scroll">
-                <table className="standings-table">
+              <div style={{ overflowX: 'auto' }}>
+                <table className="standings-board">
                   <thead>
                     <tr>
                       <th>名次</th>
@@ -955,6 +956,12 @@ export function TournamentDetailPage() {
                           finalsInfo.semi1.winnerSlot === 1 ? 'winner' : 'loser'
                         }`}
                       >
+                        {finalsInfo.playerNoByName.get(finalsInfo.semi1.player1Name) !==
+                        undefined ? (
+                          <span className="player-no tabular-nums">
+                            {finalsInfo.playerNoByName.get(finalsInfo.semi1.player1Name)}
+                          </span>
+                        ) : null}
                         <span>{finalsInfo.semi1.player1Name}</span>
                       </span>
                       <span className="v-score tabular-nums">
@@ -965,6 +972,12 @@ export function TournamentDetailPage() {
                           finalsInfo.semi1.winnerSlot === 2 ? 'winner' : 'loser'
                         }`}
                       >
+                        {finalsInfo.playerNoByName.get(finalsInfo.semi1.player2Name) !==
+                        undefined ? (
+                          <span className="player-no tabular-nums">
+                            {finalsInfo.playerNoByName.get(finalsInfo.semi1.player2Name)}
+                          </span>
+                        ) : null}
                         <span>{finalsInfo.semi1.player2Name}</span>
                       </span>
                     </div>
@@ -1020,6 +1033,12 @@ export function TournamentDetailPage() {
                         finalsInfo.finalMatch.winnerSlot === 1 ? 'winner' : 'loser'
                       }`}
                     >
+                      {finalsInfo.playerNoByName.get(finalsInfo.finalMatch.player1Name) !==
+                      undefined ? (
+                        <span className="player-no tabular-nums">
+                          {finalsInfo.playerNoByName.get(finalsInfo.finalMatch.player1Name)}
+                        </span>
+                      ) : null}
                       <span>{finalsInfo.finalMatch.player1Name}</span>
                     </span>
                     <span className="v-score tabular-nums">
@@ -1031,6 +1050,12 @@ export function TournamentDetailPage() {
                         finalsInfo.finalMatch.winnerSlot === 2 ? 'winner' : 'loser'
                       }`}
                     >
+                      {finalsInfo.playerNoByName.get(finalsInfo.finalMatch.player2Name) !==
+                      undefined ? (
+                        <span className="player-no tabular-nums">
+                          {finalsInfo.playerNoByName.get(finalsInfo.finalMatch.player2Name)}
+                        </span>
+                      ) : null}
                       <span>{finalsInfo.finalMatch.player2Name}</span>
                     </span>
                   </div>
@@ -1086,6 +1111,12 @@ export function TournamentDetailPage() {
                           finalsInfo.semi2.winnerSlot === 1 ? 'winner' : 'loser'
                         }`}
                       >
+                        {finalsInfo.playerNoByName.get(finalsInfo.semi2.player1Name) !==
+                        undefined ? (
+                          <span className="player-no tabular-nums">
+                            {finalsInfo.playerNoByName.get(finalsInfo.semi2.player1Name)}
+                          </span>
+                        ) : null}
                         <span>{finalsInfo.semi2.player1Name}</span>
                       </span>
                       <span className="v-score tabular-nums">
@@ -1096,6 +1127,12 @@ export function TournamentDetailPage() {
                           finalsInfo.semi2.winnerSlot === 2 ? 'winner' : 'loser'
                         }`}
                       >
+                        {finalsInfo.playerNoByName.get(finalsInfo.semi2.player2Name) !==
+                        undefined ? (
+                          <span className="player-no tabular-nums">
+                            {finalsInfo.playerNoByName.get(finalsInfo.semi2.player2Name)}
+                          </span>
+                        ) : null}
                         <span>{finalsInfo.semi2.player2Name}</span>
                       </span>
                     </div>
@@ -1114,6 +1151,12 @@ export function TournamentDetailPage() {
                         finalsInfo.thirdMatch.winnerSlot === 1 ? 'winner' : 'loser'
                       }`}
                     >
+                      {finalsInfo.playerNoByName.get(finalsInfo.thirdMatch.player1Name) !==
+                      undefined ? (
+                        <span className="player-no tabular-nums">
+                          {finalsInfo.playerNoByName.get(finalsInfo.thirdMatch.player1Name)}
+                        </span>
+                      ) : null}
                       <span>{finalsInfo.thirdMatch.player1Name}</span>
                     </span>
                     <span className="v-score tabular-nums">
@@ -1125,6 +1168,12 @@ export function TournamentDetailPage() {
                         finalsInfo.thirdMatch.winnerSlot === 2 ? 'winner' : 'loser'
                       }`}
                     >
+                      {finalsInfo.playerNoByName.get(finalsInfo.thirdMatch.player2Name) !==
+                      undefined ? (
+                        <span className="player-no tabular-nums">
+                          {finalsInfo.playerNoByName.get(finalsInfo.thirdMatch.player2Name)}
+                        </span>
+                      ) : null}
                       <span>{finalsInfo.thirdMatch.player2Name}</span>
                     </span>
                   </div>
