@@ -3,7 +3,13 @@ import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { EmptyState } from '@/components/common/EmptyState';
 import { matchService } from '@/services/matchService';
-import type { RenjuMatch, TiebreakerKey, TournamentItem } from '@/types/match';
+import type {
+  FootballMatch,
+  FootballStanding,
+  RenjuMatch,
+  TiebreakerKey,
+  TournamentItem,
+} from '@/types/match';
 import { computeStandings, type StandingEntry } from '@/utils/standings';
 
 const TIEBREAKER_HEADER: Record<TiebreakerKey, string> = {
@@ -77,6 +83,8 @@ export function TournamentDetailPage() {
 
   const [tournament, setTournament] = useState<TournamentItem | null>(null);
   const [matches, setMatches] = useState<RenjuMatch[]>([]);
+  const [footballMatches, setFootballMatches] = useState<FootballMatch[]>([]);
+  const [footballStandings, setFootballStandings] = useState<FootballStanding[]>([]);
   const [activeTab, setActiveTab] = useState<'matches' | 'standings'>('matches');
   const [selectedRound, setSelectedRound] = useState<number>(1);
   const [standingsRound, setStandingsRound] = useState<number>(1);
@@ -93,17 +101,32 @@ export function TournamentDetailPage() {
     setLoading(true);
     setError(null);
 
-    Promise.all([
-      matchService.getTournamentById(numericId),
-      matchService.getMatchesByTournament(numericId),
-    ])
-      .then(([tData, mData]) => {
+    matchService
+      .getTournamentById(numericId)
+      .then(async (tData) => {
         if (!active) return;
         setTournament(tData);
-        setMatches(mData);
-        if (mData.length > 0) {
-          setSelectedRound(mData[0].roundNo);
-          setStandingsRound(mData[mData.length - 1].roundNo);
+        if (!tData) return;
+
+        if (tData.sport === 'football') {
+          const [fMatches, fStandings] = await Promise.all([
+            matchService.getFootballMatches(numericId),
+            matchService.getFootballStandings(numericId),
+          ]);
+          if (!active) return;
+          setFootballMatches(fMatches);
+          setFootballStandings(fStandings);
+          if (fMatches.length > 0) {
+            setSelectedRound(fMatches[fMatches.length - 1].roundNo);
+          }
+        } else {
+          const mData = await matchService.getMatchesByTournament(numericId);
+          if (!active) return;
+          setMatches(mData);
+          if (mData.length > 0) {
+            setSelectedRound(mData[0].roundNo);
+            setStandingsRound(mData[mData.length - 1].roundNo);
+          }
         }
       })
       .catch((err: unknown) => {
@@ -120,15 +143,25 @@ export function TournamentDetailPage() {
     };
   }, [numericId]);
 
+  const isFootball = tournament?.sport === 'football';
+
   const rounds = useMemo(() => {
-    const set = new Set(matches.map((m) => m.roundNo));
+    const source = isFootball ? footballMatches : matches;
+    const set = new Set(source.map((m) => m.roundNo));
     return Array.from(set).sort((a, b) => a - b);
-  }, [matches]);
+  }, [isFootball, footballMatches, matches]);
 
   const roundIndex = rounds.indexOf(selectedRound);
+  const standingsRoundIndex = rounds.indexOf(standingsRound);
+
   const roundMatches = useMemo(
     () => matches.filter((m) => m.roundNo === selectedRound),
     [matches, selectedRound],
+  );
+
+  const roundFootballMatches = useMemo(
+    () => footballMatches.filter((m) => m.roundNo === selectedRound),
+    [footballMatches, selectedRound],
   );
 
   const prevScores = useMemo(() => {
@@ -147,7 +180,6 @@ export function TournamentDetailPage() {
     return map;
   }, [matches, selectedRound]);
 
-  const standingsRoundIndex = rounds.indexOf(standingsRound);
   const tiebreakers: TiebreakerKey[] = tournament?.tiebreakers ?? [
     'buchholz',
     'median_buchholz',
@@ -215,6 +247,153 @@ export function TournamentDetailPage() {
         <div style={{ padding: 16 }}>
           <EmptyState title="对局加载失败" description={error} />
         </div>
+      ) : isFootball ? (
+        activeTab === 'standings' ? (
+          <>
+            <div style={{ overflowX: 'auto' }}>
+              <table className="standings-board">
+                <thead>
+                  <tr>
+                    <th>名次</th>
+                    <th>球队</th>
+                    <th>赛</th>
+                    <th>胜/平/负</th>
+                    <th>进/失</th>
+                    <th>积分</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {footballStandings.map((row, idx) => {
+                    const isTopTwo = idx < 2;
+                    const showRelegationLine =
+                      idx === 13 && footballStandings.length >= 16;
+
+                    return (
+                      <Fragment key={row.teamName}>
+                        <tr className={isTopTwo ? 'qualified' : undefined}>
+                          <td className="tabular-nums" style={{ fontWeight: 600 }}>
+                            {row.rank}
+                          </td>
+                          <td style={{ fontWeight: 600 }}>{row.teamName}</td>
+                          <td className="tabular-nums">{row.played}</td>
+                          <td
+                            className="tabular-nums"
+                            style={{ color: 'var(--color-text-secondary)' }}
+                          >
+                            {row.wins}/{row.draws}/{row.losses}
+                          </td>
+                          <td className="tabular-nums">
+                            {row.goalsFor}/{row.goalsAgainst}
+                          </td>
+                          <td className="tabular-nums" style={{ fontWeight: 800 }}>
+                            {row.points}
+                          </td>
+                        </tr>
+                        {showRelegationLine ? (
+                          <tr className="cutoff-row">
+                            <td colSpan={6}>
+                              <div className="cutoff-divider">
+                                <span className="cutoff-pill">
+                                  {tournament?.qualifyLabel || '降级'}
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        ) : null}
+                      </Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {tournament?.rulesText ? (
+              <section className="rules-section">
+                <h2 className="rules-section-title">赛制说明</h2>
+                <p className="rules-section-body">{tournament.rulesText}</p>
+              </section>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <div
+              className="round-bar"
+              style={{
+                borderBottom: '1px solid var(--color-surface-muted)',
+                paddingBottom: 10,
+              }}
+            >
+              <button
+                type="button"
+                className="round-btn left"
+                disabled={roundIndex <= 0}
+                onClick={() => setSelectedRound(rounds[roundIndex - 1])}
+              >
+                <ChevronLeft size={15} />
+                上一轮
+              </button>
+
+              <span>第{selectedRound}轮</span>
+
+              <button
+                type="button"
+                className="round-btn right"
+                disabled={roundIndex === -1 || roundIndex >= rounds.length - 1}
+                onClick={() => setSelectedRound(rounds[roundIndex + 1])}
+              >
+                下一轮
+                <ChevronRight size={15} />
+              </button>
+            </div>
+
+            <div className="fixture-list">
+              {roundFootballMatches.map((m) => {
+                const dt = formatScheduleLines(m.matchTime);
+                const hasScore =
+                  m.homeScore !== null && m.awayScore !== null;
+                const homeWin = hasScore && m.homeScore! > m.awayScore!;
+                const awayWin = hasScore && m.awayScore! > m.homeScore!;
+
+                return (
+                  <div key={m.id} className="fixture-row">
+                    <div className="fixture-meta tabular-nums">
+                      <span>{dt.date}</span>
+                      <span>{dt.time}</span>
+                    </div>
+
+                    <div className="fixture-players">
+                      <div className="fixture-player-line">
+                        <span>{m.homeTeam}</span>
+                      </div>
+                      <div className="fixture-player-line">
+                        <span>{m.awayTeam}</span>
+                      </div>
+                    </div>
+
+                    <div className="fixture-scores tabular-nums">
+                      <div
+                        className={`fixture-score-line ${
+                          !hasScore ? 'muted' : awayWin ? 'loser' : ''
+                        }`}
+                      >
+                        <span>{hasScore ? m.homeScore : '-'}</span>
+                        {homeWin ? <span className="result-dot win">W</span> : <span aria-hidden="true" />}
+                      </div>
+                      <div
+                        className={`fixture-score-line ${
+                          !hasScore ? 'muted' : homeWin ? 'loser' : ''
+                        }`}
+                      >
+                        <span>{hasScore ? m.awayScore : '-'}</span>
+                        {awayWin ? <span className="result-dot win">W</span> : <span aria-hidden="true" />}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )
       ) : matches.length === 0 ? (
         <div style={{ padding: 16 }}>
           <EmptyState
@@ -322,8 +501,8 @@ export function TournamentDetailPage() {
                           <td colSpan={5 + tiebreakers.length}>
                             <div className="cutoff-divider">
                               <span className="cutoff-pill">
-                              {tournament?.qualifyLabel || '录取'}
-                            </span>
+                                {tournament?.qualifyLabel || '录取'}
+                              </span>
                             </div>
                           </td>
                         </tr>

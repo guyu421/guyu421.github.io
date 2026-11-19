@@ -1,14 +1,18 @@
 import { requireSupabase } from '@/lib/supabase';
 import type {
+  FootballMatch,
+  FootballStanding,
   PlayerInfo,
   RenjuMatch,
   TiebreakerKey,
   TournamentItem,
+  TournamentSport,
 } from '@/types/match';
 
 interface TournamentRow {
   id: number;
   name: string;
+  sport: TournamentSport | null;
   win_points: number;
   draw_points: number;
   loss_points: number;
@@ -32,6 +36,29 @@ interface RenjuMatchRow {
   white: PlayerInfo | PlayerInfo[] | null;
 }
 
+interface FootballMatchRow {
+  id: number;
+  tournament_id: number;
+  round_no: number;
+  match_time: string;
+  home_team: string;
+  away_team: string;
+  home_score: number | null;
+  away_score: number | null;
+}
+
+interface FootballStandingRow {
+  rank: number;
+  team_name: string;
+  played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  goals_for: number;
+  goals_against: number;
+  points: number;
+}
+
 function unwrapPlayer(p: PlayerInfo | PlayerInfo[] | null, fallbackId: string): string {
   if (!p) return fallbackId;
   if (Array.isArray(p)) return p[0]?.name ?? fallbackId;
@@ -42,6 +69,7 @@ function mapTournament(row: TournamentRow): TournamentItem {
   return {
     id: row.id,
     name: row.name,
+    sport: row.sport ?? 'renju',
     winPoints: Number(row.win_points ?? 1),
     drawPoints: Number(row.draw_points ?? 0.5),
     lossPoints: Number(row.loss_points ?? 0),
@@ -78,7 +106,7 @@ export const matchService = {
     const { data, error } = await supabase
       .from('tournaments')
       .select(
-        'id, name, win_points, draw_points, loss_points, tiebreakers, qualify_count, qualify_label, total_rounds, rules_text',
+        'id, name, sport, win_points, draw_points, loss_points, tiebreakers, qualify_count, qualify_label, total_rounds, rules_text',
       )
       .order('id', { ascending: false });
 
@@ -94,7 +122,7 @@ export const matchService = {
     const { data, error } = await supabase
       .from('tournaments')
       .select(
-        'id, name, win_points, draw_points, loss_points, tiebreakers, qualify_count, qualify_label, total_rounds, rules_text',
+        'id, name, sport, win_points, draw_points, loss_points, tiebreakers, qualify_count, qualify_label, total_rounds, rules_text',
       )
       .eq('id', tournamentId)
       .maybeSingle();
@@ -137,5 +165,55 @@ export const matchService = {
     return (matchesRes.data as unknown as RenjuMatchRow[]).map((row) =>
       mapMatch(row, noMap),
     );
+  },
+
+  async getFootballMatches(tournamentId: number): Promise<FootballMatch[]> {
+    const supabase = requireSupabase();
+    const { data, error } = await supabase
+      .from('football_matches')
+      .select('*')
+      .eq('tournament_id', tournamentId)
+      .order('round_no', { ascending: true })
+      .order('id', { ascending: true });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data as FootballMatchRow[]).map((r) => ({
+      id: r.id,
+      tournamentId: r.tournament_id,
+      roundNo: r.round_no,
+      matchTime: r.match_time,
+      homeTeam: r.home_team,
+      awayTeam: r.away_team,
+      homeScore: r.home_score,
+      awayScore: r.away_score,
+    }));
+  },
+
+  async getFootballStandings(tournamentId: number): Promise<FootballStanding[]> {
+    const supabase = requireSupabase();
+    const { data, error } = await supabase
+      .from('football_standings')
+      .select('*')
+      .eq('tournament_id', tournamentId)
+      .order('rank', { ascending: true });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data as FootballStandingRow[]).map((r) => ({
+      rank: r.rank,
+      teamName: r.team_name,
+      played: r.played,
+      wins: r.wins,
+      draws: r.draws,
+      losses: r.losses,
+      goalsFor: r.goals_for,
+      goalsAgainst: r.goals_against,
+      points: r.points,
+    }));
   },
 };
