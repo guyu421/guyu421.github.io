@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { type CSSProperties, Fragment, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { EmptyState } from '@/components/common/EmptyState';
+import { overlayEspnLiveScores } from '@/services/espnLiveService';
 import { matchService } from '@/services/matchService';
 import { useAppStore } from '@/store/AppContext';
 import type {
@@ -172,6 +173,16 @@ export function TournamentDetailPage() {
           setFootballMatches(fMatches);
           setFootballDeductions(fDeductions);
           setFootballTeamLogos(fLogos);
+
+          void overlayEspnLiveScores(numericId, tData.name, fMatches)
+            .then((merged) => {
+              if (active && merged !== fMatches) {
+                setFootballMatches(merged);
+              }
+            })
+            .catch(() => {
+              // 实时比分拉取失败时保留数据库已同步赛果
+            });
         } else {
           const [mData, bData] = await Promise.all([
             matchService.getMatchesByTournament(numericId),
