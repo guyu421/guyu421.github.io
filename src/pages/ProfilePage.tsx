@@ -243,8 +243,8 @@ export function ProfilePage() {
             {checkingIn
               ? '签到中...'
               : todayCheckedIn
-                ? '今日已签到 (+10)'
-                : '每日签到 (+10 源点)'}
+                ? '今日已签到'
+                : '每日签到'}
           </button>
         </div>
 
