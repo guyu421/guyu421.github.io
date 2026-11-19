@@ -11,6 +11,7 @@ import { CATEGORY_MAP } from '@/constants/categories';
 import { newsService } from '@/services/newsService';
 import type { NewsArticle } from '@/types/news';
 import { formatRelativeTime } from '@/utils/formatDate';
+import { renderTextWithMath } from '@/utils/math';
 
 export function ArticleDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -151,7 +152,7 @@ export function ArticleDetailPage() {
           if (typeof block === 'string') {
             return (
               <p key={idx} className="article-paragraph">
-                {block}
+                {renderTextWithMath(block)}
               </p>
             );
           }
@@ -166,7 +167,7 @@ export function ArticleDetailPage() {
                   lineHeight: 1.4,
                 }}
               >
-                {block.text}
+                {renderTextWithMath(block.text)}
               </h2>
             );
           }
@@ -184,7 +185,7 @@ export function ArticleDetailPage() {
                   lineHeight: 1.7,
                 }}
               >
-                {block.text}
+                {renderTextWithMath(block.text)}
               </blockquote>
             );
           }
@@ -208,7 +209,7 @@ export function ArticleDetailPage() {
                     {block.rows[0] ? (
                       <tr>
                         {block.rows[0].map((cell, cIdx) => (
-                          <th key={cIdx}>{cell}</th>
+                          <th key={cIdx}>{renderTextWithMath(cell)}</th>
                         ))}
                       </tr>
                     ) : null}
@@ -217,7 +218,7 @@ export function ArticleDetailPage() {
                     {block.rows.slice(1).map((row, rIdx) => (
                       <tr key={rIdx}>
                         {row.map((cell, cIdx) => (
-                          <td key={cIdx}>{cell}</td>
+                          <td key={cIdx}>{renderTextWithMath(cell)}</td>
                         ))}
                       </tr>
                     ))}
@@ -258,7 +259,7 @@ export function ArticleDetailPage() {
           }
           return (
             <p key={idx} className="article-paragraph">
-              {block.text}
+              {renderTextWithMath(block.text)}
             </p>
           );
         })}

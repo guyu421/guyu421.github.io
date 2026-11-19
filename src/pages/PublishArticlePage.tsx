@@ -21,6 +21,22 @@ import { Badge } from '@/components/common/Badge';
 import { newsService } from '@/services/newsService';
 import { useAuth } from '@/store/AuthContext';
 import type { ArticleContentBlock } from '@/types/news';
+import { renderTextWithMath } from '@/utils/math';
+
+function extractInlineText(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) {
+    return node.textContent ?? '';
+  }
+  if (node.nodeType !== Node.ELEMENT_NODE) return '';
+  const el = node as HTMLElement;
+  if (el.dataset.tex) {
+    return `$${el.dataset.tex}$`;
+  }
+  if (el.tagName.toLowerCase() === 'br') {
+    return '';
+  }
+  return Array.from(el.childNodes).map(extractInlineText).join('');
+}
 
 function serializeEditorDom(root: HTMLElement): ArticleContentBlock[] {
   const blocks: ArticleContentBlock[] = [];
@@ -37,7 +53,7 @@ function serializeEditorDom(root: HTMLElement): ArticleContentBlock[] {
     const tag = el.tagName.toLowerCase();
 
     if (el.dataset.tex) {
-      blocks.push({ type: 'formula', tex: el.dataset.tex });
+      blocks.push(`$${el.dataset.tex}$`);
       return;
     }
 
@@ -45,7 +61,7 @@ function serializeEditorDom(root: HTMLElement): ArticleContentBlock[] {
       const rows = Array.from(el.querySelectorAll('tr'))
         .map((tr) =>
           Array.from(tr.querySelectorAll('th, td')).map(
-            (cell) => cell.textContent?.trim() ?? '',
+            (cell) => extractInlineText(cell).trim(),
           ),
         )
         .filter((row) => row.length > 0);
@@ -73,13 +89,13 @@ function serializeEditorDom(root: HTMLElement): ArticleContentBlock[] {
     }
 
     if (tag === 'h1' || tag === 'h2' || tag === 'h3') {
-      const txt = el.textContent?.trim();
+      const txt = extractInlineText(el).trim();
       if (txt) blocks.push({ type: 'heading', text: txt });
       return;
     }
 
     if (tag === 'blockquote') {
-      const txt = el.textContent?.trim();
+      const txt = extractInlineText(el).trim();
       if (txt) blocks.push({ type: 'quote', text: txt });
       return;
     }
@@ -90,7 +106,7 @@ function serializeEditorDom(root: HTMLElement): ArticleContentBlock[] {
         Array.from(el.childNodes).forEach(walk);
         return;
       }
-      const txt = el.textContent?.trim();
+      const txt = extractInlineText(el).trim();
       if (txt) blocks.push(txt);
       return;
     }
@@ -127,6 +143,7 @@ export function PublishArticlePage() {
 
   const editorRef = useRef<HTMLDivElement | null>(null);
   const savedHtmlRef = useRef<string>('');
+  const savedRangeRef = useRef<Range | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
   const inlineImgInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -215,15 +232,34 @@ export function PublishArticlePage() {
     syncEditorStats();
   }
 
+  function saveSelection() {
+    const sel = window.getSelection();
+    if (
+      sel &&
+      sel.rangeCount > 0 &&
+      editorRef.current?.contains(sel.anchorNode)
+    ) {
+      savedRangeRef.current = sel.getRangeAt(0).cloneRange();
+    }
+  }
+
+  function restoreSelection() {
+    editorRef.current?.focus();
+    const sel = window.getSelection();
+    if (sel && savedRangeRef.current) {
+      sel.removeAllRanges();
+      sel.addRange(savedRangeRef.current);
+    }
+  }
+
   function insertTableHtml() {
     const r = Math.min(12, Math.max(1, tableRows));
     const c = Math.min(8, Math.max(1, tableCols));
-    const headerCells = Array.from({ length: c }, (_, i) => `<th>列${i + 1}</th>`).join('');
-    const bodyRow = `<tr>${Array.from({ length: c }, () => '<td>内容</td>').join('')}</tr>`;
-    const bodyRows = Array.from({ length: Math.max(0, r - 1) }, () => bodyRow).join('');
-    const html = `<table><thead><tr>${headerCells}</tr></thead><tbody>${bodyRows}</tbody></table><p><br /></p>`;
+    const rowHtml = `<tr>${Array.from({ length: c }, () => '<td>内容</td>').join('')}</tr>`;
+    const allRows = Array.from({ length: r }, () => rowHtml).join('');
+    const html = `<table><tbody>${allRows}</tbody></table><p><br /></p>`;
 
-    editorRef.current?.focus();
+    restoreSelection();
     document.execCommand('insertHTML', false, html);
     syncEditorStats();
     setActivePopover(null);
@@ -233,13 +269,13 @@ export function PublishArticlePage() {
     const tex = formulaTex.trim();
     if (!tex) return;
     const rendered = katex.renderToString(tex, {
-      displayMode: true,
+      displayMode: false,
       throwOnError: false,
     });
     const escapedTex = tex.replace(/"/g, '&quot;');
-    const html = `<div class="wx-formula-block" data-tex="${escapedTex}" contenteditable="false">${rendered}</div><p><br /></p>`;
+    const html = `<span class="wx-inline-formula" data-tex="${escapedTex}" contenteditable="false">${rendered}</span>&nbsp;`;
 
-    editorRef.current?.focus();
+    restoreSelection();
     document.execCommand('insertHTML', false, html);
     syncEditorStats();
     setFormulaTex('');
@@ -484,9 +520,10 @@ export function PublishArticlePage() {
             <button
               type="button"
               className="wx-toolbar-btn"
-              onClick={() =>
-                setActivePopover((prev) => (prev === 'table' ? null : 'table'))
-              }
+              onClick={() => {
+                saveSelection();
+                setActivePopover((prev) => (prev === 'table' ? null : 'table'));
+              }}
             >
               <Table2 size={14} />
               表格
@@ -494,9 +531,10 @@ export function PublishArticlePage() {
             <button
               type="button"
               className="wx-toolbar-btn"
-              onClick={() =>
-                setActivePopover((prev) => (prev === 'formula' ? null : 'formula'))
-              }
+              onClick={() => {
+                saveSelection();
+                setActivePopover((prev) => (prev === 'formula' ? null : 'formula'));
+              }}
             >
               <Sigma size={14} />
               公式
@@ -664,7 +702,7 @@ export function PublishArticlePage() {
                 if (typeof block === 'string') {
                   return (
                     <p key={idx} className="article-paragraph">
-                      {block}
+                      {renderTextWithMath(block)}
                     </p>
                   );
                 }
@@ -674,7 +712,7 @@ export function PublishArticlePage() {
                       key={idx}
                       style={{ margin: '24px 0 12px', fontSize: '1.24rem', fontWeight: 700 }}
                     >
-                      {block.text}
+                      {renderTextWithMath(block.text)}
                     </h2>
                   );
                 }
@@ -691,7 +729,7 @@ export function PublishArticlePage() {
                         color: 'var(--color-text-secondary)',
                       }}
                     >
-                      {block.text}
+                      {renderTextWithMath(block.text)}
                     </blockquote>
                   );
                 }
@@ -715,7 +753,7 @@ export function PublishArticlePage() {
                           {block.rows[0] ? (
                             <tr>
                               {block.rows[0].map((cell, cIdx) => (
-                                <th key={cIdx}>{cell}</th>
+                                <th key={cIdx}>{renderTextWithMath(cell)}</th>
                               ))}
                             </tr>
                           ) : null}
@@ -724,7 +762,7 @@ export function PublishArticlePage() {
                           {block.rows.slice(1).map((row, rIdx) => (
                             <tr key={rIdx}>
                               {row.map((cell, cIdx) => (
-                                <td key={cIdx}>{cell}</td>
+                                <td key={cIdx}>{renderTextWithMath(cell)}</td>
                               ))}
                             </tr>
                           ))}
