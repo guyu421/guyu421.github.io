@@ -751,31 +751,39 @@ export function TournamentDetailPage() {
               <div className="v-stage-label" style={{ textAlign: 'left', marginBottom: 10 }}>
                 决赛
               </div>
-              <div className="finals-rank-list">
-                <div className="finals-rank-row">
-                  <span className="finals-rank-pos" style={{ color: '#e11d48' }}>
-                    1 冠军
-                  </span>
-                  <span className="finals-rank-name">{finalsInfo.champion}</span>
-                </div>
-                {finalsInfo.runnerUp ? (
-                  <div className="finals-rank-row">
-                    <span className="finals-rank-pos">2 亚军</span>
-                    <span className="finals-rank-name">{finalsInfo.runnerUp}</span>
-                  </div>
-                ) : null}
-                {finalsInfo.thirdPlace ? (
-                  <div className="finals-rank-row">
-                    <span className="finals-rank-pos">3 季军</span>
-                    <span className="finals-rank-name">{finalsInfo.thirdPlace}</span>
-                  </div>
-                ) : null}
-                {finalsInfo.fourthPlace ? (
-                  <div className="finals-rank-row">
-                    <span className="finals-rank-pos">4 第四名</span>
-                    <span className="finals-rank-name">{finalsInfo.fourthPlace}</span>
-                  </div>
-                ) : null}
+              <div className="table-scroll">
+                <table className="standings-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 64 }}>名次</th>
+                      <th>棋手</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="zone-row" style={{ '--zone-bg': '#fff1f2' } as CSSProperties}>
+                      <td className="tabular-nums" style={{ fontWeight: 600 }}>1</td>
+                      <td style={{ fontWeight: 600 }}>{finalsInfo.champion}</td>
+                    </tr>
+                    {finalsInfo.runnerUp ? (
+                      <tr>
+                        <td className="tabular-nums" style={{ fontWeight: 600 }}>2</td>
+                        <td style={{ fontWeight: 600 }}>{finalsInfo.runnerUp}</td>
+                      </tr>
+                    ) : null}
+                    {finalsInfo.thirdPlace ? (
+                      <tr>
+                        <td className="tabular-nums" style={{ fontWeight: 600 }}>3</td>
+                        <td style={{ fontWeight: 600 }}>{finalsInfo.thirdPlace}</td>
+                      </tr>
+                    ) : null}
+                    {finalsInfo.fourthPlace ? (
+                      <tr>
+                        <td className="tabular-nums" style={{ fontWeight: 600 }}>4</td>
+                        <td style={{ fontWeight: 600 }}>{finalsInfo.fourthPlace}</td>
+                      </tr>
+                    ) : null}
+                  </tbody>
+                </table>
               </div>
               <div className="v-stage-label" style={{ textAlign: 'left', margin: '14px 0 0' }}>
                 预赛

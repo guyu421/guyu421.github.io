@@ -1223,7 +1223,9 @@ a.fixture-row:hover {
 }
 
 .v-final-row {
-  padding: 8px 0;
+  max-width: 280px;
+  margin: 0 auto;
+  padding: 6px 0;
 }
 
 .v-final-row .v-player {
