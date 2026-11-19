@@ -287,56 +287,9 @@ export function TournamentDetailPage() {
 
   const roundIndex = rounds.indexOf(currentRound);
 
-  const effectiveMatches = useMemo(() => {
-    if (matches.length === 0) return matches;
-    const playerMap = new Map<string, { id: string; name: string; playerNo?: number }>();
-    const byRound = new Map<number, RenjuMatch[]>();
-    for (const m of matches) {
-      if (m.blackId !== 'BYE' && !playerMap.has(m.blackId)) {
-        playerMap.set(m.blackId, { id: m.blackId, name: m.blackName, playerNo: m.blackNo });
-      }
-      if (m.whiteId !== 'BYE' && !playerMap.has(m.whiteId)) {
-        playerMap.set(m.whiteId, { id: m.whiteId, name: m.whiteName, playerNo: m.whiteNo });
-      }
-      const list = byRound.get(m.roundNo);
-      if (list) list.push(m);
-      else byRound.set(m.roundNo, [m]);
-    }
-    if (playerMap.size % 2 === 0) return matches;
-    const expectedPaired = (playerMap.size - 1) / 2;
-    const result = [...matches];
-    for (const [rNo, rm] of byRound.entries()) {
-      if (rm.length !== expectedPaired) continue;
-      if (rm.some((m) => m.whiteId === 'BYE' || m.blackId === 'BYE')) continue;
-      const seen = new Set<string>();
-      for (const m of rm) {
-        seen.add(m.blackId);
-        seen.add(m.whiteId);
-      }
-      const missing = [...playerMap.values()].filter((p) => !seen.has(p.id));
-      if (missing.length === 1) {
-        const p = missing[0];
-        result.push({
-          id: -rNo,
-          tournamentId: rm[0]?.tournamentId ?? numericId,
-          roundNo: rNo,
-          boardNo: rm.length + 1,
-          blackId: p.id,
-          blackNo: p.playerNo,
-          blackName: p.name,
-          whiteId: 'BYE',
-          whiteName: '轮空',
-          matchTime: rm[0]?.matchTime ?? '',
-          result: '+',
-        });
-      }
-    }
-    return result;
-  }, [matches]);
-
   const roundMatches = useMemo(
     () =>
-      effectiveMatches.filter((m) => {
+      matches.filter((m) => {
         if (m.roundNo !== currentRound) return false;
         if (!normalizedQuery) return true;
         return (
@@ -344,7 +297,7 @@ export function TournamentDetailPage() {
           m.whiteName.toLowerCase().includes(normalizedQuery)
         );
       }),
-    [effectiveMatches, currentRound, normalizedQuery],
+    [matches, currentRound, normalizedQuery],
   );
 
   const roundFootballMatches = useMemo(
@@ -362,7 +315,7 @@ export function TournamentDetailPage() {
 
   const prevScores = useMemo(() => {
     const map = new Map<string, number>();
-    for (const m of effectiveMatches) {
+    for (const m of matches) {
       if (m.roundNo >= currentRound || !m.result) continue;
       if (m.result === 'B' || m.result === '+' || m.result === 'WF' || m.result === '1:0') {
         map.set(m.blackId, (map.get(m.blackId) ?? 0) + 1);
@@ -415,10 +368,10 @@ export function TournamentDetailPage() {
   ];
 
   const standings = useMemo(() => {
-    const all = computeStandings(effectiveMatches, tournament, currentRound);
+    const all = computeStandings(matches, tournament, currentRound);
     if (!normalizedQuery) return all;
     return all.filter((r) => r.playerName.toLowerCase().includes(normalizedQuery));
-  }, [effectiveMatches, tournament, currentRound, normalizedQuery]);
+  }, [matches, tournament, currentRound, normalizedQuery]);
 
   const footballStandings = useMemo(() => {
     const all = computeFootballStandings(
