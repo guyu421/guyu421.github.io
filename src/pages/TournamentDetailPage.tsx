@@ -211,16 +211,20 @@ export function TournamentDetailPage() {
                   <div className="fixture-players">
                     <div className="fixture-player-line">
                       <span>{match.blackName}</span>
-                      <span className="fixture-player-id tabular-nums">
-                        {prevScores.get(match.blackId) ?? 0}
-                      </span>
+                      {match.blackId !== 'BYE' ? (
+                        <span className="fixture-player-id tabular-nums">
+                          {prevScores.get(match.blackId) ?? 0}
+                        </span>
+                      ) : null}
                     </div>
 
                     <div className="fixture-player-line">
                       <span>{match.whiteName}</span>
-                      <span className="fixture-player-id tabular-nums">
-                        {prevScores.get(match.whiteId) ?? 0}
-                      </span>
+                      {match.whiteId !== 'BYE' ? (
+                        <span className="fixture-player-id tabular-nums">
+                          {prevScores.get(match.whiteId) ?? 0}
+                        </span>
+                      ) : null}
                     </div>
                   </div>
 
