@@ -21,12 +21,16 @@ import {
 const TIEBREAKER_HEADER: Partial<Record<TiebreakerKey, string>> = {
   buchholz: '对手分',
   median_buchholz: '中间对手分',
+  progressive_buchholz: '递减最低对手分',
   wins: '胜局数',
+  direct_encounter: '直胜',
 };
 
-function getTiebreakerValue(row: StandingEntry, key: TiebreakerKey): number {
+function getTiebreakerValue(row: StandingEntry, key: TiebreakerKey): string | number {
   if (key === 'buchholz') return row.buchholz;
   if (key === 'median_buchholz') return row.medianBuchholz;
+  if (key === 'progressive_buchholz') return row.progressiveBuchholz ?? '';
+  if (key === 'direct_encounter') return row.directEncounter ?? '';
   return row.tiebreakWins;
 }
 

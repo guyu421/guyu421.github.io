@@ -18,6 +18,8 @@ export interface StandingEntry {
   points: number;
   buchholz: number;
   medianBuchholz: number;
+  progressiveBuchholz?: string;
+  directEncounter?: string;
   rank: number;
 }
 
@@ -181,6 +183,8 @@ export function computeStandings(
   }
 
   const entries: Omit<StandingEntry, 'rank'>[] = [];
+  const sortedOppsMap = new Map<string, number[]>();
+
   for (const acc of map.values()) {
     const oppScores: number[] = [];
     for (let r = 1; r <= totalRounds; r += 1) {
@@ -194,6 +198,9 @@ export function computeStandings(
         oppScores.push(opp ? opp.virtualPoints : 0);
       }
     }
+
+    const sortedOpps = [...oppScores].sort((a, b) => a - b);
+    sortedOppsMap.set(acc.playerId, sortedOpps);
 
     const sum = oppScores.reduce((s, v) => s + v, 0);
     const median =
@@ -213,26 +220,91 @@ export function computeStandings(
       points: acc.points,
       buchholz: sum,
       medianBuchholz: median,
+      progressiveBuchholz: '',
+      directEncounter: '',
     });
   }
 
-  function compareEntries(
+  // Build head-to-head points map for direct_encounter tiebreaker
+  const h2hMap = new Map<string, Map<string, number>>();
+  const addH2H = (aId: string, bId: string, pts: number) => {
+    let inner = h2hMap.get(aId);
+    if (!inner) {
+      inner = new Map();
+      h2hMap.set(aId, inner);
+    }
+    inner.set(bId, (inner.get(bId) ?? 0) + pts);
+  };
+
+  for (const m of scopedMatches) {
+    if (!m.result || m.whiteId === 'BYE' || m.blackId === 'BYE') continue;
+    if (m.result === 'B' || m.result === '+' || m.result === 'WF' || m.result === '1:0') {
+      addH2H(m.blackId, m.whiteId, 1);
+      addH2H(m.whiteId, m.blackId, 0);
+    } else if (m.result === 'W' || m.result === '-' || m.result === 'BF' || m.result === '0:1') {
+      addH2H(m.blackId, m.whiteId, 0);
+      addH2H(m.whiteId, m.blackId, 1);
+    } else if (m.result === 'D' || m.result === '0.5:0.5') {
+      addH2H(m.blackId, m.whiteId, 0.5);
+      addH2H(m.whiteId, m.blackId, 0.5);
+    }
+  }
+
+  function remSum(playerId: string, dropCount: number): number {
+    const arr = sortedOppsMap.get(playerId) ?? [];
+    let s = 0;
+    for (let i = dropCount; i < arr.length; i += 1) {
+      s += arr[i];
+    }
+    return s;
+  }
+
+  function compareProgressive(aId: string, bId: string): number {
+    const len = Math.max(
+      sortedOppsMap.get(aId)?.length ?? 0,
+      sortedOppsMap.get(bId)?.length ?? 0,
+    );
+    for (let x = 1; x <= len; x += 1) {
+      const diff = remSum(bId, x) - remSum(aId, x);
+      if (diff !== 0) return diff;
+    }
+    return 0;
+  }
+
+  function compareUpTo(
     a: Omit<StandingEntry, 'rank'>,
     b: Omit<StandingEntry, 'rank'>,
+    limitKeys: TiebreakerKey[],
   ): number {
     if (b.points !== a.points) return b.points - a.points;
-    for (const key of tiebreakers) {
+    for (const key of limitKeys) {
       if (key === 'buchholz' && b.buchholz !== a.buchholz) {
         return b.buchholz - a.buchholz;
       }
       if (key === 'median_buchholz' && b.medianBuchholz !== a.medianBuchholz) {
         return b.medianBuchholz - a.medianBuchholz;
       }
+      if (key === 'progressive_buchholz') {
+        const cmp = compareProgressive(a.playerId, b.playerId);
+        if (cmp !== 0) return cmp;
+      }
       if (key === 'wins' && b.tiebreakWins !== a.tiebreakWins) {
         return b.tiebreakWins - a.tiebreakWins;
       }
+      if (key === 'direct_encounter') {
+        const bPts = h2hMap.get(b.playerId)?.get(a.playerId) ?? 0;
+        const aPts = h2hMap.get(a.playerId)?.get(b.playerId) ?? 0;
+        if (bPts !== aPts) return bPts - aPts;
+      }
     }
     return 0;
+  }
+
+  function compareEntries(
+    a: Omit<StandingEntry, 'rank'>,
+    b: Omit<StandingEntry, 'rank'>,
+  ): number {
+    return compareUpTo(a, b, tiebreakers);
   }
 
   const sorted = entries.sort((a, b) => {
@@ -240,6 +312,75 @@ export function computeStandings(
     if (cmp !== 0) return cmp;
     return (a.playerNo ?? 999) - (b.playerNo ?? 999);
   });
+
+  // Populate progressive_buchholz ("x-y") only when needed to distinguish tied players
+  const progIdx = tiebreakers.indexOf('progressive_buchholz');
+  if (progIdx !== -1) {
+    const beforeKeys = tiebreakers.slice(0, progIdx);
+    let i = 0;
+    while (i < sorted.length) {
+      let j = i + 1;
+      while (j < sorted.length && compareUpTo(sorted[i], sorted[j], beforeKeys) === 0) {
+        j += 1;
+      }
+      if (j - i > 1) {
+        const group = sorted.slice(i, j);
+        for (let k = 0; k < group.length; k += 1) {
+          const cur = group[k];
+          const maxDrops = sortedOppsMap.get(cur.playerId)?.length ?? 0;
+          let maxNeededX = 0;
+          for (let m = 0; m < group.length; m += 1) {
+            if (m === k) continue;
+            const peer = group[m];
+            for (let x = 1; x <= maxDrops; x += 1) {
+              if (remSum(cur.playerId, x) !== remSum(peer.playerId, x)) {
+                if (x > maxNeededX) maxNeededX = x;
+                break;
+              }
+            }
+          }
+          if (maxNeededX > 0) {
+            cur.progressiveBuchholz = `${maxNeededX}-${remSum(cur.playerId, maxNeededX)}`;
+          }
+        }
+      }
+      i = j;
+    }
+  }
+
+  // Populate direct_encounter only when players are tied on all preceding tiebreakers
+  const deIdx = tiebreakers.indexOf('direct_encounter');
+  if (deIdx !== -1) {
+    const beforeKeys = tiebreakers.slice(0, deIdx);
+    let i = 0;
+    while (i < sorted.length) {
+      let j = i + 1;
+      while (j < sorted.length && compareUpTo(sorted[i], sorted[j], beforeKeys) === 0) {
+        j += 1;
+      }
+      if (j - i > 1) {
+        const group = sorted.slice(i, j);
+        const groupIds = new Set(group.map((g) => g.playerId));
+        for (const cur of group) {
+          const inner = h2hMap.get(cur.playerId);
+          if (!inner) continue;
+          let sum = 0;
+          let met = false;
+          for (const oid of groupIds) {
+            if (oid === cur.playerId) continue;
+            if (inner.has(oid)) {
+              met = true;
+              sum += inner.get(oid) ?? 0;
+            }
+          }
+          if (met) {
+            cur.directEncounter = String(sum);
+          }
+        }
+      }
+      i = j;
+    }
+  }
 
   let currentRank = 1;
   return sorted.map((item, idx) => {

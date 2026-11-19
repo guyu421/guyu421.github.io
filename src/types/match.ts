@@ -1,7 +1,9 @@
 export type TiebreakerKey =
   | 'buchholz'
   | 'median_buchholz'
+  | 'progressive_buchholz'
   | 'wins'
+  | 'direct_encounter'
   | 'h2h_points'
   | 'h2h_gd'
   | 'h2h_gf'
