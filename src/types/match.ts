@@ -8,6 +8,7 @@ export interface TournamentItem {
   lossPoints: number;
   tiebreakers: TiebreakerKey[];
   qualifyCount: number | null;
+  qualifyLabel: string;
   totalRounds: number;
   rulesText: string;
 }

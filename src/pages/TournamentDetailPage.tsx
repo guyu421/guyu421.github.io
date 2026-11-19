@@ -321,7 +321,9 @@ export function TournamentDetailPage() {
                         <tr className="cutoff-row">
                           <td colSpan={5 + tiebreakers.length}>
                             <div className="cutoff-divider">
-                              <span className="cutoff-pill">录取线</span>
+                              <span className="cutoff-pill">
+                              {tournament?.qualifyLabel || '录取'}
+                            </span>
                             </div>
                           </td>
                         </tr>

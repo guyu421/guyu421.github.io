@@ -80,6 +80,7 @@ create table public.tournaments (
   loss_points numeric(3,1) not null default 0,
   tiebreakers jsonb not null default '["buchholz","median_buchholz","wins"]'::jsonb,
   qualify_count integer,
+  qualify_label text not null default '录取',
   total_rounds integer not null default 9,
   rules_text text not null default ''
 );
@@ -94,7 +95,7 @@ create policy "tournaments_public_read"
 grant select on public.tournaments to anon, authenticated;
 
 insert into public.tournaments (
-  id, name, win_points, draw_points, loss_points, tiebreakers, qualify_count, total_rounds, rules_text
+  id, name, win_points, draw_points, loss_points, tiebreakers, qualify_count, qualify_label, total_rounds, rules_text
 )
 values (
   1,
@@ -104,6 +105,7 @@ values (
   0,
   '["buchholz","median_buchholz","wins"]'::jsonb,
   16,
+  '录取',
   9,
   E'积分排名规则\n1.每名棋手胜一场积1分，平一场积0.5分，负一场积0分\n2.比赛结束，积分多的名次靠前\n3.如果两名棋手或两名棋手以上积分相等，依下列顺序排列名次：\na)对手分：所遇对手积分之和\nb)中间对手分：对手分去掉最高和最低一个再求和\nc)胜局数\nd)并列'
 );

@@ -14,6 +14,7 @@ interface TournamentRow {
   loss_points: number;
   tiebreakers: TiebreakerKey[] | null;
   qualify_count: number | null;
+  qualify_label: string | null;
   total_rounds: number;
   rules_text: string;
 }
@@ -48,6 +49,7 @@ function mapTournament(row: TournamentRow): TournamentItem {
       ? row.tiebreakers
       : ['buchholz', 'median_buchholz', 'wins'],
     qualifyCount: row.qualify_count ?? null,
+    qualifyLabel: row.qualify_label || '录取',
     totalRounds: row.total_rounds ?? 9,
     rulesText: row.rules_text ?? '',
   };
@@ -76,7 +78,7 @@ export const matchService = {
     const { data, error } = await supabase
       .from('tournaments')
       .select(
-        'id, name, win_points, draw_points, loss_points, tiebreakers, qualify_count, total_rounds, rules_text',
+        'id, name, win_points, draw_points, loss_points, tiebreakers, qualify_count, qualify_label, total_rounds, rules_text',
       )
       .order('id', { ascending: false });
 
@@ -92,7 +94,7 @@ export const matchService = {
     const { data, error } = await supabase
       .from('tournaments')
       .select(
-        'id, name, win_points, draw_points, loss_points, tiebreakers, qualify_count, total_rounds, rules_text',
+        'id, name, win_points, draw_points, loss_points, tiebreakers, qualify_count, qualify_label, total_rounds, rules_text',
       )
       .eq('id', tournamentId)
       .maybeSingle();
