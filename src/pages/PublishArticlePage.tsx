@@ -238,13 +238,7 @@ export function PublishArticlePage() {
             updatedAt: Date.now(),
           }),
         );
-        const nowText = new Intl.DateTimeFormat('zh-CN', {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: false,
-        }).format(new Date());
-        setDraftStatus(`草稿已自动保存 ${nowText}`);
+        setDraftStatus('草稿已自动保存');
       } catch {
         // Ignore storage quota error
       }
@@ -313,25 +307,6 @@ export function PublishArticlePage() {
     const text = editorRef.current.innerText.replace(/\s+/g, '');
     setCharCount(text.length);
     setBodyVersion((v) => v + 1);
-  }
-
-  function handleClearDraft() {
-    if (draftKey) {
-      localStorage.removeItem(draftKey);
-    }
-    setTitle('');
-    setCategory('renju');
-    setSummary('');
-    setCoverImage('');
-    setSourceUrl('');
-    setTagsText('');
-    savedHtmlRef.current = '';
-    if (editorRef.current) {
-      editorRef.current.innerHTML = '';
-    }
-    setCharCount(0);
-    setTableMenuPos(null);
-    setDraftStatus(null);
   }
 
   function positionTableMenu(cell: HTMLTableCellElement | null) {
@@ -734,21 +709,6 @@ export function PublishArticlePage() {
           {draftStatus ? (
             <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
               {draftStatus}
-              <button
-                type="button"
-                onClick={handleClearDraft}
-                style={{
-                  marginLeft: 8,
-                  border: 'none',
-                  background: 'transparent',
-                  color: '#dc2626',
-                  fontSize: '0.76rem',
-                  cursor: 'pointer',
-                  padding: 0,
-                }}
-              >
-                清空草稿
-              </button>
             </span>
           ) : null}
         </div>
