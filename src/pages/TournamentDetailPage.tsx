@@ -237,10 +237,33 @@ export function TournamentDetailPage() {
 
   const defaultRound = useMemo(() => {
     if (rounds.length === 0) return 1;
-    return isFootball || activeTab === 'standings'
-      ? rounds[rounds.length - 1]
-      : rounds[0];
-  }, [rounds, isFootball, activeTab]);
+    const stats = new Map<number, { played: number; unplayed: number }>();
+    const items = isFootball
+      ? footballMatches.map((m) => ({
+          roundNo: m.roundNo,
+          played: m.homeScore !== null && m.awayScore !== null,
+        }))
+      : matches.map((m) => ({ roundNo: m.roundNo, played: Boolean(m.result) }));
+
+    for (const item of items) {
+      const cur = stats.get(item.roundNo) ?? { played: 0, unplayed: 0 };
+      if (item.played) cur.played += 1;
+      else cur.unplayed += 1;
+      stats.set(item.roundNo, cur);
+    }
+
+    const inProgress = rounds.find((r) => {
+      const s = stats.get(r);
+      return s && s.played > 0 && s.unplayed > 0;
+    });
+    if (inProgress !== undefined) return inProgress;
+
+    for (let i = rounds.length - 1; i >= 0; i -= 1) {
+      const s = stats.get(rounds[i]);
+      if (s && s.played > 0) return rounds[i];
+    }
+    return rounds[0];
+  }, [rounds, isFootball, footballMatches, matches]);
 
   const currentRound = useMemo(() => {
     const parsed = roundNo ? Number(roundNo) : NaN;
