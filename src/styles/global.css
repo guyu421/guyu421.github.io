@@ -548,12 +548,13 @@ button {
 }
 
 .standings-board th {
-  padding: 10px 12px;
+  padding: 10px 8px;
   font-size: 0.78rem;
   font-weight: 500;
   color: var(--color-text-muted);
   border-bottom: 1px solid var(--color-surface-muted);
   text-align: center;
+  white-space: nowrap;
 }
 
 .standings-board th:nth-child(2),
@@ -562,10 +563,11 @@ button {
 }
 
 .standings-board td {
-  padding: 12px;
+  padding: 12px 8px;
   text-align: center;
   border-bottom: 1px solid var(--color-surface-muted);
   color: var(--color-text);
+  white-space: nowrap;
 }
 
 .standings-board tr:last-child td {

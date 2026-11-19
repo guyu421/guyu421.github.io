@@ -8,7 +8,7 @@ import { computeStandings, type StandingEntry } from '@/utils/standings';
 
 const TIEBREAKER_HEADER: Record<TiebreakerKey, string> = {
   buchholz: '对手分',
-  median_buchholz: '中间',
+  median_buchholz: '中间对手分',
   wins: '胜局',
 };
 
