@@ -1,5 +1,6 @@
 import { MessageSquare, Trash2 } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
+import { ConfirmModal } from '@/components/common/ConfirmModal';
 import { commentService } from '@/services/commentService';
 import { useAuth } from '@/store/AuthContext';
 import type { CommentItem } from '@/types/auth';
@@ -15,6 +16,8 @@ export function AccountComments({ articleId }: AccountCommentsProps) {
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -59,12 +62,17 @@ export function AccountComments({ articleId }: AccountCommentsProps) {
     }
   }
 
-  async function handleDelete(commentId: number) {
+  async function handleConfirmDelete() {
+    if (pendingDeleteId === null || deleting) return;
+    setDeleting(true);
     try {
-      await commentService.deleteComment(commentId);
-      setComments((prev) => prev.filter((item) => item.id !== commentId));
+      await commentService.deleteComment(pendingDeleteId);
+      setComments((prev) => prev.filter((item) => item.id !== pendingDeleteId));
+      setPendingDeleteId(null);
     } catch {
       // ignore
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -188,7 +196,7 @@ export function AccountComments({ articleId }: AccountCommentsProps) {
                 {user?.id === item.userId ? (
                   <button
                     type="button"
-                    onClick={() => handleDelete(item.id)}
+                    onClick={() => setPendingDeleteId(item.id)}
                     aria-label="删除评价"
                     style={{
                       border: 'none',
@@ -216,6 +224,15 @@ export function AccountComments({ articleId }: AccountCommentsProps) {
           ))}
         </div>
       )}
+
+      <ConfirmModal
+        open={pendingDeleteId !== null}
+        title="确认删除评论"
+        description="确定要删除这条评论吗？删除后无法恢复。"
+        loading={deleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setPendingDeleteId(null)}
+      />
     </section>
   );
 }

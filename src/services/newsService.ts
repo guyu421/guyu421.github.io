@@ -97,7 +97,22 @@ export const newsService = {
       throw new Error(error.message);
     }
 
-    return data ? mapArticle(data as ArticleRow) : null;
+    if (!data) return null;
+
+    const article = mapArticle(data as ArticleRow);
+    const uid = (data as ArticleRow).user_id;
+    if (uid) {
+      const { data: profileData } = await supabase
+        .from('user_profiles')
+        .select('username')
+        .eq('user_id', uid)
+        .maybeSingle();
+      if (profileData?.username) {
+        article.author.username = profileData.username as string;
+      }
+    }
+
+    return article;
   },
 
   async getRelatedArticles(

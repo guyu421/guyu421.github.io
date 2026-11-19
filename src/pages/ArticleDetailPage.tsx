@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AccountComments } from '@/components/common/AccountComments';
 import { Badge } from '@/components/common/Badge';
+import { ConfirmModal } from '@/components/common/ConfirmModal';
 import { EmptyState } from '@/components/common/EmptyState';
 import { LoadingSkeleton } from '@/components/common/LoadingSkeleton';
 import { NewsList } from '@/components/news/NewsList';
@@ -22,6 +23,7 @@ export function ArticleDetailPage() {
   const [article, setArticle] = useState<NewsArticle | null>(null);
   const [related, setRelated] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
@@ -75,15 +77,15 @@ export function ArticleDetailPage() {
   const categoryMeta = CATEGORY_MAP[article.category];
   const isOwner = Boolean(user && article.userId && user.id === article.userId);
 
-  async function handleDelete() {
+  async function handleConfirmDelete() {
     if (!article || !isOwner || deleting) return;
-    if (!window.confirm('确定要删除这篇文章吗？删除后无法恢复。')) return;
     setDeleting(true);
     try {
       await newsService.deleteArticle(article.id);
       navigate(`/category/${article.category}`, { replace: true });
     } catch {
       setDeleting(false);
+      setConfirmDeleteOpen(false);
     }
   }
 
@@ -130,7 +132,7 @@ export function ArticleDetailPage() {
       >
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 14 }}>
           <strong style={{ color: 'var(--color-text)' }}>{article.author.name}</strong>
-          <span>{article.author.role}</span>
+          <span>{article.author.username || article.author.role}</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             <Clock size={14} />
             {formatRelativeTime(article.publishedAt)}
@@ -158,7 +160,7 @@ export function ArticleDetailPage() {
           <button
             type="button"
             disabled={deleting}
-            onClick={handleDelete}
+            onClick={() => setConfirmDeleteOpen(true)}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -316,6 +318,15 @@ export function ArticleDetailPage() {
       ) : null}
 
       <AccountComments articleId={article.id} />
+
+      <ConfirmModal
+        open={confirmDeleteOpen}
+        title="确认删除文章"
+        description="确定要删除这篇文章吗？删除后无法恢复。"
+        loading={deleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmDeleteOpen(false)}
+      />
     </div>
   );
 }
