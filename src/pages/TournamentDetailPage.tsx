@@ -460,71 +460,7 @@ export function TournamentDetailPage() {
     return all.filter((r) => r.teamName.toLowerCase().includes(normalizedQuery));
   }, [footballMatches, footballDeductions, tournament, currentRound, normalizedQuery]);
 
-  const zones = useMemo<StandingsZone[]>(() => {
-    const raw = tournament?.standingsZones ?? [];
-    if (
-      tournament?.sport === 'renju' &&
-      raw.length >= 1 &&
-      raw[0].fromRank === 1
-    ) {
-      const z = raw[0];
-      const isAward = z.cutoffLabel === '录取线' || z.cutoffLabel === '获奖' || z.toRank === 16;
-      if (isAward) {
-        return [
-          {
-            fromRank: 1,
-            toRank: z.toRank,
-            bgColor: z.bgColor || '#fff1f2',
-            cutoffBefore: true,
-            cutoffLabel: '获奖',
-            cutoffColor: '#f43f5e',
-            cutoffLineColor: '#fda4af',
-          },
-          {
-            fromRank: z.toRank + 1,
-            toRank: 999,
-            bgColor: '',
-            cutoffBefore: true,
-            cutoffLabel: '未获奖',
-            cutoffColor: '#64748b',
-            cutoffLineColor: '#cbd5e1',
-          },
-        ];
-      }
-      if (z.cutoffLabel === '晋级决赛' && z.toRank === 4) {
-        return [
-          {
-            fromRank: 1,
-            toRank: 4,
-            bgColor: '#ffe4e6',
-            cutoffBefore: true,
-            cutoffLabel: '晋级决赛',
-            cutoffColor: '#f43f5e',
-            cutoffLineColor: '#fda4af',
-          },
-          {
-            fromRank: 5,
-            toRank: 8,
-            bgColor: '#fff1f2',
-            cutoffBefore: true,
-            cutoffLabel: '获奖',
-            cutoffColor: '#f43f5e',
-            cutoffLineColor: '#fda4af',
-          },
-          {
-            fromRank: 9,
-            toRank: 999,
-            bgColor: '',
-            cutoffBefore: true,
-            cutoffLabel: '未获奖',
-            cutoffColor: '#64748b',
-            cutoffLineColor: '#cbd5e1',
-          },
-        ];
-      }
-    }
-    return raw;
-  }, [tournament]);
+  const zones = tournament?.standingsZones ?? [];
 
   return (
     <div className="tournament-page">
