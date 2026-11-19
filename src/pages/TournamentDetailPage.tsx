@@ -363,7 +363,7 @@ export function TournamentDetailPage() {
                       (z) => pos >= z.fromRank && pos <= z.toRank,
                     );
                     const beforeZone = zones.find(
-                      (z) => z.cutoffBefore && z.fromRank === pos && idx > 0,
+                      (z) => z.cutoffBefore && z.fromRank === pos,
                     );
                     const afterZone = zones.find(
                       (z) =>
@@ -583,7 +583,7 @@ export function TournamentDetailPage() {
                     (z) => pos >= z.fromRank && pos <= z.toRank,
                   );
                   const beforeZone = zones.find(
-                    (z) => z.cutoffBefore && z.fromRank === pos && idx > 0,
+                    (z) => z.cutoffBefore && z.fromRank === pos,
                   );
                   const afterZone = zones.find(
                     (z) =>
