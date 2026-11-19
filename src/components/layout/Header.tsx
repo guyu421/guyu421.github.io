@@ -20,7 +20,9 @@ export function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const isMatchesRoute = location.pathname.startsWith('/matches');
-  const isTournamentDetail = /^\/matches\/\d+/.test(location.pathname);
+  const hideSportNav =
+    /^\/matches\/\d+/.test(location.pathname) ||
+    location.pathname.startsWith('/article/');
 
   function handleNavClick(
     e: React.MouseEvent<HTMLAnchorElement>,
@@ -43,7 +45,7 @@ export function Header() {
             <span>赛源网</span>
           </NavLink>
 
-          {!isTournamentDetail && (
+          {!hideSportNav && (
             <nav className="main-nav" aria-label="主导航">
               {MAIN_NAV_LINKS.map((item) => {
                 const sport = extractSportFromPath(item.path);
@@ -134,7 +136,7 @@ export function Header() {
           </div>
         </div>
 
-        {!isTournamentDetail && (
+        {!hideSportNav && (
           <nav className="mobile-nav" aria-label="移动端频道导航">
             <div className="container mobile-nav-inner">
               {MAIN_NAV_LINKS.map((item) => {
