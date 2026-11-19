@@ -145,7 +145,7 @@ export function ProfilePage() {
           </div>
           <h1 style={{ margin: '0 0 8px', fontSize: '1.25rem' }}>欢迎来到赛源网</h1>
           <p style={{ margin: '0 0 20px', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
-            登录后即可每日签到领取源点经验值，并参与文章评价讨论
+            登录后即可每日签到领取源点，并参与文章评价讨论
           </p>
           <button
             type="button"
@@ -240,7 +240,7 @@ export function ProfilePage() {
               }}
             >
               <Sparkles size={15} color="#f59e0b" />
-              我的源点（经验值）
+              我的源点
             </div>
             <div
               className="tabular-nums"

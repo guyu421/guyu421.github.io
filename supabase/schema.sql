@@ -208,8 +208,12 @@ create table if not exists public.user_profiles (
   source_points integer not null default 0,
   streak_days integer not null default 0,
   last_checkin_date date,
+  last_comment_reward_date date,
   updated_at timestamptz not null default now()
 );
+
+alter table public.user_profiles
+  add column if not exists last_comment_reward_date date;
 
 alter table public.user_profiles enable row level security;
 
@@ -326,6 +330,46 @@ end;
 $$;
 
 grant execute on function public.daily_checkin() to authenticated;
+
+-- 8. 每日首次发表评论自动 +5 源点触发器
+create or replace function public.grant_daily_comment_points()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  today_cn date := (now() at time zone 'Asia/Shanghai')::date;
+  prev_reward_date date;
+begin
+  select last_comment_reward_date into prev_reward_date
+  from public.user_profiles
+  where user_id = new.user_id;
+
+  if not found then
+    insert into public.user_profiles (
+      user_id, username, source_points, last_comment_reward_date, updated_at
+    )
+    values (new.user_id, new.username, 5, today_cn, now());
+  elsif prev_reward_date is null or prev_reward_date < today_cn then
+    update public.user_profiles
+    set
+      username = new.username,
+      source_points = source_points + 5,
+      last_comment_reward_date = today_cn,
+      updated_at = now()
+    where user_id = new.user_id;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_comments_daily_points on public.comments;
+create trigger trg_comments_daily_points
+  after insert on public.comments
+  for each row
+  execute function public.grant_daily_comment_points();
 
 -- 3. 预置第 1 篇五子棋公众号文章
 insert into public.articles (
