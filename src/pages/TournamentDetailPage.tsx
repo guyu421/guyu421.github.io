@@ -3,6 +3,7 @@ import { type CSSProperties, Fragment, useEffect, useMemo, useState } from 'reac
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { EmptyState } from '@/components/common/EmptyState';
 import { matchService } from '@/services/matchService';
+import { useAppStore } from '@/store/AppContext';
 import type {
   FootballMatch,
   RenjuMatch,
@@ -106,6 +107,8 @@ export function TournamentDetailPage() {
   }>();
   const location = useLocation();
   const navigate = useNavigate();
+  const { searchQuery } = useAppStore();
+  const normalizedQuery = searchQuery.trim().toLowerCase();
   const numericId = Number(tournamentId);
   const activeTab: 'matches' | 'standings' = location.pathname.includes('/standings')
     ? 'standings'
@@ -216,13 +219,29 @@ export function TournamentDetailPage() {
   const roundIndex = rounds.indexOf(currentRound);
 
   const roundMatches = useMemo(
-    () => matches.filter((m) => m.roundNo === currentRound),
-    [matches, currentRound],
+    () =>
+      matches.filter((m) => {
+        if (m.roundNo !== currentRound) return false;
+        if (!normalizedQuery) return true;
+        return (
+          m.blackName.toLowerCase().includes(normalizedQuery) ||
+          m.whiteName.toLowerCase().includes(normalizedQuery)
+        );
+      }),
+    [matches, currentRound, normalizedQuery],
   );
 
   const roundFootballMatches = useMemo(
-    () => footballMatches.filter((m) => m.roundNo === currentRound),
-    [footballMatches, currentRound],
+    () =>
+      footballMatches.filter((m) => {
+        if (m.roundNo !== currentRound) return false;
+        if (!normalizedQuery) return true;
+        return (
+          m.homeTeam.toLowerCase().includes(normalizedQuery) ||
+          m.awayTeam.toLowerCase().includes(normalizedQuery)
+        );
+      }),
+    [footballMatches, currentRound, normalizedQuery],
   );
 
   const prevScores = useMemo(() => {
@@ -279,21 +298,22 @@ export function TournamentDetailPage() {
     'wins',
   ];
 
-  const standings = useMemo(
-    () => computeStandings(matches, tournament, currentRound),
-    [matches, tournament, currentRound],
-  );
+  const standings = useMemo(() => {
+    const all = computeStandings(matches, tournament, currentRound);
+    if (!normalizedQuery) return all;
+    return all.filter((r) => r.playerName.toLowerCase().includes(normalizedQuery));
+  }, [matches, tournament, currentRound, normalizedQuery]);
 
-  const footballStandings = useMemo(
-    () =>
-      computeFootballStandings(
-        footballMatches,
-        footballDeductions,
-        tournament,
-        currentRound,
-      ),
-    [footballMatches, footballDeductions, tournament, currentRound],
-  );
+  const footballStandings = useMemo(() => {
+    const all = computeFootballStandings(
+      footballMatches,
+      footballDeductions,
+      tournament,
+      currentRound,
+    );
+    if (!normalizedQuery) return all;
+    return all.filter((r) => r.teamName.toLowerCase().includes(normalizedQuery));
+  }, [footballMatches, footballDeductions, tournament, currentRound, normalizedQuery]);
 
   const zones = tournament?.standingsZones ?? [];
 
@@ -416,15 +436,17 @@ export function TournamentDetailPage() {
                     const rowZone = zones.find(
                       (z) => pos >= z.fromRank && pos <= z.toRank,
                     );
-                    const beforeZone = zones.find(
-                      (z) => z.cutoffBefore && z.fromRank === pos,
-                    );
-                    const afterZone = zones.find(
-                      (z) =>
-                        !z.cutoffBefore &&
-                        z.toRank === pos &&
-                        idx < footballStandings.length - 1,
-                    );
+                    const beforeZone = !normalizedQuery
+                      ? zones.find((z) => z.cutoffBefore && z.fromRank === pos)
+                      : undefined;
+                    const afterZone = !normalizedQuery
+                      ? zones.find(
+                          (z) =>
+                            !z.cutoffBefore &&
+                            z.toRank === pos &&
+                            idx < footballStandings.length - 1,
+                        )
+                      : undefined;
                     const gd = row.goalsFor - row.goalsAgainst;
                     const gdText = gd > 0 ? `+${gd}` : `${gd}`;
 
@@ -670,15 +692,17 @@ export function TournamentDetailPage() {
                   const rowZone = zones.find(
                     (z) => pos >= z.fromRank && pos <= z.toRank,
                   );
-                  const beforeZone = zones.find(
-                    (z) => z.cutoffBefore && z.fromRank === pos,
-                  );
-                  const afterZone = zones.find(
-                    (z) =>
-                      !z.cutoffBefore &&
-                      z.toRank === pos &&
-                      idx < standings.length - 1,
-                  );
+                  const beforeZone = !normalizedQuery
+                    ? zones.find((z) => z.cutoffBefore && z.fromRank === pos)
+                    : undefined;
+                  const afterZone = !normalizedQuery
+                    ? zones.find(
+                        (z) =>
+                          !z.cutoffBefore &&
+                          z.toRank === pos &&
+                          idx < standings.length - 1,
+                      )
+                    : undefined;
 
                   return (
                     <Fragment key={row.playerId}>

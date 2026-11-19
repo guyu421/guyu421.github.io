@@ -2,12 +2,14 @@ import { ChevronRight } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { EmptyState } from '@/components/common/EmptyState';
+import { useDebounce } from '@/hooks/useDebounce';
 import { matchService } from '@/services/matchService';
 import { useAppStore } from '@/store/AppContext';
 import type { TournamentItem } from '@/types/match';
 
 export function MatchesPage() {
-  const { activeCategory } = useAppStore();
+  const { activeCategory, searchQuery } = useAppStore();
+  const debouncedSearch = useDebounce(searchQuery, 200);
   const [tournaments, setTournaments] = useState<TournamentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,9 +39,15 @@ export function MatchesPage() {
   }, []);
 
   const visibleTournaments = useMemo(() => {
-    if (activeCategory === 'all') return tournaments;
-    return tournaments.filter((item) => item.sport === activeCategory);
-  }, [tournaments, activeCategory]);
+    const q = debouncedSearch.trim().toLowerCase();
+    return tournaments.filter((item) => {
+      if (activeCategory !== 'all' && item.sport !== activeCategory) {
+        return false;
+      }
+      if (!q) return true;
+      return item.name.toLowerCase().includes(q);
+    });
+  }, [tournaments, activeCategory, debouncedSearch]);
 
   return (
     <div className="tournament-page">
