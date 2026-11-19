@@ -22,7 +22,7 @@ export function getLevelInfo(points: number) {
     return {
       level: current.level,
       progressPercent: 100,
-      progressLabel: `已达最高等级（累计 ${points.toLocaleString()} 源点）`,
+      progressLabel: '已达最高等级',
     };
   }
 

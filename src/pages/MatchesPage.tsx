@@ -43,10 +43,6 @@ export function MatchesPage() {
 
   return (
     <div className="container">
-      <div className="league-banner">
-        <span style={{ fontSize: '1.05rem', fontWeight: 800 }}>五子棋赛事中心</span>
-      </div>
-
       {loading ? (
         <div className="card" style={{ padding: 24 }}>
           <div className="skeleton" style={{ height: 84 }} />
