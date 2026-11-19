@@ -35,26 +35,38 @@ export function MatchesPage() {
   }, []);
 
   return (
-    <div className="container">
+    <div className="tournament-page">
+      <div className="league-banner">
+        <div className="container" style={{ padding: 0 }}>
+          <div style={{ fontSize: '1.02rem', fontWeight: 700, lineHeight: 1.35 }}>
+            赛事
+          </div>
+        </div>
+      </div>
+
       {loading ? (
-        <div className="card" style={{ padding: 24 }}>
+        <div className="card" style={{ margin: 16, padding: 24 }}>
           <div className="skeleton" style={{ height: 84 }} />
         </div>
       ) : error ? (
-        <EmptyState title="赛事列表加载失败" description={error} />
+        <div style={{ padding: 16 }}>
+          <EmptyState title="赛事列表加载失败" description={error} />
+        </div>
       ) : tournaments.length === 0 ? (
-        <EmptyState
-          title="暂无赛事"
-          description="请先在 Supabase 执行 schema.sql 初始化赛事数据。"
-        />
+        <div style={{ padding: 16 }}>
+          <EmptyState
+            title="暂无赛事"
+            description="请先在 Supabase 执行 schema.sql 初始化赛事数据。"
+          />
+        </div>
       ) : (
-        <div className="fixture-list" style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)' }}>
+        <div className="fixture-list">
           {tournaments.map((item) => (
             <Link key={item.id} to={`/matches/${item.id}`} className="fixture-row">
-              <div className="fixture-meta">
-                <span className="tabular-nums" style={{ fontWeight: 600, color: 'var(--color-text)' }}>
-                  {item.dateRange}
-                </span>
+              <div className="fixture-meta tabular-nums">
+                {item.dateRange.split(' - ').map((part, idx) => (
+                  <span key={idx}>{part}</span>
+                ))}
               </div>
 
               <div className="fixture-players">

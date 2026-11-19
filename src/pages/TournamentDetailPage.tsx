@@ -130,10 +130,6 @@ export function TournamentDetailPage() {
         </div>
       </div>
 
-      <div className="league-subtabs">
-        <span className="league-subtab">比赛</span>
-      </div>
-
       {loading ? (
         <div className="card" style={{ margin: 16, padding: 24 }}>
           <div className="skeleton" style={{ height: 96 }} />
