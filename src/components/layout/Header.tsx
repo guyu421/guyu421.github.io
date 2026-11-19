@@ -20,6 +20,7 @@ export function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const isMatchesRoute = location.pathname.startsWith('/matches');
+  const isTournamentDetail = /^\/matches\/\d+/.test(location.pathname);
 
   function handleNavClick(
     e: React.MouseEvent<HTMLAnchorElement>,
@@ -42,27 +43,29 @@ export function Header() {
             <span>赛源网</span>
           </NavLink>
 
-          <nav className="main-nav" aria-label="主导航">
-            {MAIN_NAV_LINKS.map((item) => {
-              const sport = extractSportFromPath(item.path);
-              return (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  onClick={(e) => handleNavClick(e, item.path)}
-                  className={({ isActive }) =>
-                    cn(
-                      'nav-link',
-                      (isMatchesRoute ? activeCategory === sport : isActive) &&
-                        'active',
-                    )
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              );
-            })}
-          </nav>
+          {!isTournamentDetail && (
+            <nav className="main-nav" aria-label="主导航">
+              {MAIN_NAV_LINKS.map((item) => {
+                const sport = extractSportFromPath(item.path);
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    onClick={(e) => handleNavClick(e, item.path)}
+                    className={({ isActive }) =>
+                      cn(
+                        'nav-link',
+                        (isMatchesRoute ? activeCategory === sport : isActive) &&
+                          'active',
+                      )
+                    }
+                  >
+                    {item.label}
+                  </NavLink>
+                );
+              })}
+            </nav>
+          )}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div className="search-box">
@@ -131,29 +134,31 @@ export function Header() {
           </div>
         </div>
 
-        <nav className="mobile-nav" aria-label="移动端频道导航">
-          <div className="container mobile-nav-inner">
-            {MAIN_NAV_LINKS.map((item) => {
-              const sport = extractSportFromPath(item.path);
-              return (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  onClick={(e) => handleNavClick(e, item.path)}
-                  className={({ isActive }) =>
-                    cn(
-                      'mobile-nav-link',
-                      (isMatchesRoute ? activeCategory === sport : isActive) &&
-                        'active',
-                    )
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              );
-            })}
-          </div>
-        </nav>
+        {!isTournamentDetail && (
+          <nav className="mobile-nav" aria-label="移动端频道导航">
+            <div className="container mobile-nav-inner">
+              {MAIN_NAV_LINKS.map((item) => {
+                const sport = extractSportFromPath(item.path);
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    onClick={(e) => handleNavClick(e, item.path)}
+                    className={({ isActive }) =>
+                      cn(
+                        'mobile-nav-link',
+                        (isMatchesRoute ? activeCategory === sport : isActive) &&
+                          'active',
+                      )
+                    }
+                  >
+                    {item.label}
+                  </NavLink>
+                );
+              })}
+            </div>
+          </nav>
+        )}
       </header>
 
       <AuthModal />
