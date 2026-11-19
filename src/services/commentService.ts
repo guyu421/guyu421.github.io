@@ -58,7 +58,7 @@ export const commentService = {
       username ||
       (user.user_metadata?.username as string | undefined) ||
       user.email?.split('@')[0] ||
-      '棋友';
+      '球友';
 
     const { data, error } = await supabase
       .from('comments')

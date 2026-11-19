@@ -8,7 +8,7 @@ export function mapSupabaseUser(u: SupabaseUser | null): User | null {
   const username =
     (u.user_metadata?.username as string | undefined)?.trim() ||
     email.split('@')[0] ||
-    '棋友';
+    '球友';
   return {
     id: u.id,
     email,
