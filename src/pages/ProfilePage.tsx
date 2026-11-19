@@ -102,7 +102,7 @@ export function ProfilePage() {
 
   if (!user) {
     return (
-      <div className="container" style={{ maxWidth: 640 }}>
+      <div className="container">
         <div className="card" style={{ padding: '40px 24px', textAlign: 'center' }}>
           <div
             style={{
@@ -145,7 +145,7 @@ export function ProfilePage() {
   const { level, progressPercent, progressLabel } = getLevelInfo(points);
 
   return (
-    <div className="container" style={{ maxWidth: 680 }}>
+    <div className="container">
       <div className="card" style={{ padding: 24, marginBottom: 16 }}>
         <div
           style={{

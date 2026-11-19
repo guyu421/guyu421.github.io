@@ -415,7 +415,7 @@ button {
 
 /* Article Detail */
 .article-container {
-  max-width: 820px;
+  max-width: 100%;
   margin: 0 auto;
 }
 
@@ -1025,8 +1025,8 @@ a.fixture-row:hover {
 }
 
 .wx-editor-paper {
-  max-width: 780px;
-  width: calc(100% - 24px);
+  max-width: 100%;
+  width: calc(100% - 32px);
   margin: 24px auto 48px;
   background: #ffffff;
   border-radius: 8px;
