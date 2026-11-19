@@ -238,7 +238,7 @@ export function TournamentDetailPage() {
               上一轮
             </button>
 
-            <span>第{standingsRound}轮后积分榜</span>
+            <span>第{standingsRound}轮</span>
 
             <button
               type="button"
