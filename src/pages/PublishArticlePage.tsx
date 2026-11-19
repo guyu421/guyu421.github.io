@@ -142,6 +142,8 @@ export function PublishArticlePage() {
     null,
   );
   const [wxRawHtml, setWxRawHtml] = useState('');
+  const [importingWechat, setImportingWechat] = useState(false);
+  const [wxImportStatus, setWxImportStatus] = useState<string | null>(null);
   const [tableRows, setTableRows] = useState(3);
   const [tableCols, setTableCols] = useState(3);
   const [tableMenuPos, setTableMenuPos] = useState<{ top: number; left: number } | null>(
@@ -491,10 +493,7 @@ export function PublishArticlePage() {
     }
   }
 
-  function handleWechatImportConfirm() {
-    const raw = wxRawHtml.trim();
-    if (!raw) return;
-
+  function applyWechatImportResult(raw: string) {
     const looksLikeHtml = /<[a-z][\s\S]*>/i.test(raw);
     let importedTitle: string | undefined;
     let importedCover: string | undefined;
@@ -529,9 +528,43 @@ export function PublishArticlePage() {
       editorRef.current.innerHTML = bodyHtml;
       syncEditorStats();
     }
+  }
 
-    setWxRawHtml('');
-    setActivePopover(null);
+  async function handleWechatImportConfirm() {
+    setWxImportStatus(null);
+    const raw = wxRawHtml.trim();
+    if (raw) {
+      applyWechatImportResult(raw);
+      setWxRawHtml('');
+      setActivePopover(null);
+      return;
+    }
+
+    const url = sourceUrl.trim();
+    if (!url) return;
+
+    setImportingWechat(true);
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status}`);
+      }
+      const html = await resp.text();
+      if (html.includes('wappoc_appmsgcaptcha') || !html.includes('js_content')) {
+        setWxImportStatus(
+          '微信页面触发安全验证或未返回正文，无法仅凭链接自动抓取，请展开下方手动粘贴正文或源码导入。',
+        );
+        return;
+      }
+      applyWechatImportResult(html);
+      setActivePopover(null);
+    } catch {
+      setWxImportStatus(
+        '浏览器跨域限制（CORS）拦截了直接抓取微信链接，请展开下方手动粘贴正文或网页源码导入。',
+      );
+    } finally {
+      setImportingWechat(false);
+    }
   }
 
   function handleEditorDoubleClick(e: React.MouseEvent<HTMLDivElement>) {
@@ -1117,32 +1150,61 @@ export function PublishArticlePage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
                 <label htmlFor="wx-url" style={labelStyle}>
-                  公众号文章链接（选填，用于保留原文链接）
+                  公众号文章链接 *
                 </label>
                 <input
                   id="wx-url"
                   type="url"
+                  autoFocus
                   value={sourceUrl}
-                  onChange={(e) => setSourceUrl(e.target.value)}
+                  onChange={(e) => {
+                    setWxImportStatus(null);
+                    setSourceUrl(e.target.value);
+                  }}
                   placeholder="请输入微信公众号文章链接..."
                   style={fieldStyle}
                 />
               </div>
 
-              <div>
-                <label htmlFor="wx-content" style={labelStyle}>
-                  粘贴公众号文章内容或网页 HTML 源码 *
-                </label>
-                <textarea
-                  id="wx-content"
-                  rows={8}
-                  value={wxRawHtml}
-                  onPaste={handleWechatPaste}
-                  onChange={(e) => setWxRawHtml(e.target.value)}
-                  placeholder="请在微信文章页面全选复制后直接粘贴到这里，或粘贴网页源码..."
-                  style={{ ...fieldStyle, resize: 'vertical', lineHeight: 1.6 }}
-                />
-              </div>
+              {wxImportStatus ? (
+                <div
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: '#fef2f2',
+                    color: '#dc2626',
+                    fontSize: '0.82rem',
+                    lineHeight: 1.5,
+                    fontWeight: 600,
+                  }}
+                >
+                  {wxImportStatus}
+                </div>
+              ) : null}
+
+              <details>
+                <summary
+                  style={{
+                    fontSize: '0.82rem',
+                    color: 'var(--color-text-muted)',
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                  }}
+                >
+                  无法直接抓取时，点此粘贴公众号正文或源码
+                </summary>
+                <div style={{ marginTop: 10 }}>
+                  <textarea
+                    id="wx-content"
+                    rows={6}
+                    value={wxRawHtml}
+                    onPaste={handleWechatPaste}
+                    onChange={(e) => setWxRawHtml(e.target.value)}
+                    placeholder="请粘贴微信公众号正文或网页源码..."
+                    style={{ ...fieldStyle, resize: 'vertical', lineHeight: 1.6 }}
+                  />
+                </div>
+              </details>
             </div>
 
             <div className="wx-modal-footer">
@@ -1158,10 +1220,10 @@ export function PublishArticlePage() {
                 type="button"
                 className="category-pill active"
                 onClick={handleWechatImportConfirm}
-                disabled={!wxRawHtml.trim()}
+                disabled={importingWechat || (!sourceUrl.trim() && !wxRawHtml.trim())}
                 style={{ padding: '6px 16px', fontSize: '0.84rem' }}
               >
-                确认导入
+                {importingWechat ? '导入中...' : '确认导入'}
               </button>
             </div>
           </div>
