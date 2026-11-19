@@ -13,6 +13,7 @@ import {
   Sigma,
   Table2,
   Upload,
+  X,
 } from 'lucide-react';
 import katex from 'katex';
 import { type ChangeEvent, useMemo, useRef, useState } from 'react';
@@ -584,72 +585,178 @@ export function PublishArticlePage() {
           </button>
         </div>
 
-        {mode === 'edit' && activePopover === 'table' ? (
-          <div className="wx-editor-popover">
-            <span style={{ fontSize: '0.84rem', fontWeight: 700 }}>插入表格：</span>
-            <label style={{ fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              行数
-              <input
-                type="number"
-                min={1}
-                max={12}
-                value={tableRows}
-                onChange={(e) => setTableRows(Number(e.target.value) || 1)}
-                style={{ ...fieldStyle, width: 68, padding: '5px 8px' }}
-              />
-            </label>
-            <label style={{ fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              列数
-              <input
-                type="number"
-                min={1}
-                max={8}
-                value={tableCols}
-                onChange={(e) => setTableCols(Number(e.target.value) || 1)}
-                style={{ ...fieldStyle, width: 68, padding: '5px 8px' }}
-              />
-            </label>
-            <button
-              type="button"
-              className="category-pill active"
-              onClick={insertTableHtml}
-              style={{ padding: '5px 14px', fontSize: '0.82rem' }}
-            >
-              插入表格
-            </button>
-          </div>
-        ) : null}
+      </header>
 
-        {mode === 'edit' && activePopover === 'formula' ? (
-          <div className="wx-editor-popover" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+      {/* 插入表格弹窗 */}
+      {mode === 'edit' && activePopover === 'table' ? (
+        <div
+          className="wx-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label="插入表格"
+          onClick={() => setActivePopover(null)}
+        >
+          <div className="wx-modal-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="wx-modal-header">
+              <strong style={{ fontSize: '1.02rem' }}>插入表格</strong>
+              <button
+                type="button"
+                aria-label="关闭弹窗"
+                onClick={() => setActivePopover(null)}
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--color-text-muted)',
+                  padding: 4,
+                  cursor: 'pointer',
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 12,
+              }}
+            >
+              <div>
+                <label htmlFor="tbl-rows" style={labelStyle}>
+                  行数
+                </label>
+                <input
+                  id="tbl-rows"
+                  type="number"
+                  min={1}
+                  max={12}
+                  value={tableRows}
+                  onChange={(e) => setTableRows(Number(e.target.value) || 1)}
+                  style={fieldStyle}
+                />
+              </div>
+              <div>
+                <label htmlFor="tbl-cols" style={labelStyle}>
+                  列数
+                </label>
+                <input
+                  id="tbl-cols"
+                  type="number"
+                  min={1}
+                  max={8}
+                  value={tableCols}
+                  onChange={(e) => setTableCols(Number(e.target.value) || 1)}
+                  style={fieldStyle}
+                />
+              </div>
+            </div>
+
+            <div className="wx-modal-footer">
+              <button
+                type="button"
+                className="category-pill"
+                onClick={() => setActivePopover(null)}
+                style={{ padding: '6px 14px', fontSize: '0.84rem' }}
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                className="category-pill active"
+                onClick={insertTableHtml}
+                style={{ padding: '6px 16px', fontSize: '0.84rem' }}
+              >
+                插入表格
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* 插入公式弹窗 */}
+      {mode === 'edit' && activePopover === 'formula' ? (
+        <div
+          className="wx-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label="插入公式"
+          onClick={() => setActivePopover(null)}
+        >
+          <div
+            className="wx-modal-dialog"
+            style={{ maxWidth: 480 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="wx-modal-header">
+              <strong style={{ fontSize: '1.02rem' }}>插入行内公式</strong>
+              <button
+                type="button"
+                aria-label="关闭弹窗"
+                onClick={() => setActivePopover(null)}
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--color-text-muted)',
+                  padding: 4,
+                  cursor: 'pointer',
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div>
+              <label htmlFor="formula-input" style={labelStyle}>
+                LaTeX 公式
+              </label>
               <input
+                id="formula-input"
                 type="text"
+                autoFocus
                 value={formulaTex}
                 onChange={(e) => setFormulaTex(e.target.value)}
                 placeholder="请输入 LaTeX 公式..."
-                style={{ ...fieldStyle, flex: '1 1 260px', padding: '6px 10px' }}
+                style={fieldStyle}
               />
+            </div>
+
+            {formulaPreviewHtml ? (
+              <div
+                className="article-formula"
+                style={{
+                  margin: '14px 0 0',
+                  padding: '12px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid var(--color-border)',
+                  background: 'var(--color-surface-muted)',
+                }}
+                dangerouslySetInnerHTML={{ __html: formulaPreviewHtml }}
+              />
+            ) : null}
+
+            <div className="wx-modal-footer">
+              <button
+                type="button"
+                className="category-pill"
+                onClick={() => setActivePopover(null)}
+                style={{ padding: '6px 14px', fontSize: '0.84rem' }}
+              >
+                取消
+              </button>
               <button
                 type="button"
                 className="category-pill active"
                 onClick={insertFormulaHtml}
                 disabled={!formulaTex.trim()}
-                style={{ padding: '6px 14px', fontSize: '0.82rem' }}
+                style={{ padding: '6px 16px', fontSize: '0.84rem' }}
               >
                 插入公式
               </button>
             </div>
-            {formulaPreviewHtml ? (
-              <div
-                className="article-formula"
-                style={{ margin: '6px 0 0', background: '#ffffff' }}
-                dangerouslySetInnerHTML={{ __html: formulaPreviewHtml }}
-              />
-            ) : null}
           </div>
-        ) : null}
-      </header>
+        </div>
+      ) : null}
 
       {/* 居中稿纸编辑区 */}
       <main className="wx-editor-paper">

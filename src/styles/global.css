@@ -1133,15 +1133,39 @@ a.fixture-row:hover {
   text-align: center;
 }
 
-.wx-editor-popover {
-  width: 100%;
-  background: #f8fafc;
-  border-top: 1px solid var(--color-border);
-  padding: 10px 20px;
+.wx-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(15, 23, 42, 0.52);
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
+  justify-content: center;
+  padding: 16px;
+}
+
+.wx-modal-dialog {
+  width: 100%;
+  max-width: 420px;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.18);
+  padding: 22px 24px;
+}
+
+.wx-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.wx-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
 }
 
 @media (max-width: 640px) {
