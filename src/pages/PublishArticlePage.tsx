@@ -135,6 +135,7 @@ export function PublishArticlePage() {
   const [activePopover, setActivePopover] = useState<'table' | 'formula' | null>(null);
   const [tableRows, setTableRows] = useState(3);
   const [tableCols, setTableCols] = useState(3);
+  const [inTable, setInTable] = useState(false);
   const [formulaTex, setFormulaTex] = useState('');
 
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -146,6 +147,7 @@ export function PublishArticlePage() {
   const savedHtmlRef = useRef<string>('');
   const savedRangeRef = useRef<Range | null>(null);
   const editingFormulaElRef = useRef<HTMLElement | null>(null);
+  const activeTableCellRef = useRef<HTMLTableCellElement | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
   const inlineImgInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -210,6 +212,82 @@ export function PublishArticlePage() {
     savedHtmlRef.current = editorRef.current.innerHTML;
     const text = editorRef.current.innerText.replace(/\s+/g, '');
     setCharCount(text.length);
+  }
+
+  function updateTableSelection() {
+    const sel = window.getSelection();
+    const anchor = sel?.anchorNode;
+    const anchorEl =
+      anchor instanceof HTMLElement ? anchor : anchor?.parentElement ?? null;
+    const cell = anchorEl?.closest('td, th') as HTMLTableCellElement | null;
+    if (cell && editorRef.current?.contains(cell)) {
+      activeTableCellRef.current = cell;
+      setInTable(true);
+    } else {
+      activeTableCellRef.current = null;
+      setInTable(false);
+    }
+  }
+
+  function mutateTable(action: 'addRow' | 'delRow' | 'addCol' | 'delCol' | 'delTable') {
+    const cell = activeTableCellRef.current;
+    if (!cell) return;
+    const tr = cell.closest('tr');
+    const table = cell.closest('table');
+    if (!tr || !table) return;
+
+    const rowIndex = Array.from(table.rows).indexOf(tr);
+    const colIndex = cell.cellIndex;
+
+    if (action === 'delTable') {
+      table.remove();
+      activeTableCellRef.current = null;
+      setInTable(false);
+      syncEditorStats();
+      return;
+    }
+
+    if (action === 'addRow') {
+      const colCount = tr.cells.length;
+      const newRow = table.insertRow(rowIndex + 1);
+      for (let i = 0; i < colCount; i += 1) {
+        const td = newRow.insertCell();
+        td.innerHTML = '<br />';
+      }
+      activeTableCellRef.current = newRow.cells[colIndex] ?? newRow.cells[0] ?? null;
+    } else if (action === 'delRow') {
+      if (table.rows.length <= 1) {
+        table.remove();
+        activeTableCellRef.current = null;
+        setInTable(false);
+      } else {
+        table.deleteRow(rowIndex);
+        const nextRow = table.rows[Math.min(rowIndex, table.rows.length - 1)];
+        activeTableCellRef.current = nextRow?.cells[colIndex] ?? nextRow?.cells[0] ?? null;
+      }
+    } else if (action === 'addCol') {
+      for (const row of Array.from(table.rows)) {
+        const td = row.insertCell(colIndex + 1);
+        td.innerHTML = '<br />';
+      }
+      activeTableCellRef.current = tr.cells[colIndex + 1] ?? cell;
+    } else if (action === 'delCol') {
+      if (tr.cells.length <= 1) {
+        table.remove();
+        activeTableCellRef.current = null;
+        setInTable(false);
+      } else {
+        for (const row of Array.from(table.rows)) {
+          if (colIndex < row.cells.length) {
+            row.deleteCell(colIndex);
+          }
+        }
+        activeTableCellRef.current =
+          tr.cells[Math.min(colIndex, tr.cells.length - 1)] ?? null;
+      }
+    }
+
+    syncEditorStats();
   }
 
   function execFormat(command: string, value?: string) {
@@ -613,6 +691,48 @@ export function PublishArticlePage() {
 
       </header>
 
+      {mode === 'edit' && inTable ? (
+        <div
+          style={{
+            position: 'sticky',
+            top: 52,
+            zIndex: 25,
+            background: '#ffffff',
+            borderBottom: '1px solid var(--color-border)',
+            padding: '6px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+            gap: 8,
+          }}
+        >
+          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--color-text-muted)' }}>
+            表格编辑：
+          </span>
+          <button type="button" className="wx-toolbar-btn" onClick={() => mutateTable('addRow')}>
+            + 插入行
+          </button>
+          <button type="button" className="wx-toolbar-btn" onClick={() => mutateTable('delRow')}>
+            - 删除行
+          </button>
+          <button type="button" className="wx-toolbar-btn" onClick={() => mutateTable('addCol')}>
+            + 插入列
+          </button>
+          <button type="button" className="wx-toolbar-btn" onClick={() => mutateTable('delCol')}>
+            - 删除列
+          </button>
+          <button
+            type="button"
+            className="wx-toolbar-btn"
+            style={{ color: '#dc2626' }}
+            onClick={() => mutateTable('delTable')}
+          >
+            删除表格
+          </button>
+        </div>
+      ) : null}
+
       {/* 插入表格弹窗 */}
       {mode === 'edit' && activePopover === 'table' ? (
         <div
@@ -1000,7 +1120,12 @@ export function PublishArticlePage() {
               contentEditable
               suppressContentEditableWarning
               data-placeholder="请输入正文内容..."
-              onInput={syncEditorStats}
+              onInput={() => {
+                syncEditorStats();
+                updateTableSelection();
+              }}
+              onClick={updateTableSelection}
+              onKeyUp={updateTableSelection}
               onDoubleClick={handleEditorDoubleClick}
             />
 
