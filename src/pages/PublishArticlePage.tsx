@@ -125,6 +125,7 @@ export function PublishArticlePage() {
 
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const [title, setTitle] = useState('');
+  const [authorName, setAuthorName] = useState('');
   const [category, setCategory] = useState<'renju' | 'football'>('renju');
   const [summary, setSummary] = useState('');
   const [coverImage, setCoverImage] = useState('');
@@ -167,6 +168,7 @@ export function PublishArticlePage() {
       if (!raw) return;
       const draft = JSON.parse(raw) as {
         title?: string;
+        authorName?: string;
         category?: 'renju' | 'football';
         summary?: string;
         coverImage?: string;
@@ -174,6 +176,7 @@ export function PublishArticlePage() {
         bodyHtml?: string;
       };
       if (draft.title) setTitle(draft.title);
+      if (draft.authorName) setAuthorName(draft.authorName);
       if (draft.category === 'renju' || draft.category === 'football') {
         setCategory(draft.category);
       }
@@ -190,7 +193,7 @@ export function PublishArticlePage() {
           }
         });
       }
-      if (draft.title || draft.bodyHtml || draft.summary || draft.coverImage) {
+      if (draft.title || draft.authorName || draft.bodyHtml || draft.summary || draft.coverImage) {
         setDraftStatus('已恢复上次草稿');
       }
     } catch {
@@ -202,6 +205,7 @@ export function PublishArticlePage() {
     if (!draftKey) return;
     const hasContent =
       title.trim() ||
+      authorName.trim() ||
       summary.trim() ||
       coverImage.trim() ||
       tagsText.trim() ||
@@ -220,6 +224,7 @@ export function PublishArticlePage() {
           draftKey,
           JSON.stringify({
             title,
+            authorName,
             category,
             summary,
             coverImage,
@@ -235,7 +240,7 @@ export function PublishArticlePage() {
     }, 500);
 
     return () => window.clearTimeout(timer);
-  }, [draftKey, title, category, summary, coverImage, tagsText, bodyVersion]);
+  }, [draftKey, title, authorName, category, summary, coverImage, tagsText, bodyVersion]);
 
   const formulaPreviewHtml = useMemo(() => {
     if (!formulaTex.trim()) return '';
@@ -574,7 +579,7 @@ export function PublishArticlePage() {
     try {
       const created = await newsService.createArticle({
         userId: user.id,
-        authorName: user.username,
+        authorName: authorName.trim() || user.username,
         title: cleanTitle,
         summary: cleanSummary,
         content: contentBlocks,
@@ -1040,7 +1045,7 @@ export function PublishArticlePage() {
                 borderBottom: '1px solid var(--color-border)',
               }}
             >
-              {user.username} · 创作者 · 约 {readMinutes} 分钟阅读
+              {authorName.trim() || user.username} · {user.username} · 约 {readMinutes} 分钟阅读
             </div>
             {coverImage.trim() ? (
               <img
@@ -1182,7 +1187,22 @@ export function PublishArticlePage() {
                 color: 'var(--color-text-muted)',
               }}
             >
-              <span>作者：{user.username}</span>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <input
+                  type="text"
+                  value={authorName}
+                  onChange={(e) => setAuthorName(e.target.value)}
+                  placeholder="请输入作者署名..."
+                  maxLength={40}
+                  style={{
+                    ...fieldStyle,
+                    width: 180,
+                    padding: '4px 10px',
+                    fontSize: '0.82rem',
+                  }}
+                />
+                <span>{user.username}</span>
+              </div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 <span>频道：</span>
                 <button

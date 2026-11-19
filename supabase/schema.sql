@@ -1043,11 +1043,19 @@ begin
     insert into public.user_profiles (
       user_id, username, source_points, last_article_reward_date, updated_at
     )
-    values (new.user_id, new.author_name, 50, today_cn, now());
+    values (
+      new.user_id,
+      coalesce(
+        (select raw_user_meta_data->>'username' from auth.users where id = new.user_id),
+        new.author_name
+      ),
+      50,
+      today_cn,
+      now()
+    );
   elsif prev_reward_date is null or prev_reward_date < today_cn then
     update public.user_profiles
     set
-      username = new.author_name,
       source_points = source_points + 50,
       last_article_reward_date = today_cn,
       updated_at = now()
