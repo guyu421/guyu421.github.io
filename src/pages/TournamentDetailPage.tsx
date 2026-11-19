@@ -273,6 +273,21 @@ export function TournamentDetailPage() {
         : thirdMatch.player1Name
       : null;
 
+    const playerNoByName = new Map<string, number>();
+    for (const m of matches) {
+      if (m.blackNo !== undefined) playerNoByName.set(m.blackName, m.blackNo);
+      if (m.whiteNo !== undefined) playerNoByName.set(m.whiteName, m.whiteNo);
+    }
+
+    const rankedNames = [champion, runnerUp, thirdPlace, fourthPlace].filter(
+      (n): n is string => Boolean(n),
+    );
+    const finalsRows = rankedNames.map((name, idx) => ({
+      rank: idx + 1,
+      playerName: name,
+      playerNo: playerNoByName.get(name),
+    }));
+
     return {
       semi1: semis[0],
       semi2: semis[1],
@@ -282,8 +297,9 @@ export function TournamentDetailPage() {
       runnerUp,
       thirdPlace,
       fourthPlace,
+      finalsRows,
     };
-  }, [hasBracket, bracketMatches]);
+  }, [hasBracket, bracketMatches, matches]);
 
   const roundIndex = rounds.indexOf(currentRound);
 
@@ -757,33 +773,36 @@ export function TournamentDetailPage() {
                 <table className="standings-table">
                   <thead>
                     <tr>
-                      <th style={{ width: 64 }}>名次</th>
+                      <th>名次</th>
                       <th>棋手</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="zone-row" style={{ '--zone-bg': '#fff1f2' } as CSSProperties}>
-                      <td className="tabular-nums" style={{ fontWeight: 600 }}>1</td>
-                      <td style={{ fontWeight: 600 }}>{finalsInfo.champion}</td>
-                    </tr>
-                    {finalsInfo.runnerUp ? (
-                      <tr>
-                        <td className="tabular-nums" style={{ fontWeight: 600 }}>2</td>
-                        <td style={{ fontWeight: 600 }}>{finalsInfo.runnerUp}</td>
+                    {finalsInfo.finalsRows.map((row) => (
+                      <tr
+                        key={row.playerName}
+                        className={row.rank === 1 ? 'zone-row' : undefined}
+                        style={
+                          row.rank === 1
+                            ? ({ '--zone-bg': '#fff1f2' } as CSSProperties)
+                            : undefined
+                        }
+                      >
+                        <td className="tabular-nums" style={{ fontWeight: 600 }}>
+                          {row.rank}
+                        </td>
+                        <td style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+                          <span className="team-cell">
+                            {row.playerNo !== undefined ? (
+                              <span className="player-no tabular-nums">
+                                {row.playerNo}
+                              </span>
+                            ) : null}
+                            <span>{row.playerName}</span>
+                          </span>
+                        </td>
                       </tr>
-                    ) : null}
-                    {finalsInfo.thirdPlace ? (
-                      <tr>
-                        <td className="tabular-nums" style={{ fontWeight: 600 }}>3</td>
-                        <td style={{ fontWeight: 600 }}>{finalsInfo.thirdPlace}</td>
-                      </tr>
-                    ) : null}
-                    {finalsInfo.fourthPlace ? (
-                      <tr>
-                        <td className="tabular-nums" style={{ fontWeight: 600 }}>4</td>
-                        <td style={{ fontWeight: 600 }}>{finalsInfo.fourthPlace}</td>
-                      </tr>
-                    ) : null}
+                    ))}
                   </tbody>
                 </table>
               </div>
