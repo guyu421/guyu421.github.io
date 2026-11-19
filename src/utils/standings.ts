@@ -271,6 +271,8 @@ export function computeStandings(
     return 0;
   }
 
+  const deScoreMap = new Map<string, number>();
+
   function compareUpTo(
     a: Omit<StandingEntry, 'rank'>,
     b: Omit<StandingEntry, 'rank'>,
@@ -292,9 +294,11 @@ export function computeStandings(
         return b.tiebreakWins - a.tiebreakWins;
       }
       if (key === 'direct_encounter') {
-        const bPts = h2hMap.get(b.playerId)?.get(a.playerId) ?? 0;
-        const aPts = h2hMap.get(a.playerId)?.get(b.playerId) ?? 0;
-        if (bPts !== aPts) return bPts - aPts;
+        const bScore = deScoreMap.get(b.playerId);
+        const aScore = deScoreMap.get(a.playerId);
+        if (bScore !== undefined && aScore !== undefined && bScore !== aScore) {
+          return bScore - aScore;
+        }
       }
     }
     return 0;
@@ -305,6 +309,46 @@ export function computeStandings(
     b: Omit<StandingEntry, 'rank'>,
   ): number {
     return compareUpTo(a, b, tiebreakers);
+  }
+
+  // Populate direct_encounter only when players are tied on all preceding tiebreakers
+  // AND every pair in the tied group has played each other ("两两都遇到才能比")
+  const deIdx = tiebreakers.indexOf('direct_encounter');
+  if (deIdx !== -1) {
+    const beforeKeys = tiebreakers.slice(0, deIdx);
+    entries.sort((a, b) => compareUpTo(a, b, beforeKeys));
+    let i = 0;
+    while (i < entries.length) {
+      let j = i + 1;
+      while (j < entries.length && compareUpTo(entries[i], entries[j], beforeKeys) === 0) {
+        j += 1;
+      }
+      if (j - i > 1) {
+        const group = entries.slice(i, j);
+        let allMet = true;
+        for (let a = 0; a < group.length && allMet; a += 1) {
+          for (let b = a + 1; b < group.length; b += 1) {
+            if (!h2hMap.get(group[a].playerId)?.has(group[b].playerId)) {
+              allMet = false;
+              break;
+            }
+          }
+        }
+        if (allMet) {
+          for (const cur of group) {
+            const inner = h2hMap.get(cur.playerId);
+            let sum = 0;
+            for (const peer of group) {
+              if (peer.playerId === cur.playerId) continue;
+              sum += inner?.get(peer.playerId) ?? 0;
+            }
+            deScoreMap.set(cur.playerId, sum);
+            cur.directEncounter = String(sum);
+          }
+        }
+      }
+      i = j;
+    }
   }
 
   const sorted = entries.sort((a, b) => {
@@ -341,40 +385,6 @@ export function computeStandings(
           }
           if (maxNeededX > 0) {
             cur.progressiveBuchholz = `${maxNeededX}-${remSum(cur.playerId, maxNeededX)}`;
-          }
-        }
-      }
-      i = j;
-    }
-  }
-
-  // Populate direct_encounter only when players are tied on all preceding tiebreakers
-  const deIdx = tiebreakers.indexOf('direct_encounter');
-  if (deIdx !== -1) {
-    const beforeKeys = tiebreakers.slice(0, deIdx);
-    let i = 0;
-    while (i < sorted.length) {
-      let j = i + 1;
-      while (j < sorted.length && compareUpTo(sorted[i], sorted[j], beforeKeys) === 0) {
-        j += 1;
-      }
-      if (j - i > 1) {
-        const group = sorted.slice(i, j);
-        const groupIds = new Set(group.map((g) => g.playerId));
-        for (const cur of group) {
-          const inner = h2hMap.get(cur.playerId);
-          if (!inner) continue;
-          let sum = 0;
-          let met = false;
-          for (const oid of groupIds) {
-            if (oid === cur.playerId) continue;
-            if (inner.has(oid)) {
-              met = true;
-              sum += inner.get(oid) ?? 0;
-            }
-          }
-          if (met) {
-            cur.directEncounter = String(sum);
           }
         }
       }

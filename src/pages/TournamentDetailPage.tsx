@@ -868,13 +868,9 @@ export function TournamentDetailPage() {
         <>
           {finalsInfo ? (
             <div className="bracket-section" style={{ paddingBottom: 16 }}>
-              <div className="v-stage-label" style={{ textAlign: 'left', marginBottom: 10 }}>
-                决赛对阵图
-              </div>
-              <div className="v-bracket-card">
+              <div className="v-bracket-clean">
                 {finalsInfo.semi1 ? (
                   <>
-                    <div className="v-stage-label">半决赛 上半区</div>
                     <div className="v-match-row">
                       <span
                         className={`v-player ${
@@ -904,54 +900,128 @@ export function TournamentDetailPage() {
                         ) : null}
                       </span>
                     </div>
-                    <div className="v-fork-down" aria-hidden="true" />
+                    <svg
+                      className="v-fork-svg"
+                      viewBox="0 0 200 36"
+                      preserveAspectRatio="none"
+                      aria-hidden="true"
+                    >
+                      {finalsInfo.semi1.winnerSlot === 2 ? (
+                        <>
+                          <path
+                            d="M 44 0 V 18 H 100"
+                            fill="none"
+                            stroke="#e2e8f0"
+                            strokeWidth="2"
+                            vectorEffect="non-scaling-stroke"
+                          />
+                          <path
+                            d="M 156 0 V 18 H 100 V 36"
+                            fill="none"
+                            stroke="#2563eb"
+                            strokeWidth="2"
+                            vectorEffect="non-scaling-stroke"
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <path
+                            d="M 156 0 V 18 H 100"
+                            fill="none"
+                            stroke="#e2e8f0"
+                            strokeWidth="2"
+                            vectorEffect="non-scaling-stroke"
+                          />
+                          <path
+                            d="M 44 0 V 18 H 100 V 36"
+                            fill="none"
+                            stroke="#2563eb"
+                            strokeWidth="2"
+                            vectorEffect="non-scaling-stroke"
+                          />
+                        </>
+                      )}
+                    </svg>
                   </>
                 ) : null}
 
                 {finalsInfo.finalMatch ? (
-                  <div className="v-final-box">
-                    <div
-                      className="v-stage-label"
-                      style={{ color: 'var(--color-primary)', marginBottom: 8 }}
+                  <div className="v-match-row v-final-row">
+                    <span
+                      className={`v-player ${
+                        finalsInfo.finalMatch.winnerSlot === 1 ? 'winner' : 'loser'
+                      }`}
                     >
-                      决赛
-                    </div>
-                    <div className="v-match-row">
-                      <span
-                        className={`v-player ${
-                          finalsInfo.finalMatch.winnerSlot === 1 ? 'winner' : 'loser'
-                        }`}
-                      >
-                        {finalsInfo.finalMatch.player1Seed !== undefined ? (
-                          <span className="bracket-seed tabular-nums">
-                            预#{finalsInfo.finalMatch.player1Seed}
-                          </span>
-                        ) : null}
-                        <span>{finalsInfo.finalMatch.player1Name}</span>
-                      </span>
-                      <span className="v-score tabular-nums">
-                        {finalsInfo.finalMatch.player1Score}-
-                        {finalsInfo.finalMatch.player2Score}
-                      </span>
-                      <span
-                        className={`v-player ${
-                          finalsInfo.finalMatch.winnerSlot === 2 ? 'winner' : 'loser'
-                        }`}
-                      >
-                        <span>{finalsInfo.finalMatch.player2Name}</span>
-                        {finalsInfo.finalMatch.player2Seed !== undefined ? (
-                          <span className="bracket-seed tabular-nums">
-                            预#{finalsInfo.finalMatch.player2Seed}
-                          </span>
-                        ) : null}
-                      </span>
-                    </div>
+                      {finalsInfo.finalMatch.player1Seed !== undefined ? (
+                        <span className="bracket-seed tabular-nums">
+                          预#{finalsInfo.finalMatch.player1Seed}
+                        </span>
+                      ) : null}
+                      <span>{finalsInfo.finalMatch.player1Name}</span>
+                    </span>
+                    <span className="v-score tabular-nums">
+                      {finalsInfo.finalMatch.player1Score}-
+                      {finalsInfo.finalMatch.player2Score}
+                    </span>
+                    <span
+                      className={`v-player ${
+                        finalsInfo.finalMatch.winnerSlot === 2 ? 'winner' : 'loser'
+                      }`}
+                    >
+                      <span>{finalsInfo.finalMatch.player2Name}</span>
+                      {finalsInfo.finalMatch.player2Seed !== undefined ? (
+                        <span className="bracket-seed tabular-nums">
+                          预#{finalsInfo.finalMatch.player2Seed}
+                        </span>
+                      ) : null}
+                    </span>
                   </div>
                 ) : null}
 
                 {finalsInfo.semi2 ? (
                   <>
-                    <div className="v-fork-up" aria-hidden="true" />
+                    <svg
+                      className="v-fork-svg"
+                      viewBox="0 0 200 36"
+                      preserveAspectRatio="none"
+                      aria-hidden="true"
+                    >
+                      {finalsInfo.semi2.winnerSlot === 2 ? (
+                        <>
+                          <path
+                            d="M 44 36 V 18 H 100"
+                            fill="none"
+                            stroke="#e2e8f0"
+                            strokeWidth="2"
+                            vectorEffect="non-scaling-stroke"
+                          />
+                          <path
+                            d="M 156 36 V 18 H 100 V 0"
+                            fill="none"
+                            stroke="#dc2626"
+                            strokeWidth="2"
+                            vectorEffect="non-scaling-stroke"
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <path
+                            d="M 156 36 V 18 H 100"
+                            fill="none"
+                            stroke="#e2e8f0"
+                            strokeWidth="2"
+                            vectorEffect="non-scaling-stroke"
+                          />
+                          <path
+                            d="M 44 36 V 18 H 100 V 0"
+                            fill="none"
+                            stroke="#dc2626"
+                            strokeWidth="2"
+                            vectorEffect="non-scaling-stroke"
+                          />
+                        </>
+                      )}
+                    </svg>
                     <div className="v-match-row">
                       <span
                         className={`v-player ${
@@ -981,51 +1051,9 @@ export function TournamentDetailPage() {
                         ) : null}
                       </span>
                     </div>
-                    <div
-                      className="v-stage-label"
-                      style={{ marginTop: 10, marginBottom: 0 }}
-                    >
-                      半决赛 下半区
-                    </div>
                   </>
                 ) : null}
               </div>
-
-              {finalsInfo.thirdMatch ? (
-                <div className="v-third-card">
-                  <div className="v-stage-label">三四名决赛</div>
-                  <div className="v-match-row">
-                    <span
-                      className={`v-player ${
-                        finalsInfo.thirdMatch.winnerSlot === 1 ? 'winner' : 'loser'
-                      }`}
-                    >
-                      {finalsInfo.thirdMatch.player1Seed !== undefined ? (
-                        <span className="bracket-seed tabular-nums">
-                          预#{finalsInfo.thirdMatch.player1Seed}
-                        </span>
-                      ) : null}
-                      <span>{finalsInfo.thirdMatch.player1Name}</span>
-                    </span>
-                    <span className="v-score tabular-nums">
-                      {finalsInfo.thirdMatch.player1Score}-
-                      {finalsInfo.thirdMatch.player2Score}
-                    </span>
-                    <span
-                      className={`v-player ${
-                        finalsInfo.thirdMatch.winnerSlot === 2 ? 'winner' : 'loser'
-                      }`}
-                    >
-                      <span>{finalsInfo.thirdMatch.player2Name}</span>
-                      {finalsInfo.thirdMatch.player2Seed !== undefined ? (
-                        <span className="bracket-seed tabular-nums">
-                          预#{finalsInfo.thirdMatch.player2Seed}
-                        </span>
-                      ) : null}
-                    </span>
-                  </div>
-                </div>
-              ) : null}
 
               <div className="v-stage-label" style={{ textAlign: 'left', margin: '18px 0 0' }}>
                 预赛对阵
