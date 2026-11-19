@@ -888,7 +888,7 @@ export function PublishArticlePage() {
           className="wx-modal-backdrop"
           role="dialog"
           aria-modal="true"
-          aria-label={editingFormulaElRef.current ? '编辑行内公式' : '插入行内公式'}
+          aria-label={editingFormulaElRef.current ? '编辑公式' : '插入公式'}
           onClick={() => {
             editingFormulaElRef.current = null;
             setActivePopover(null);
@@ -901,7 +901,7 @@ export function PublishArticlePage() {
           >
             <div className="wx-modal-header">
               <strong style={{ fontSize: '1.02rem' }}>
-                {editingFormulaElRef.current ? '编辑行内公式' : '插入行内公式'}
+                {editingFormulaElRef.current ? '编辑公式' : '插入公式'}
               </strong>
               <button
                 type="button"
