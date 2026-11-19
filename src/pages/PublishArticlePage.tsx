@@ -3,7 +3,6 @@ import {
   AlignLeft,
   ArrowLeft,
   Bold,
-  Download,
   Eye,
   Heading2,
   ImagePlus,
@@ -24,7 +23,6 @@ import { newsService } from '@/services/newsService';
 import { useAuth } from '@/store/AuthContext';
 import type { ArticleContentBlock } from '@/types/news';
 import { renderTextWithMath } from '@/utils/math';
-import { parseWechatHtml } from '@/utils/wechatImport';
 
 function extractInlineText(node: Node): string {
   if (node.nodeType === Node.TEXT_NODE) {
@@ -130,19 +128,13 @@ export function PublishArticlePage() {
   const [category, setCategory] = useState<'renju' | 'football'>('renju');
   const [summary, setSummary] = useState('');
   const [coverImage, setCoverImage] = useState('');
-  const [sourceUrl, setSourceUrl] = useState('');
-  const [publishedAt, setPublishedAt] = useState('');
   const [tagsText, setTagsText] = useState('');
   const [charCount, setCharCount] = useState(0);
   const [bodyVersion, setBodyVersion] = useState(0);
   const [draftStatus, setDraftStatus] = useState<string | null>(null);
   const [previewBlocks, setPreviewBlocks] = useState<ArticleContentBlock[]>([]);
 
-  const [activePopover, setActivePopover] = useState<'table' | 'formula' | 'wechat' | null>(
-    null,
-  );
-  const [importingWechat, setImportingWechat] = useState(false);
-  const [wxImportStatus, setWxImportStatus] = useState<string | null>(null);
+  const [activePopover, setActivePopover] = useState<'table' | 'formula' | null>(null);
   const [tableRows, setTableRows] = useState(3);
   const [tableCols, setTableCols] = useState(3);
   const [tableMenuPos, setTableMenuPos] = useState<{ top: number; left: number } | null>(
@@ -178,8 +170,6 @@ export function PublishArticlePage() {
         category?: 'renju' | 'football';
         summary?: string;
         coverImage?: string;
-        sourceUrl?: string;
-        publishedAt?: string;
         tagsText?: string;
         bodyHtml?: string;
       };
@@ -189,8 +179,6 @@ export function PublishArticlePage() {
       }
       if (draft.summary) setSummary(draft.summary);
       if (draft.coverImage) setCoverImage(draft.coverImage);
-      if (draft.sourceUrl) setSourceUrl(draft.sourceUrl);
-      if (draft.publishedAt) setPublishedAt(draft.publishedAt);
       if (draft.tagsText) setTagsText(draft.tagsText);
       if (draft.bodyHtml) {
         savedHtmlRef.current = draft.bodyHtml;
@@ -216,7 +204,6 @@ export function PublishArticlePage() {
       title.trim() ||
       summary.trim() ||
       coverImage.trim() ||
-      sourceUrl.trim() ||
       tagsText.trim() ||
       savedHtmlRef.current.replace(/<[^>]+>/g, '').trim() ||
       savedHtmlRef.current.includes('<img') ||
@@ -236,8 +223,6 @@ export function PublishArticlePage() {
             category,
             summary,
             coverImage,
-            sourceUrl,
-            publishedAt,
             tagsText,
             bodyHtml: savedHtmlRef.current,
             updatedAt: Date.now(),
@@ -250,7 +235,7 @@ export function PublishArticlePage() {
     }, 500);
 
     return () => window.clearTimeout(timer);
-  }, [draftKey, title, category, summary, coverImage, sourceUrl, publishedAt, tagsText, bodyVersion]);
+  }, [draftKey, title, category, summary, coverImage, tagsText, bodyVersion]);
 
   const formulaPreviewHtml = useMemo(() => {
     if (!formulaTex.trim()) return '';
@@ -484,52 +469,6 @@ export function PublishArticlePage() {
     setActivePopover(null);
   }
 
-  function applyWechatImportResult(raw: string) {
-    const parsed = parseWechatHtml(raw);
-    if (parsed.title && !title.trim()) {
-      setTitle(parsed.title);
-    }
-    if (parsed.coverImage && !coverImage.trim()) {
-      setCoverImage(parsed.coverImage);
-    }
-    if (parsed.publishedAt) {
-      setPublishedAt(parsed.publishedAt);
-    }
-    if (editorRef.current && parsed.bodyHtml) {
-      editorRef.current.innerHTML = parsed.bodyHtml;
-      syncEditorStats();
-    }
-  }
-
-  async function handleWechatImportConfirm() {
-    setWxImportStatus(null);
-    const url = sourceUrl.trim();
-    if (!url) return;
-
-    setImportingWechat(true);
-    try {
-      const resp = await fetch(url);
-      if (!resp.ok) {
-        throw new Error(`HTTP ${resp.status}`);
-      }
-      const html = await resp.text();
-      if (html.includes('wappoc_appmsgcaptcha') || !html.includes('js_content')) {
-        setWxImportStatus(
-          '微信页面触发安全验证或未返回正文，无法通过链接直接导入。',
-        );
-        return;
-      }
-      applyWechatImportResult(html);
-      setActivePopover(null);
-    } catch {
-      setWxImportStatus(
-        '浏览器跨域限制（CORS）拦截了直接抓取微信链接，需要通过后端代理接口才可仅凭链接导入。',
-      );
-    } finally {
-      setImportingWechat(false);
-    }
-  }
-
   function handleEditorDoubleClick(e: React.MouseEvent<HTMLDivElement>) {
     const formulaEl = (e.target as HTMLElement).closest(
       '.wx-inline-formula',
@@ -641,8 +580,6 @@ export function PublishArticlePage() {
         content: contentBlocks,
         category,
         coverImage: coverImage.trim() || undefined,
-        sourceUrl: sourceUrl.trim() || undefined,
-        publishedAt: publishedAt || undefined,
         tags,
       });
       if (draftKey) {
@@ -817,16 +754,6 @@ export function PublishArticlePage() {
             >
               <Minus size={14} />
               分割线
-            </button>
-            <button
-              type="button"
-              className="wx-toolbar-btn"
-              onClick={() =>
-                setActivePopover((prev) => (prev === 'wechat' ? null : 'wechat'))
-              }
-            >
-              <Download size={14} />
-              公众号导入
             </button>
           </div>
         ) : (
@@ -1072,97 +999,6 @@ export function PublishArticlePage() {
                 style={{ padding: '6px 16px', fontSize: '0.84rem' }}
               >
                 {editingFormulaElRef.current ? '保存修改' : '插入公式'}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {/* 微信公众号导入弹窗 */}
-      {mode === 'edit' && activePopover === 'wechat' ? (
-        <div
-          className="wx-modal-backdrop"
-          role="dialog"
-          aria-modal="true"
-          aria-label="从微信公众号导入"
-          onClick={() => setActivePopover(null)}
-        >
-          <div
-            className="wx-modal-dialog"
-            style={{ maxWidth: 540 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="wx-modal-header">
-              <strong style={{ fontSize: '1.02rem' }}>从微信公众号导入文章</strong>
-              <button
-                type="button"
-                aria-label="关闭弹窗"
-                onClick={() => setActivePopover(null)}
-                style={{
-                  border: 'none',
-                  background: 'transparent',
-                  color: 'var(--color-text-muted)',
-                  padding: 4,
-                  cursor: 'pointer',
-                }}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div>
-                <label htmlFor="wx-url" style={labelStyle}>
-                  公众号文章链接
-                </label>
-                <input
-                  id="wx-url"
-                  type="url"
-                  autoFocus
-                  value={sourceUrl}
-                  onChange={(e) => {
-                    setWxImportStatus(null);
-                    setSourceUrl(e.target.value);
-                  }}
-                  placeholder="请输入微信公众号文章链接..."
-                  style={fieldStyle}
-                />
-              </div>
-
-              {wxImportStatus ? (
-                <div
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: 'var(--radius-sm)',
-                    background: '#fef2f2',
-                    color: '#dc2626',
-                    fontSize: '0.82rem',
-                    lineHeight: 1.5,
-                    fontWeight: 600,
-                  }}
-                >
-                  {wxImportStatus}
-                </div>
-              ) : null}
-            </div>
-
-            <div className="wx-modal-footer">
-              <button
-                type="button"
-                className="category-pill"
-                onClick={() => setActivePopover(null)}
-                style={{ padding: '6px 14px', fontSize: '0.84rem' }}
-              >
-                取消
-              </button>
-              <button
-                type="button"
-                className="category-pill active"
-                onClick={handleWechatImportConfirm}
-                disabled={importingWechat || !sourceUrl.trim()}
-                style={{ padding: '6px 16px', fontSize: '0.84rem' }}
-              >
-                {importingWechat ? '导入中...' : '确认导入'}
               </button>
             </div>
           </div>
@@ -1458,21 +1294,6 @@ export function PublishArticlePage() {
                   style={fieldStyle}
                 />
               </div>
-
-              {publishedAt ? (
-                <div style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>
-                  已识别公众号发布时间：
-                  {new Intl.DateTimeFormat('zh-CN', {
-                    timeZone: 'Asia/Shanghai',
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false,
-                  }).format(new Date(publishedAt))}
-                </div>
-              ) : null}
 
               <div>
                 <label htmlFor="pub-tags" style={labelStyle}>
