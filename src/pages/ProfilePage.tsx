@@ -12,7 +12,7 @@ import { Link } from 'react-router-dom';
 import { profileService } from '@/services/profileService';
 import { useAuth } from '@/store/AuthContext';
 import type { UserProfile } from '@/types/match';
-import { getLevelInfo, LEVEL_THRESHOLDS } from '@/utils/level';
+import { getLevelInfo } from '@/utils/level';
 
 function getTodayBeijingDate(): string {
   return new Intl.DateTimeFormat('en-CA', {
@@ -393,25 +393,6 @@ export function ProfilePage() {
               </Link>
             )}
           </div>
-        </div>
-
-        <div
-          style={{
-            marginTop: 18,
-            paddingTop: 14,
-            borderTop: '1px solid var(--color-surface-muted)',
-            fontSize: '0.78rem',
-            color: 'var(--color-text-muted)',
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '6px 14px',
-          }}
-        >
-          {LEVEL_THRESHOLDS.map((item) => (
-            <span key={item.level} className="tabular-nums">
-              Lv.{item.level}: {item.minPoints.toLocaleString()}
-            </span>
-          ))}
         </div>
       </div>
     </div>

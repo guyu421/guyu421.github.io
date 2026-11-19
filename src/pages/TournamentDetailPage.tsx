@@ -1,7 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Badge } from '@/components/common/Badge';
 import { EmptyState } from '@/components/common/EmptyState';
 import { matchService } from '@/services/matchService';
 import type { RenjuMatch, RenjuMatchStatus, TournamentItem } from '@/types/match';
@@ -96,50 +95,60 @@ export function TournamentDetailPage() {
   );
 
   return (
-    <div className="container">
+    <div className="tournament-page">
       <div className="league-banner">
-        <Link
-          to="/matches"
-          aria-label="返回赛事列表"
-          style={{
-            color: '#ffffff',
-            display: 'inline-flex',
-            alignItems: 'center',
-            flexShrink: 0,
-          }}
+        <div
+          className="container"
+          style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 0 }}
         >
-          <ChevronLeft size={22} />
-        </Link>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: '1rem', fontWeight: 800, lineHeight: 1.35 }}>
+          <Link
+            to="/matches"
+            aria-label="返回赛事列表"
+            style={{
+              color: '#ffffff',
+              display: 'inline-flex',
+              alignItems: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <ChevronLeft size={22} />
+          </Link>
+          <div style={{ fontSize: '1.02rem', fontWeight: 700, lineHeight: 1.35 }}>
             {tournament?.title || '赛事对局'}
           </div>
-          {tournament ? (
-            <div style={{ fontSize: '0.76rem', opacity: 0.85 }}>
-              {tournament.groupName}
-              {tournament.location ? ` · ${tournament.location}` : ''}
-            </div>
-          ) : null}
         </div>
       </div>
 
+      <div className="league-subtabs">
+        <span className="league-subtab">比赛</span>
+        {tournament ? (
+          <span style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>
+            {tournament.groupName}
+          </span>
+        ) : null}
+      </div>
+
       {loading ? (
-        <div className="card" style={{ padding: 24 }}>
+        <div className="card" style={{ margin: 16, padding: 24 }}>
           <div className="skeleton" style={{ height: 96 }} />
         </div>
       ) : error ? (
-        <EmptyState title="对局加载失败" description={error} />
+        <div style={{ padding: 16 }}>
+          <EmptyState title="对局加载失败" description={error} />
+        </div>
       ) : matches.length === 0 ? (
-        <EmptyState
-          title="暂无对局数据"
-          description="请先在 Supabase 执行最新的 schema.sql 导入对局数据。"
-        />
+        <div style={{ padding: 16 }}>
+          <EmptyState
+            title="暂无对局数据"
+            description="请先在 Supabase 执行最新的 schema.sql 导入对局数据。"
+          />
+        </div>
       ) : (
         <>
           <div className="round-bar">
             <button
               type="button"
-              className="round-btn"
+              className="round-btn left"
               disabled={roundIndex <= 0}
               onClick={() => setSelectedRound(rounds[roundIndex - 1])}
             >
@@ -147,13 +156,11 @@ export function TournamentDetailPage() {
               上一轮
             </button>
 
-            <span style={{ color: 'var(--color-text)', fontWeight: 700 }}>
-              第 {selectedRound} 轮（{roundMatches.length} 台）
-            </span>
+            <span>公开组 第{selectedRound}轮</span>
 
             <button
               type="button"
-              className="round-btn"
+              className="round-btn right"
               disabled={roundIndex === -1 || roundIndex >= rounds.length - 1}
               onClick={() => setSelectedRound(rounds[roundIndex + 1])}
             >
@@ -162,32 +169,29 @@ export function TournamentDetailPage() {
             </button>
           </div>
 
+          <div className="round-sublabel">
+            第{selectedRound}轮 · 共{roundMatches.length}台
+          </div>
+
           <div className="fixture-list">
             {roundMatches.map((match) => {
               const score = getDisplayScores(match);
               return (
                 <div key={match.id} className="fixture-row">
                   <div className="fixture-meta">
-                    <span className="tabular-nums" style={{ fontWeight: 600, color: 'var(--color-text)' }}>
-                      第 {match.boardNo} 台
-                    </span>
-                    <Badge variant={match.status === 'live' ? 'breaking' : 'neutral'}>
+                    <span className="tabular-nums">第{match.boardNo}台</span>
+                    <span
+                      className={
+                        match.status === 'live' ? 'fixture-status-live' : undefined
+                      }
+                    >
                       {STATUS_LABEL[match.status]}
-                    </Badge>
+                    </span>
                   </div>
 
                   <div className="fixture-players">
                     <div className="fixture-player-line">
-                      <span
-                        className="badge"
-                        style={{
-                          backgroundColor: '#0f172a',
-                          color: '#ffffff',
-                          flexShrink: 0,
-                        }}
-                      >
-                        假先
-                      </span>
+                      <span className="role-tag first">假先</span>
                       <span>{match.blackName}</span>
                       <span className="fixture-player-id tabular-nums">
                         #{match.blackId}
@@ -195,17 +199,7 @@ export function TournamentDetailPage() {
                     </div>
 
                     <div className="fixture-player-line">
-                      <span
-                        className="badge"
-                        style={{
-                          backgroundColor: '#ffffff',
-                          color: '#0f172a',
-                          border: '1px solid #cbd5e1',
-                          flexShrink: 0,
-                        }}
-                      >
-                        假后
-                      </span>
+                      <span className="role-tag second">假后</span>
                       <span>{match.whiteName}</span>
                       <span className="fixture-player-id tabular-nums">
                         #{match.whiteId}
@@ -216,7 +210,7 @@ export function TournamentDetailPage() {
                   <div className="fixture-scores tabular-nums">
                     <div
                       className={`fixture-score-line ${
-                        !match.result ? 'muted' : ''
+                        !match.result ? 'muted' : !score.blackWin ? 'loser' : ''
                       }`}
                     >
                       <span>{score.blackText}</span>
@@ -224,7 +218,7 @@ export function TournamentDetailPage() {
                     </div>
                     <div
                       className={`fixture-score-line ${
-                        !match.result ? 'muted' : ''
+                        !match.result ? 'muted' : !score.whiteWin ? 'loser' : ''
                       }`}
                     >
                       <span>{score.whiteText}</span>
