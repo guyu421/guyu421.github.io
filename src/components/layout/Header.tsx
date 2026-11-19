@@ -1,14 +1,37 @@
 import { LogOut, Search, User } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { MAIN_NAV_LINKS } from '@/constants/navigation';
 import { useAppStore } from '@/store/AppContext';
 import { useAuth } from '@/store/AuthContext';
+import type { SportCategoryId } from '@/types/common';
 import { cn } from '@/utils/cn';
 
+function extractSportFromPath(path: string): SportCategoryId {
+  const seg = path.split('/').pop();
+  if (seg === 'renju' || seg === 'football') return seg;
+  return 'all';
+}
+
 export function Header() {
-  const { searchQuery, setSearchQuery } = useAppStore();
+  const { activeCategory, setActiveCategory, searchQuery, setSearchQuery } =
+    useAppStore();
   const { user, openAuthModal, logout } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isMatchesRoute = location.pathname.startsWith('/matches');
+
+  function handleNavClick(
+    e: React.MouseEvent<HTMLAnchorElement>,
+    path: string,
+  ) {
+    const sport = extractSportFromPath(path);
+    setActiveCategory(sport);
+    if (isMatchesRoute) {
+      e.preventDefault();
+      navigate('/matches');
+    }
+  }
 
   return (
     <>
@@ -20,15 +43,25 @@ export function Header() {
           </NavLink>
 
           <nav className="main-nav" aria-label="主导航">
-            {MAIN_NAV_LINKS.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) => cn('nav-link', isActive && 'active')}
-              >
-                {item.label}
-              </NavLink>
-            ))}
+            {MAIN_NAV_LINKS.map((item) => {
+              const sport = extractSportFromPath(item.path);
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  onClick={(e) => handleNavClick(e, item.path)}
+                  className={({ isActive }) =>
+                    cn(
+                      'nav-link',
+                      (isMatchesRoute ? activeCategory === sport : isActive) &&
+                        'active',
+                    )
+                  }
+                >
+                  {item.label}
+                </NavLink>
+              );
+            })}
           </nav>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -100,17 +133,25 @@ export function Header() {
 
         <nav className="mobile-nav" aria-label="移动端频道导航">
           <div className="container mobile-nav-inner">
-            {MAIN_NAV_LINKS.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) =>
-                  cn('mobile-nav-link', isActive && 'active')
-                }
-              >
-                {item.label}
-              </NavLink>
-            ))}
+            {MAIN_NAV_LINKS.map((item) => {
+              const sport = extractSportFromPath(item.path);
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  onClick={(e) => handleNavClick(e, item.path)}
+                  className={({ isActive }) =>
+                    cn(
+                      'mobile-nav-link',
+                      (isMatchesRoute ? activeCategory === sport : isActive) &&
+                        'active',
+                    )
+                  }
+                >
+                  {item.label}
+                </NavLink>
+              );
+            })}
           </div>
         </nav>
       </header>

@@ -351,8 +351,13 @@ export function TournamentDetailPage() {
                 const dt = formatScheduleLines(m.matchTime);
                 const hasScore =
                   m.homeScore !== null && m.awayScore !== null;
-                const homeWin = hasScore && m.homeScore! > m.awayScore!;
-                const awayWin = hasScore && m.awayScore! > m.homeScore!;
+                const homeOutcome: 'win' | 'draw' | 'loss' | null = !hasScore
+                  ? null
+                  : m.homeScore! > m.awayScore!
+                    ? 'win'
+                    : m.homeScore! < m.awayScore!
+                      ? 'loss'
+                      : 'draw';
 
                 return (
                   <div key={m.id} className="fixture-row">
@@ -373,19 +378,33 @@ export function TournamentDetailPage() {
                     <div className="fixture-scores tabular-nums">
                       <div
                         className={`fixture-score-line ${
-                          !hasScore ? 'muted' : awayWin ? 'loser' : ''
+                          !hasScore
+                            ? 'muted'
+                            : homeOutcome === 'loss'
+                              ? 'loser'
+                              : ''
                         }`}
                       >
                         <span>{hasScore ? m.homeScore : '-'}</span>
-                        {homeWin ? <span className="result-dot win">W</span> : <span aria-hidden="true" />}
+                        {homeOutcome ? (
+                          <span className={`result-dot ${homeOutcome}`}>
+                            {OUTCOME_LABEL[homeOutcome]}
+                          </span>
+                        ) : (
+                          <span aria-hidden="true" />
+                        )}
                       </div>
                       <div
                         className={`fixture-score-line ${
-                          !hasScore ? 'muted' : homeWin ? 'loser' : ''
+                          !hasScore
+                            ? 'muted'
+                            : homeOutcome === 'win'
+                              ? 'loser'
+                              : ''
                         }`}
                       >
                         <span>{hasScore ? m.awayScore : '-'}</span>
-                        {awayWin ? <span className="result-dot win">W</span> : <span aria-hidden="true" />}
+                        <span aria-hidden="true" />
                       </div>
                     </div>
                   </div>

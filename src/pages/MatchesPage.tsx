@@ -1,11 +1,13 @@
 import { ChevronRight } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { EmptyState } from '@/components/common/EmptyState';
 import { matchService } from '@/services/matchService';
+import { useAppStore } from '@/store/AppContext';
 import type { TournamentItem } from '@/types/match';
 
 export function MatchesPage() {
+  const { activeCategory } = useAppStore();
   const [tournaments, setTournaments] = useState<TournamentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,16 +36,13 @@ export function MatchesPage() {
     };
   }, []);
 
+  const visibleTournaments = useMemo(() => {
+    if (activeCategory === 'all') return tournaments;
+    return tournaments.filter((item) => item.sport === activeCategory);
+  }, [tournaments, activeCategory]);
+
   return (
     <div className="tournament-page">
-      <div className="league-banner">
-        <div className="container" style={{ padding: 0 }}>
-          <div style={{ fontSize: '1.02rem', fontWeight: 700, lineHeight: 1.35 }}>
-            赛事
-          </div>
-        </div>
-      </div>
-
       {loading ? (
         <div className="card" style={{ margin: 16, padding: 24 }}>
           <div className="skeleton" style={{ height: 84 }} />
@@ -52,16 +51,16 @@ export function MatchesPage() {
         <div style={{ padding: 16 }}>
           <EmptyState title="赛事列表加载失败" description={error} />
         </div>
-      ) : tournaments.length === 0 ? (
+      ) : visibleTournaments.length === 0 ? (
         <div style={{ padding: 16 }}>
           <EmptyState
             title="暂无赛事"
-            description="请先在 Supabase 执行 schema.sql 初始化赛事数据。"
+            description="请切换顶部项目分类，或先在 Supabase 执行 schema.sql 初始化赛事数据。"
           />
         </div>
       ) : (
         <div className="fixture-list">
-          {tournaments.map((item) => (
+          {visibleTournaments.map((item) => (
             <Link
               key={item.id}
               to={`/matches/${item.id}`}
