@@ -39,6 +39,22 @@ export function Header() {
           />
         </div>
       </div>
+
+      <nav className="mobile-nav" aria-label="移动端频道导航">
+        <div className="container mobile-nav-inner">
+          {MAIN_NAV_LINKS.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) =>
+                cn('mobile-nav-link', isActive && 'active')
+              }
+            >
+              {item.label}
+            </NavLink>
+          ))}
+        </div>
+      </nav>
     </header>
   );
 }

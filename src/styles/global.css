@@ -458,11 +458,55 @@ button {
   font-size: 0.85rem;
 }
 
+.mobile-nav {
+  display: none;
+  border-top: 1px solid var(--color-header-border);
+  background-color: var(--color-header-bg);
+}
+
+.mobile-nav-inner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.mobile-nav-inner::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-nav-link {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #cbd5e1;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.mobile-nav-link:hover,
+.mobile-nav-link.active {
+  background-color: var(--color-primary);
+  color: #ffffff;
+}
+
 @media (max-width: 960px) {
   .home-grid {
     grid-template-columns: 1fr;
   }
   .main-nav {
     display: none;
+  }
+  .mobile-nav {
+    display: block;
+  }
+  .search-box {
+    width: auto;
+    flex: 1;
+    max-width: 210px;
   }
 }
