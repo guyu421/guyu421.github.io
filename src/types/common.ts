@@ -1,4 +1,4 @@
-export type SportCategoryId = 'all' | 'gomoku';
+export type SportCategoryId = 'all' | 'renju';
 
 export interface ApiResponse<T> {
   data: T;

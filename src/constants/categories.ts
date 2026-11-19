@@ -8,7 +8,7 @@ export interface SportCategoryMeta {
 
 export const SPORT_CATEGORIES: SportCategoryMeta[] = [
   { id: 'all', label: '全部资讯', accentColor: '#ef4444' },
-  { id: 'gomoku', label: '五子棋', accentColor: '#d97706' },
+  { id: 'renju', label: '五子棋', accentColor: '#d97706' },
 ];
 
 export const CATEGORY_MAP: Record<SportCategoryId, SportCategoryMeta> =

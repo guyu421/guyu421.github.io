@@ -4,5 +4,5 @@ export interface NavLinkItem {
 }
 
 export const MAIN_NAV_LINKS: NavLinkItem[] = [
-  { label: '五子棋', path: '/category/gomoku' },
+  { label: '五子棋', path: '/category/renju' },
 ];

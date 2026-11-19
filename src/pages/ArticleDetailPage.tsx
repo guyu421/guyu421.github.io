@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Badge } from '@/components/common/Badge';
 import { EmptyState } from '@/components/common/EmptyState';
+import { GitHubComments } from '@/components/common/GitHubComments';
 import { LoadingSkeleton } from '@/components/common/LoadingSkeleton';
 import { NewsList } from '@/components/news/NewsList';
 import { CATEGORY_MAP } from '@/constants/categories';
@@ -167,6 +168,11 @@ export function ArticleDetailPage() {
           <NewsList articles={related} />
         </section>
       ) : null}
+
+      <GitHubComments
+        issueTerm={`article-${article.slug}`}
+        title="文章评价与讨论"
+      />
     </div>
   );
 }
