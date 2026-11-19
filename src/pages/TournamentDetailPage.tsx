@@ -1260,9 +1260,6 @@ export function TournamentDetailPage() {
                           {prevScores.get(match.blackId) ?? 0}
                         </span>
                       ) : null}
-                      {score.forfeitSide === 'black' ? (
-                        <span className="forfeit-badge">退赛</span>
-                      ) : null}
                     </div>
 
                     <div className="fixture-player-line">
@@ -1276,9 +1273,6 @@ export function TournamentDetailPage() {
                         <span className="fixture-player-id tabular-nums">
                           {prevScores.get(match.whiteId) ?? 0}
                         </span>
-                      ) : null}
-                      {score.forfeitSide === 'white' ? (
-                        <span className="forfeit-badge">退赛</span>
                       ) : null}
                     </div>
                   </div>
