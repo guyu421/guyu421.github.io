@@ -11,7 +11,6 @@ create table if not exists public.articles (
   category_label text not null default '五子棋',
   cover_image text,
   author_name text not null,
-  author_role text not null default '微信公众号',
   published_at timestamptz not null default now(),
   read_time_minutes integer not null default 2,
   views integer not null default 0,
@@ -24,6 +23,9 @@ create table if not exists public.articles (
 
 alter table public.articles
   add column if not exists user_id uuid references auth.users(id) on delete set null;
+
+alter table public.articles
+  drop column if exists author_role;
 
 alter table public.articles enable row level security;
 
@@ -1065,7 +1067,7 @@ create trigger trg_articles_daily_points
 -- 3. 预置第 1 篇五子棋公众号文章
 insert into public.articles (
   id, title, summary, content, category, category_label, cover_image,
-  author_name, author_role, published_at, read_time_minutes, views,
+  author_name, published_at, read_time_minutes, views,
   is_featured, is_breaking, source_url, tags
 )
 values (
@@ -1107,7 +1109,6 @@ values (
   '五子棋',
   'https://cqhktfwogmffcorwfrxm.supabase.co/storage/v1/object/public/media/articles/1/cover.jpg',
   '中国五子棋',
-  '微信公众号',
   '2026-11-16T15:11:00+08:00',
   2,
   0,

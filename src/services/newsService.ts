@@ -10,7 +10,6 @@ interface ArticleRow {
   category_label: string;
   cover_image: string | null;
   author_name: string;
-  author_role: string;
   published_at: string;
   read_time_minutes: number;
   views: number;
@@ -34,7 +33,6 @@ function mapArticle(row: ArticleRow): NewsArticle {
     author: {
       id: 'author',
       name: row.author_name,
-      role: row.author_role,
     },
     publishedAt: row.published_at,
     readTimeMinutes: row.read_time_minutes,
@@ -196,7 +194,6 @@ export const newsService = {
         source_url: input.sourceUrl?.trim() || null,
         ...(input.publishedAt ? { published_at: input.publishedAt } : {}),
         author_name: input.authorName,
-        author_role: '创作者',
         read_time_minutes: readTimeMinutes,
         tags: input.tags ?? [],
       })

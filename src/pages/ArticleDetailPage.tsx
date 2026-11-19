@@ -132,7 +132,7 @@ export function ArticleDetailPage() {
       >
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 14 }}>
           <strong style={{ color: 'var(--color-text)' }}>{article.author.name}</strong>
-          <span>{article.author.username || article.author.role}</span>
+          {article.author.username ? <span>{article.author.username}</span> : null}
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             <Clock size={14} />
             {formatRelativeTime(article.publishedAt)}

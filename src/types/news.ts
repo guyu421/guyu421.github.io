@@ -3,7 +3,6 @@ import type { SportCategoryId } from './common';
 export interface NewsAuthor {
   id: string;
   name: string;
-  role: string;
   username?: string;
   avatarUrl?: string;
 }
