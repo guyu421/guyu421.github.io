@@ -237,32 +237,37 @@ export function TournamentDetailPage() {
 
   const defaultRound = useMemo(() => {
     if (rounds.length === 0) return 1;
-    const stats = new Map<number, { played: number; unplayed: number }>();
-    const items = isFootball
-      ? footballMatches.map((m) => ({
-          roundNo: m.roundNo,
-          played: m.homeScore !== null && m.awayScore !== null,
-        }))
-      : matches.map((m) => ({ roundNo: m.roundNo, played: Boolean(m.result) }));
+    const rangeByRound = new Map<number, { min: number; max: number }>();
+    const items = isFootball ? footballMatches : matches;
 
     for (const item of items) {
-      const cur = stats.get(item.roundNo) ?? { played: 0, unplayed: 0 };
-      if (item.played) cur.played += 1;
-      else cur.unplayed += 1;
-      stats.set(item.roundNo, cur);
+      const ts = new Date(item.matchTime).getTime();
+      if (!Number.isFinite(ts)) continue;
+      const cur = rangeByRound.get(item.roundNo);
+      if (!cur) {
+        rangeByRound.set(item.roundNo, { min: ts, max: ts });
+      } else {
+        if (ts < cur.min) cur.min = ts;
+        if (ts > cur.max) cur.max = ts;
+      }
     }
 
-    const inProgress = rounds.find((r) => {
-      const s = stats.get(r);
-      return s && s.played > 0 && s.unplayed > 0;
-    });
-    if (inProgress !== undefined) return inProgress;
+    const now = Date.now();
+    let bestRound = rounds[0];
+    let bestDist = Number.POSITIVE_INFINITY;
 
-    for (let i = rounds.length - 1; i >= 0; i -= 1) {
-      const s = stats.get(rounds[i]);
-      if (s && s.played > 0) return rounds[i];
+    for (const r of rounds) {
+      const range = rangeByRound.get(r);
+      if (!range) continue;
+      const dist =
+        now < range.min ? range.min - now : now > range.max ? now - range.max : 0;
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestRound = r;
+      }
     }
-    return rounds[0];
+
+    return bestRound;
   }, [rounds, isFootball, footballMatches, matches]);
 
   const currentRound = useMemo(() => {
