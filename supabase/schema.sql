@@ -206,6 +206,35 @@ insert into public.football_standings (
   (2, 15, '武汉三镇',   30, 5,  12, 13, 45, 57, 22),
   (2, 16, '青岛海牛',   30, 6,  4,  20, 36, 64, 15);
 
+-- 4.2 足球球队赛季扣分表（仅参与积分计算，不在积分榜前端展示）
+drop table if exists public.football_team_deductions cascade;
+create table public.football_team_deductions (
+  tournament_id bigint not null references public.tournaments(id) on delete cascade,
+  team_name text not null,
+  deduction integer not null default 0,
+  primary key (tournament_id, team_name)
+);
+
+alter table public.football_team_deductions enable row level security;
+
+drop policy if exists "football_deductions_public_read" on public.football_team_deductions;
+create policy "football_deductions_public_read"
+  on public.football_team_deductions for select
+  using (true);
+
+grant select on public.football_team_deductions to anon, authenticated;
+
+insert into public.football_team_deductions (tournament_id, team_name, deduction) values
+  (2, '天津津门虎', 10),
+  (2, '上海申花',   10),
+  (2, '青岛海牛',   7),
+  (2, '山东泰山',   6),
+  (2, '河南队',     6),
+  (2, '武汉三镇',   5),
+  (2, '浙江队',     5),
+  (2, '上海海港',   5),
+  (2, '北京国安',   5);
+
 -- 预置足球资讯（2026中超收官战）
 insert into public.articles (
   id, title, summary, content, category, category_label, cover_image,
