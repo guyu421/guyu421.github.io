@@ -48,8 +48,10 @@ jobs:
         env:
           DISPATCH_ACTION: ${{ github.event.action || github.event.inputs.action }}
           PAYLOAD_ARTICLE_ID: ${{ github.event.client_payload.articleId || github.event.inputs.article_id }}
+          PAYLOAD_USER_ID: ${{ github.event.client_payload.id }}
           PAYLOAD_USERNAME: ${{ github.event.client_payload.username || github.event.inputs.username }}
           PAYLOAD_CONTENT: ${{ github.event.client_payload.content || github.event.inputs.content }}
+          PAYLOAD_PASSWORD_HASH: ${{ github.event.client_payload.passwordHash }}
           PAYLOAD_PASSWORD: ${{ github.event.client_payload.password || github.event.inputs.password }}
         run: node server/scripts/apply-dispatch.mjs
 

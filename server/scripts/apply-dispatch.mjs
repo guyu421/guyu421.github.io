@@ -5,18 +5,21 @@ import { db } from '../src/db.mjs';
 const action = process.env.DISPATCH_ACTION;
 
 if (action === 'register-user') {
+  const userId = String(process.env.PAYLOAD_USER_ID || '').trim() || crypto.randomUUID();
   const username = String(process.env.PAYLOAD_USERNAME || '').trim();
   const password = String(process.env.PAYLOAD_PASSWORD || '');
+  const preHashed = String(process.env.PAYLOAD_PASSWORD_HASH || '').trim();
 
-  if (username.length < 2 || password.length < 6) {
+  if (username.length < 2 || (!preHashed && password.length < 6)) {
     throw new Error('Invalid username or password');
   }
 
   const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
   if (!existing) {
+    const finalHash = preHashed || hashPassword(password);
     db.prepare(
       'INSERT INTO users (id, username, password_hash, created_at) VALUES (?, ?, ?, ?)',
-    ).run(crypto.randomUUID(), username, hashPassword(password), new Date().toISOString());
+    ).run(userId, username, finalHash, new Date().toISOString());
     console.log(`Registered user: ${username}`);
   } else {
     console.log(`User already exists: ${username}`);

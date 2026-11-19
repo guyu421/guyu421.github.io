@@ -55,4 +55,9 @@ for (const article of articles) {
   );
 }
 
-console.log(`Exported ${articles.length} articles to public/static-api/`);
+const users = db
+  .prepare('SELECT id, username, password_hash AS passwordHash FROM users')
+  .all();
+fs.writeFileSync(path.join(outDir, 'users.json'), JSON.stringify(users, null, 2));
+
+console.log(`Exported ${articles.length} articles and ${users.length} users to public/static-api/`);

@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { AUTH_TOKEN_KEY } from '@/services/apiClient';
-import { authService } from '@/services/authService';
+import { authService, STATIC_USER_KEY } from '@/services/authService';
 import type { User } from '@/types/auth';
 
 interface AuthContextValue {
@@ -65,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     window.localStorage.removeItem(AUTH_TOKEN_KEY);
+    window.localStorage.removeItem(STATIC_USER_KEY);
     setUser(null);
   }, []);
 

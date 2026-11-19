@@ -2,17 +2,20 @@ import crypto from 'node:crypto';
 
 const AUTH_SECRET = process.env.JWT_SECRET || 'saiyuan-dev-secret-change-in-prod';
 const TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const PBKDF2_ITERATIONS = 100_000;
 
 export function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString('hex');
-  const derived = crypto.scryptSync(password, salt, 64).toString('hex');
+  const derived = crypto
+    .pbkdf2Sync(password, salt, PBKDF2_ITERATIONS, 32, 'sha256')
+    .toString('hex');
   return `${salt}:${derived}`;
 }
 
 export function verifyPassword(password, storedHash) {
   const [salt, keyHex] = String(storedHash).split(':');
   if (!salt || !keyHex) return false;
-  const derived = crypto.scryptSync(password, salt, 64);
+  const derived = crypto.pbkdf2Sync(password, salt, PBKDF2_ITERATIONS, 32, 'sha256');
   const storedBuf = Buffer.from(keyHex, 'hex');
   if (derived.length !== storedBuf.length) return false;
   return crypto.timingSafeEqual(derived, storedBuf);
