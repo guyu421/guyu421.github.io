@@ -184,12 +184,10 @@ export function TournamentDetailPage() {
 
                   <div className="fixture-players">
                     <div className="fixture-player-line">
-                      <span className="role-tag first">假先</span>
                       <span>{match.blackName}</span>
                     </div>
 
                     <div className="fixture-player-line">
-                      <span className="role-tag second">假后</span>
                       <span>{match.whiteName}</span>
                     </div>
                   </div>
