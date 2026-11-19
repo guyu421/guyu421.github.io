@@ -257,7 +257,7 @@ export function PublishArticlePage() {
   function insertTableHtml() {
     const r = Math.min(12, Math.max(1, tableRows));
     const c = Math.min(8, Math.max(1, tableCols));
-    const rowHtml = `<tr>${Array.from({ length: c }, () => '<td>内容</td>').join('')}</tr>`;
+    const rowHtml = `<tr>${Array.from({ length: c }, () => '<td><br /></td>').join('')}</tr>`;
     const allRows = Array.from({ length: r }, () => rowHtml).join('');
     const html = `<table><tbody>${allRows}</tbody></table><p><br /></p>`;
 
