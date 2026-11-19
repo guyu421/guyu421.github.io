@@ -4,6 +4,7 @@ import type {
   FootballStanding,
   PlayerInfo,
   RenjuMatch,
+  StandingsZone,
   TiebreakerKey,
   TournamentItem,
   TournamentSport,
@@ -19,6 +20,7 @@ interface TournamentRow {
   tiebreakers: TiebreakerKey[] | null;
   qualify_count: number | null;
   qualify_label: string | null;
+  standings_zones: StandingsZone[] | null;
   total_rounds: number;
   rules_text: string;
 }
@@ -78,6 +80,7 @@ function mapTournament(row: TournamentRow): TournamentItem {
       : ['buchholz', 'median_buchholz', 'wins'],
     qualifyCount: row.qualify_count ?? null,
     qualifyLabel: row.qualify_label || '录取',
+    standingsZones: Array.isArray(row.standings_zones) ? row.standings_zones : [],
     totalRounds: row.total_rounds ?? 9,
     rulesText: row.rules_text ?? '',
   };
@@ -106,7 +109,7 @@ export const matchService = {
     const { data, error } = await supabase
       .from('tournaments')
       .select(
-        'id, name, sport, win_points, draw_points, loss_points, tiebreakers, qualify_count, qualify_label, total_rounds, rules_text',
+        'id, name, sport, win_points, draw_points, loss_points, tiebreakers, qualify_count, qualify_label, standings_zones, total_rounds, rules_text',
       )
       .order('id', { ascending: false });
 
@@ -122,7 +125,7 @@ export const matchService = {
     const { data, error } = await supabase
       .from('tournaments')
       .select(
-        'id, name, sport, win_points, draw_points, loss_points, tiebreakers, qualify_count, qualify_label, total_rounds, rules_text',
+        'id, name, sport, win_points, draw_points, loss_points, tiebreakers, qualify_count, qualify_label, standings_zones, total_rounds, rules_text',
       )
       .eq('id', tournamentId)
       .maybeSingle();

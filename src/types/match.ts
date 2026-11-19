@@ -1,6 +1,16 @@
 export type TiebreakerKey = 'buchholz' | 'median_buchholz' | 'wins';
 export type TournamentSport = 'renju' | 'football';
 
+export interface StandingsZone {
+  fromRank: number;
+  toRank: number;
+  bgColor?: string;
+  cutoffLabel?: string;
+  cutoffBefore?: boolean;
+  cutoffColor?: string;
+  cutoffLineColor?: string;
+}
+
 export interface TournamentItem {
   id: number;
   name: string;
@@ -11,6 +21,7 @@ export interface TournamentItem {
   tiebreakers: TiebreakerKey[];
   qualifyCount: number | null;
   qualifyLabel: string;
+  standingsZones: StandingsZone[];
   totalRounds: number;
   rulesText: string;
 }

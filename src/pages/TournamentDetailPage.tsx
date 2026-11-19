@@ -1,11 +1,12 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Fragment, useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { type CSSProperties, Fragment, useEffect, useMemo, useState } from 'react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { EmptyState } from '@/components/common/EmptyState';
 import { matchService } from '@/services/matchService';
 import type {
   FootballMatch,
   RenjuMatch,
+  StandingsZone,
   TiebreakerKey,
   TournamentItem,
 } from '@/types/match';
@@ -80,9 +81,54 @@ const OUTCOME_LABEL: Record<'win' | 'draw' | 'loss', string> = {
   loss: 'L',
 };
 
+function getEffectiveZones(tournament: TournamentItem | null): StandingsZone[] {
+  if (tournament?.standingsZones && tournament.standingsZones.length > 0) {
+    return tournament.standingsZones;
+  }
+  if (tournament?.qualifyCount) {
+    return [
+      {
+        fromRank: 1,
+        toRank: tournament.qualifyCount,
+        bgColor: '#fff1f2',
+        cutoffLabel: tournament.qualifyLabel || '录取',
+        cutoffColor: '#f43f5e',
+        cutoffLineColor: '#fda4af',
+      },
+    ];
+  }
+  return [];
+}
+
+function renderCutoffRow(zone: StandingsZone | undefined, colSpan: number, key: string) {
+  if (!zone?.cutoffLabel) return null;
+  const dividerStyle = {
+    ...(zone.cutoffLineColor ? { '--cutoff-line-color': zone.cutoffLineColor } : {}),
+    ...(zone.cutoffColor ? { '--cutoff-color': zone.cutoffColor } : {}),
+  } as CSSProperties;
+
+  return (
+    <tr key={key} className="cutoff-row">
+      <td colSpan={colSpan}>
+        <div className="cutoff-divider" style={dividerStyle}>
+          <span className="cutoff-pill">{zone.cutoffLabel}</span>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 export function TournamentDetailPage() {
-  const { tournamentId } = useParams<{ tournamentId: string }>();
+  const { tournamentId, roundNo } = useParams<{
+    tournamentId: string;
+    roundNo?: string;
+  }>();
+  const location = useLocation();
+  const navigate = useNavigate();
   const numericId = Number(tournamentId);
+  const activeTab: 'matches' | 'standings' = location.pathname.includes('/standings')
+    ? 'standings'
+    : 'matches';
 
   const [tournament, setTournament] = useState<TournamentItem | null>(null);
   const [matches, setMatches] = useState<RenjuMatch[]>([]);
@@ -90,9 +136,6 @@ export function TournamentDetailPage() {
   const [footballDeductions, setFootballDeductions] = useState<Map<string, number>>(
     () => new Map(),
   );
-  const [activeTab, setActiveTab] = useState<'matches' | 'standings'>('matches');
-  const [selectedRound, setSelectedRound] = useState<number>(1);
-  const [standingsRound, setStandingsRound] = useState<number>(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -121,19 +164,10 @@ export function TournamentDetailPage() {
           if (!active) return;
           setFootballMatches(fMatches);
           setFootballDeductions(fDeductions);
-          if (fMatches.length > 0) {
-            const lastRound = fMatches[fMatches.length - 1].roundNo;
-            setSelectedRound(lastRound);
-            setStandingsRound(lastRound);
-          }
         } else {
           const mData = await matchService.getMatchesByTournament(numericId);
           if (!active) return;
           setMatches(mData);
-          if (mData.length > 0) {
-            setSelectedRound(mData[0].roundNo);
-            setStandingsRound(mData[mData.length - 1].roundNo);
-          }
         }
       })
       .catch((err: unknown) => {
@@ -158,23 +192,57 @@ export function TournamentDetailPage() {
     return Array.from(set).sort((a, b) => a - b);
   }, [isFootball, footballMatches, matches]);
 
-  const roundIndex = rounds.indexOf(selectedRound);
-  const standingsRoundIndex = rounds.indexOf(standingsRound);
+  const defaultRound = useMemo(() => {
+    if (rounds.length === 0) return 1;
+    return isFootball || activeTab === 'standings'
+      ? rounds[rounds.length - 1]
+      : rounds[0];
+  }, [rounds, isFootball, activeTab]);
+
+  const currentRound = useMemo(() => {
+    const parsed = roundNo ? Number(roundNo) : NaN;
+    if (Number.isInteger(parsed) && rounds.includes(parsed)) {
+      return parsed;
+    }
+    return defaultRound;
+  }, [roundNo, rounds, defaultRound]);
+
+  useEffect(() => {
+    if (loading || rounds.length === 0) return;
+    const parsed = roundNo ? Number(roundNo) : NaN;
+    if (!Number.isInteger(parsed) || !rounds.includes(parsed)) {
+      const target =
+        activeTab === 'standings'
+          ? `/matches/${numericId}/standings/round/${defaultRound}`
+          : `/matches/${numericId}/round/${defaultRound}`;
+      navigate(target, { replace: true });
+    }
+  }, [loading, rounds, roundNo, activeTab, numericId, defaultRound, navigate]);
+
+  const goToView = (tab: 'matches' | 'standings', round: number) => {
+    navigate(
+      tab === 'standings'
+        ? `/matches/${numericId}/standings/round/${round}`
+        : `/matches/${numericId}/round/${round}`,
+    );
+  };
+
+  const roundIndex = rounds.indexOf(currentRound);
 
   const roundMatches = useMemo(
-    () => matches.filter((m) => m.roundNo === selectedRound),
-    [matches, selectedRound],
+    () => matches.filter((m) => m.roundNo === currentRound),
+    [matches, currentRound],
   );
 
   const roundFootballMatches = useMemo(
-    () => footballMatches.filter((m) => m.roundNo === selectedRound),
-    [footballMatches, selectedRound],
+    () => footballMatches.filter((m) => m.roundNo === currentRound),
+    [footballMatches, currentRound],
   );
 
   const prevScores = useMemo(() => {
     const map = new Map<string, number>();
     for (const m of matches) {
-      if (m.roundNo >= selectedRound || !m.result) continue;
+      if (m.roundNo >= currentRound || !m.result) continue;
       if (m.result === 'B' || m.result === '+' || m.result === 'WF' || m.result === '1:0') {
         map.set(m.blackId, (map.get(m.blackId) ?? 0) + 1);
       } else if (m.result === 'W' || m.result === '-' || m.result === 'BF' || m.result === '0:1') {
@@ -185,7 +253,7 @@ export function TournamentDetailPage() {
       }
     }
     return map;
-  }, [matches, selectedRound]);
+  }, [matches, currentRound]);
 
   const tiebreakers: TiebreakerKey[] = tournament?.tiebreakers ?? [
     'buchholz',
@@ -194,8 +262,8 @@ export function TournamentDetailPage() {
   ];
 
   const standings = useMemo(
-    () => computeStandings(matches, tournament, standingsRound),
-    [matches, tournament, standingsRound],
+    () => computeStandings(matches, tournament, currentRound),
+    [matches, tournament, currentRound],
   );
 
   const footballStandings = useMemo(
@@ -203,12 +271,12 @@ export function TournamentDetailPage() {
       computeFootballStandings(
         footballMatches,
         footballDeductions,
-        standingsRound,
+        currentRound,
       ),
-    [footballMatches, footballDeductions, standingsRound],
+    [footballMatches, footballDeductions, currentRound],
   );
 
-  const qualifyCount = tournament?.qualifyCount ?? null;
+  const zones = useMemo(() => getEffectiveZones(tournament), [tournament]);
 
   return (
     <div className="tournament-page">
@@ -241,7 +309,7 @@ export function TournamentDetailPage() {
           role="tab"
           aria-selected={activeTab === 'matches'}
           className={`league-subtab ${activeTab === 'matches' ? 'active' : ''}`}
-          onClick={() => setActiveTab('matches')}
+          onClick={() => goToView('matches', currentRound)}
         >
           比赛
         </button>
@@ -250,7 +318,7 @@ export function TournamentDetailPage() {
           role="tab"
           aria-selected={activeTab === 'standings'}
           className={`league-subtab ${activeTab === 'standings' ? 'active' : ''}`}
-          onClick={() => setActiveTab('standings')}
+          onClick={() => goToView('standings', currentRound)}
         >
           积分
         </button>
@@ -274,23 +342,20 @@ export function TournamentDetailPage() {
               <button
                 type="button"
                 className="round-btn left"
-                disabled={standingsRoundIndex <= 0}
-                onClick={() => setStandingsRound(rounds[standingsRoundIndex - 1])}
+                disabled={roundIndex <= 0}
+                onClick={() => goToView('standings', rounds[roundIndex - 1])}
               >
                 <ChevronLeft size={15} />
                 上一轮
               </button>
 
-              <span>第{standingsRound}轮</span>
+              <span>第{currentRound}轮</span>
 
               <button
                 type="button"
                 className="round-btn right"
-                disabled={
-                  standingsRoundIndex === -1 ||
-                  standingsRoundIndex >= rounds.length - 1
-                }
-                onClick={() => setStandingsRound(rounds[standingsRoundIndex + 1])}
+                disabled={roundIndex === -1 || roundIndex >= rounds.length - 1}
+                onClick={() => goToView('standings', rounds[roundIndex + 1])}
               >
                 下一轮
                 <ChevronRight size={15} />
@@ -312,29 +377,37 @@ export function TournamentDetailPage() {
                 </thead>
                 <tbody>
                   {footballStandings.map((row, idx) => {
-                    const rowClass =
-                      idx === 0
-                        ? 'qualified-deep'
-                        : idx === 1
-                          ? 'qualified'
-                          : idx >= 14
-                            ? 'relegated'
-                            : undefined;
-                    const cutoffLabel =
-                      idx === 0
-                        ? '亚冠精英正赛'
-                        : idx === 1
-                          ? '亚冠精英小组赛'
-                          : idx === 13 && footballStandings.length >= 16
-                            ? tournament?.qualifyLabel || '降级'
-                            : null;
-                    const isAclCutoff = idx === 0 || idx === 1;
+                    const pos = idx + 1;
+                    const rowZone = zones.find(
+                      (z) => pos >= z.fromRank && pos <= z.toRank,
+                    );
+                    const beforeZone = zones.find(
+                      (z) => z.cutoffBefore && z.fromRank === pos && idx > 0,
+                    );
+                    const afterZone = zones.find(
+                      (z) =>
+                        !z.cutoffBefore &&
+                        z.toRank === pos &&
+                        idx < footballStandings.length - 1,
+                    );
                     const gd = row.goalsFor - row.goalsAgainst;
                     const gdText = gd > 0 ? `+${gd}` : `${gd}`;
 
                     return (
                       <Fragment key={row.teamName}>
-                        <tr className={rowClass}>
+                        {renderCutoffRow(
+                          beforeZone,
+                          7,
+                          `${row.teamName}-before-cutoff`,
+                        )}
+                        <tr
+                          className={rowZone?.bgColor ? 'zone-row' : undefined}
+                          style={
+                            rowZone?.bgColor
+                              ? ({ '--zone-bg': rowZone.bgColor } as CSSProperties)
+                              : undefined
+                          }
+                        >
                           <td className="tabular-nums" style={{ fontWeight: 600 }}>
                             {row.rank}
                           </td>
@@ -354,25 +427,11 @@ export function TournamentDetailPage() {
                             {row.points}
                           </td>
                         </tr>
-                        {cutoffLabel ? (
-                          <tr className="cutoff-row">
-                            <td colSpan={7}>
-                              <div
-                                className={`cutoff-divider ${
-                                  isAclCutoff ? 'acl' : ''
-                                }`}
-                              >
-                                <span
-                                  className={`cutoff-pill ${
-                                    isAclCutoff ? 'acl' : ''
-                                  }`}
-                                >
-                                  {cutoffLabel}
-                                </span>
-                              </div>
-                            </td>
-                          </tr>
-                        ) : null}
+                        {renderCutoffRow(
+                          afterZone,
+                          7,
+                          `${row.teamName}-after-cutoff`,
+                        )}
                       </Fragment>
                     );
                   })}
@@ -400,19 +459,19 @@ export function TournamentDetailPage() {
                 type="button"
                 className="round-btn left"
                 disabled={roundIndex <= 0}
-                onClick={() => setSelectedRound(rounds[roundIndex - 1])}
+                onClick={() => goToView('matches', rounds[roundIndex - 1])}
               >
                 <ChevronLeft size={15} />
                 上一轮
               </button>
 
-              <span>第{selectedRound}轮</span>
+              <span>第{currentRound}轮</span>
 
               <button
                 type="button"
                 className="round-btn right"
                 disabled={roundIndex === -1 || roundIndex >= rounds.length - 1}
-                onClick={() => setSelectedRound(rounds[roundIndex + 1])}
+                onClick={() => goToView('matches', rounds[roundIndex + 1])}
               >
                 下一轮
                 <ChevronRight size={15} />
@@ -502,23 +561,20 @@ export function TournamentDetailPage() {
             <button
               type="button"
               className="round-btn left"
-              disabled={standingsRoundIndex <= 0}
-              onClick={() => setStandingsRound(rounds[standingsRoundIndex - 1])}
+              disabled={roundIndex <= 0}
+              onClick={() => goToView('standings', rounds[roundIndex - 1])}
             >
               <ChevronLeft size={15} />
               上一轮
             </button>
 
-            <span>第{standingsRound}轮</span>
+            <span>第{currentRound}轮</span>
 
             <button
               type="button"
               className="round-btn right"
-              disabled={
-                standingsRoundIndex === -1 ||
-                standingsRoundIndex >= rounds.length - 1
-              }
-              onClick={() => setStandingsRound(rounds[standingsRoundIndex + 1])}
+              disabled={roundIndex === -1 || roundIndex >= rounds.length - 1}
+              onClick={() => goToView('standings', rounds[roundIndex + 1])}
             >
               下一轮
               <ChevronRight size={15} />
@@ -541,16 +597,35 @@ export function TournamentDetailPage() {
               </thead>
               <tbody>
                 {standings.map((row, idx) => {
-                  const isQualified =
-                    qualifyCount !== null && idx < qualifyCount;
-                  const showCutoffLine =
-                    qualifyCount !== null &&
-                    idx === qualifyCount - 1 &&
-                    idx < standings.length - 1;
+                  const pos = idx + 1;
+                  const rowZone = zones.find(
+                    (z) => pos >= z.fromRank && pos <= z.toRank,
+                  );
+                  const beforeZone = zones.find(
+                    (z) => z.cutoffBefore && z.fromRank === pos && idx > 0,
+                  );
+                  const afterZone = zones.find(
+                    (z) =>
+                      !z.cutoffBefore &&
+                      z.toRank === pos &&
+                      idx < standings.length - 1,
+                  );
 
                   return (
                     <Fragment key={row.playerId}>
-                      <tr className={isQualified ? 'qualified' : undefined}>
+                      {renderCutoffRow(
+                        beforeZone,
+                        5 + tiebreakers.length,
+                        `${row.playerId}-before-cutoff`,
+                      )}
+                      <tr
+                        className={rowZone?.bgColor ? 'zone-row' : undefined}
+                        style={
+                          rowZone?.bgColor
+                            ? ({ '--zone-bg': rowZone.bgColor } as CSSProperties)
+                            : undefined
+                        }
+                      >
                         <td className="tabular-nums" style={{ fontWeight: 600 }}>
                           {row.rank}
                         </td>
@@ -588,17 +663,11 @@ export function TournamentDetailPage() {
                           </td>
                         ))}
                       </tr>
-                      {showCutoffLine ? (
-                        <tr className="cutoff-row">
-                          <td colSpan={5 + tiebreakers.length}>
-                            <div className="cutoff-divider">
-                              <span className="cutoff-pill">
-                                {tournament?.qualifyLabel || '录取'}
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
-                      ) : null}
+                      {renderCutoffRow(
+                        afterZone,
+                        5 + tiebreakers.length,
+                        `${row.playerId}-after-cutoff`,
+                      )}
                     </Fragment>
                   );
                 })}
@@ -623,19 +692,19 @@ export function TournamentDetailPage() {
               type="button"
               className="round-btn left"
               disabled={roundIndex <= 0}
-              onClick={() => setSelectedRound(rounds[roundIndex - 1])}
+              onClick={() => goToView('matches', rounds[roundIndex - 1])}
             >
               <ChevronLeft size={15} />
               上一轮
             </button>
 
-            <span>第{selectedRound}轮</span>
+            <span>第{currentRound}轮</span>
 
             <button
               type="button"
               className="round-btn right"
               disabled={roundIndex === -1 || roundIndex >= rounds.length - 1}
-              onClick={() => setSelectedRound(rounds[roundIndex + 1])}
+              onClick={() => goToView('matches', rounds[roundIndex + 1])}
             >
               下一轮
               <ChevronRight size={15} />
