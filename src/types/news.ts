@@ -15,7 +15,7 @@ export interface NewsArticle {
   content: string[];
   category: Exclude<SportCategoryId, 'all'>;
   categoryLabel: string;
-  coverImage: string;
+  coverImage?: string;
   author: NewsAuthor;
   publishedAt: string;
   readTimeMinutes: number;

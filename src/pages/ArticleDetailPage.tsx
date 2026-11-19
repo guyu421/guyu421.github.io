@@ -135,11 +135,13 @@ export function ArticleDetailPage() {
         </button>
       </div>
 
-      <img
-        src={article.coverImage}
-        alt={article.title}
-        className="article-cover"
-      />
+      {article.coverImage ? (
+        <img
+          src={article.coverImage}
+          alt={article.title}
+          className="article-cover"
+        />
+      ) : null}
 
       <p
         style={{

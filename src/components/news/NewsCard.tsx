@@ -17,14 +17,16 @@ export function NewsCard({ article }: NewsCardProps) {
 
   return (
     <article className="card news-card">
-      <Link to={`/article/${article.slug}`}>
-        <img
-          src={article.coverImage}
-          alt={article.title}
-          className="news-card-cover"
-          loading="lazy"
-        />
-      </Link>
+      {article.coverImage ? (
+        <Link to={`/article/${article.slug}`}>
+          <img
+            src={article.coverImage}
+            alt={article.title}
+            className="news-card-cover"
+            loading="lazy"
+          />
+        </Link>
+      ) : null}
 
       <div className="news-card-body">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
