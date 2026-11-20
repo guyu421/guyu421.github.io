@@ -315,9 +315,25 @@ export function MatchDetailPage() {
                           {m.tournamentName}
                         </div>
                         <div className="fixture-player-line">
+                          {teamLogos.get(m.homeTeam) ? (
+                            <img
+                              className="team-logo"
+                              src={teamLogos.get(m.homeTeam)}
+                              alt=""
+                              loading="lazy"
+                            />
+                          ) : null}
                           <span>{m.homeTeam}</span>
                         </div>
                         <div className="fixture-player-line">
+                          {teamLogos.get(m.awayTeam) ? (
+                            <img
+                              className="team-logo"
+                              src={teamLogos.get(m.awayTeam)}
+                              alt=""
+                              loading="lazy"
+                            />
+                          ) : null}
                           <span>{m.awayTeam}</span>
                         </div>
                       </div>
