@@ -790,7 +790,7 @@ export function TournamentDetailPage() {
         </div>
       ) : activeTab === 'standings' ? (
         <>
-          {finalsInfo?.champion ? (
+          {rounds.length > 0 && currentRound === rounds[rounds.length - 1] && finalsInfo?.champion ? (
             <>
               <div style={{ padding: '16px 16px 8px' }}>
                 <div className="v-stage-label" style={{ textAlign: 'left', marginBottom: 0 }}>
@@ -961,7 +961,7 @@ export function TournamentDetailPage() {
         </>
       ) : (
         <>
-          {finalsInfo ? (
+          {rounds.length > 0 && currentRound === rounds[rounds.length - 1] && finalsInfo ? (
             <div className="bracket-section" style={{ paddingBottom: 16 }}>
               <div className="v-stage-label" style={{ textAlign: 'left', marginBottom: 10 }}>
                 决赛
