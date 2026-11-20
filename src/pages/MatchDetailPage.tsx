@@ -1,6 +1,6 @@
 import { ChevronLeft } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { EmptyState } from '@/components/common/EmptyState';
 import { overlayEspnLiveScores } from '@/services/espnLiveService';
 import { matchService } from '@/services/matchService';
@@ -57,8 +57,6 @@ export function MatchDetailPage() {
     tournamentId: string;
     matchId: string;
   }>();
-  const location = useLocation();
-  const isBracketMatch = location.pathname.includes('/bracket-match/');
   const tid = Number(tournamentId);
   const mid = Number(matchId);
 
@@ -116,9 +114,7 @@ export function MatchDetailPage() {
             if (active) setFootballH2H(h2h);
           }
         } else {
-          const mData = isBracketMatch
-            ? await matchService.getRenjuBracketMatchById(mid)
-            : await matchService.getRenjuMatchById(mid);
+          const mData = await matchService.getRenjuMatchById(mid, tid);
           if (!active) return;
           setRenjuMatch(mData);
           setFootballMatch(null);
@@ -143,7 +139,7 @@ export function MatchDetailPage() {
     return () => {
       active = false;
     };
-  }, [tid, mid, isBracketMatch]);
+  }, [tid, mid]);
 
   const footballStats = useMemo(() => {
     if (!footballMatch) return { total: 0, homeWins: 0, draws: 0, awayWins: 0 };
@@ -212,7 +208,7 @@ export function MatchDetailPage() {
     );
   }
 
-  const backPath = isBracketMatch
+  const backPath = renjuMatch?.stageLabel
     ? `/matches/${tid}`
     : `/matches/${tid}/round/${activeMatch.roundNo}`;
 
@@ -481,7 +477,7 @@ export function MatchDetailPage() {
                   const targetPath =
                     m.id > 0
                       ? `/matches/${m.tournamentId}/match/${m.id}`
-                      : `/matches/${m.tournamentId}/bracket-match/${-m.id - 1000}`;
+                      : `/matches/${m.tournamentId}/match/${-m.id - 1000}`;
                   return (
                     <Link
                       key={m.id}

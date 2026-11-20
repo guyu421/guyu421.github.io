@@ -978,7 +978,7 @@ export function TournamentDetailPage() {
                 {finalsInfo.semi1 ? (
                   <>
                     <Link
-                      to={`/matches/${numericId}/bracket-match/${finalsInfo.semi1.id}`}
+                      to={`/matches/${numericId}/match/${finalsInfo.semi1.id}`}
                       className="v-match-row v-match-link"
                     >
                       <span
@@ -1058,7 +1058,7 @@ export function TournamentDetailPage() {
 
                 {finalsInfo.finalMatch ? (
                   <Link
-                    to={`/matches/${numericId}/bracket-match/${finalsInfo.finalMatch.id}`}
+                    to={`/matches/${numericId}/match/${finalsInfo.finalMatch.id}`}
                     className="v-match-row v-final-row v-match-link"
                   >
                     <span
@@ -1139,7 +1139,7 @@ export function TournamentDetailPage() {
                       )}
                     </svg>
                     <Link
-                      to={`/matches/${numericId}/bracket-match/${finalsInfo.semi2.id}`}
+                      to={`/matches/${numericId}/match/${finalsInfo.semi2.id}`}
                       className="v-match-row v-match-link"
                     >
                       <span
@@ -1182,7 +1182,7 @@ export function TournamentDetailPage() {
                     季军赛
                   </div>
                   <Link
-                    to={`/matches/${numericId}/bracket-match/${finalsInfo.thirdMatch.id}`}
+                    to={`/matches/${numericId}/match/${finalsInfo.thirdMatch.id}`}
                     className="v-match-row v-final-row v-match-link"
                   >
                     <span

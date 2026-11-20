@@ -23,12 +23,7 @@ export function AppRouter() {
           path="/matches/:tournamentId/standings/round/:roundNo"
           element={<TournamentDetailPage />}
         />
-        <Route path="/matches/:tournamentId/bracket" element={<TournamentDetailPage />} />
         <Route path="/matches/:tournamentId/match/:matchId" element={<MatchDetailPage />} />
-        <Route
-          path="/matches/:tournamentId/bracket-match/:matchId"
-          element={<MatchDetailPage />}
-        />
         <Route path="/category/:categoryId" element={<CategoryPage />} />
         <Route path="/article/:id" element={<ArticleDetailPage />} />
         <Route path="/publish" element={<PublishArticlePage />} />

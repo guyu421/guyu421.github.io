@@ -310,17 +310,25 @@ export const matchService = {
     }));
   },
 
-  async getRenjuMatchById(matchId: number): Promise<RenjuMatch | null> {
+  async getRenjuMatchById(
+    matchId: number,
+    tournamentId?: number,
+  ): Promise<(RenjuMatch & { stageLabel?: string }) | null> {
     const supabase = requireSupabase();
-    const { data, error } = await supabase
+    let query = supabase
       .from('renju_matches')
       .select(
         'id, tournament_id, round_no, board_no, black_id, white_id, match_time, result, black:players!renju_matches_black_id_fkey(id, name), white:players!renju_matches_white_id_fkey(id, name)',
       )
-      .eq('id', matchId)
-      .maybeSingle();
+      .eq('id', matchId);
+    if (tournamentId !== undefined) {
+      query = query.eq('tournament_id', tournamentId);
+    }
+    const { data, error } = await query.maybeSingle();
 
-    if (error || !data) return null;
+    if (error || !data) {
+      return this.getRenjuBracketMatchById(matchId, tournamentId);
+    }
     const row = data as unknown as RenjuMatchRow;
     const { data: playersData } = await supabase
       .from('tournament_players')
@@ -337,13 +345,17 @@ export const matchService = {
 
   async getRenjuBracketMatchById(
     bracketMatchId: number,
+    tournamentId?: number,
   ): Promise<(RenjuMatch & { stageLabel: string }) | null> {
     const supabase = requireSupabase();
-    const { data, error } = await supabase
+    let query = supabase
       .from('renju_bracket_matches')
       .select('*')
-      .eq('id', bracketMatchId)
-      .maybeSingle();
+      .eq('id', bracketMatchId);
+    if (tournamentId !== undefined) {
+      query = query.eq('tournament_id', tournamentId);
+    }
+    const { data, error } = await query.maybeSingle();
 
     if (error || !data) return null;
     const b = data as {
