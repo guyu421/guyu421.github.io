@@ -319,10 +319,12 @@ export function MatchDetailPage() {
                       to={`/matches/${m.tournamentId}/match/${m.id}`}
                       className={`fixture-row fixture-link h2h-row ${isCurrent ? 'is-current-match' : ''}`}
                     >
-                      <div className="h2h-row-league">{m.tournamentName}</div>
+                      <div className="h2h-row-league">
+                        {m.tournamentName} · 第{m.roundNo}轮
+                      </div>
                       <div className="fixture-meta tabular-nums">
                         <span>{formatDateTime(m.matchTime).slice(0, 10)}</span>
-                        <span>第{m.roundNo}轮</span>
+                        <span>{formatDateTime(m.matchTime).slice(11, 16)}</span>
                       </div>
                       <div className="fixture-players">
                         <div className="fixture-player-line">
@@ -466,10 +468,12 @@ export function MatchDetailPage() {
                       to={targetPath}
                       className={`fixture-row fixture-link h2h-row ${isCurrent ? 'is-current-match' : ''}`}
                     >
-                      <div className="h2h-row-league">{m.tournamentName}</div>
+                      <div className="h2h-row-league">
+                        {m.tournamentName} · {m.stageLabel ?? `第${m.roundNo}轮`}
+                      </div>
                       <div className="fixture-meta tabular-nums">
                         <span>{formatDateTime(m.matchTime).slice(0, 10)}</span>
-                        <span>{m.stageLabel ?? `第${m.roundNo}轮`}</span>
+                        <span>{formatDateTime(m.matchTime).slice(11, 16)}</span>
                       </div>
                       <div className="fixture-players">
                         <div className="fixture-player-line">
