@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ArticleDetailPage } from '@/pages/ArticleDetailPage';
 import { CategoryPage } from '@/pages/CategoryPage';
+import { MatchDetailPage } from '@/pages/MatchDetailPage';
 import { MatchesPage } from '@/pages/MatchesPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { ProfilePage } from '@/pages/ProfilePage';
@@ -23,6 +24,7 @@ export function AppRouter() {
           element={<TournamentDetailPage />}
         />
         <Route path="/matches/:tournamentId/bracket" element={<TournamentDetailPage />} />
+        <Route path="/matches/:tournamentId/match/:matchId" element={<MatchDetailPage />} />
         <Route path="/category/:categoryId" element={<CategoryPage />} />
         <Route path="/article/:id" element={<ArticleDetailPage />} />
         <Route path="/publish" element={<PublishArticlePage />} />

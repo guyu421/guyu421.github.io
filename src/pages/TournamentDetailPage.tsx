@@ -706,7 +706,11 @@ export function TournamentDetailPage() {
                       : 'draw';
 
                 return (
-                  <div key={m.id} className="fixture-row">
+                  <Link
+                    key={m.id}
+                    to={`/matches/${numericId}/match/${m.id}`}
+                    className="fixture-row fixture-link"
+                  >
                     <div className="fixture-meta tabular-nums">
                       <span>{dt.date}</span>
                       <span>{dt.time}</span>
@@ -775,7 +779,7 @@ export function TournamentDetailPage() {
                         <span aria-hidden="true" />
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>
@@ -1236,8 +1240,9 @@ export function TournamentDetailPage() {
             {roundMatches.map((match) => {
               const score = getDisplayScores(match);
               const dt = formatScheduleLines(match.matchTime);
-              return (
-                <div key={match.id} className="fixture-row">
+              const isBye = match.whiteId === 'BYE' || match.blackId === 'BYE';
+              const rowContent = (
+                <>
                   <div className="fixture-meta tabular-nums">
                     <span>{dt.date}</span>
                     <span>{dt.time}</span>
@@ -1303,7 +1308,20 @@ export function TournamentDetailPage() {
                       <span aria-hidden="true" />
                     </div>
                   </div>
+                </>
+              );
+              return isBye ? (
+                <div key={match.id} className="fixture-row">
+                  {rowContent}
                 </div>
+              ) : (
+                <Link
+                  key={match.id}
+                  to={`/matches/${numericId}/match/${match.id}`}
+                  className="fixture-row fixture-link"
+                >
+                  {rowContent}
+                </Link>
               );
             })}
           </div>

@@ -309,4 +309,167 @@ export const matchService = {
       winnerSlot: r.winner_slot,
     }));
   },
+
+  async getRenjuMatchById(matchId: number): Promise<RenjuMatch | null> {
+    const supabase = requireSupabase();
+    const { data, error } = await supabase
+      .from('renju_matches')
+      .select(
+        'id, tournament_id, round_no, board_no, black_id, white_id, match_time, result, black:players!renju_matches_black_id_fkey(id, name), white:players!renju_matches_white_id_fkey(id, name)',
+      )
+      .eq('id', matchId)
+      .maybeSingle();
+
+    if (error || !data) return null;
+    const row = data as unknown as RenjuMatchRow;
+    const { data: playersData } = await supabase
+      .from('tournament_players')
+      .select('player_id, player_no')
+      .eq('tournament_id', row.tournament_id)
+      .in('player_id', [row.black_id, row.white_id]);
+
+    const noMap = new Map<string, number>();
+    for (const p of playersData ?? []) {
+      noMap.set(p.player_id as string, p.player_no as number);
+    }
+    return mapMatch(row, noMap);
+  },
+
+  async getFootballMatchById(matchId: number): Promise<FootballMatch | null> {
+    const supabase = requireSupabase();
+    const { data, error } = await supabase
+      .from('football_matches')
+      .select('*')
+      .eq('id', matchId)
+      .maybeSingle();
+
+    if (error || !data) return null;
+    const r = data as FootballMatchRow;
+    return {
+      id: r.id,
+      tournamentId: r.tournament_id,
+      roundNo: r.round_no,
+      matchTime: r.match_time,
+      homeTeam: r.home_team,
+      awayTeam: r.away_team,
+      homeScore: r.home_score,
+      awayScore: r.away_score,
+    };
+  },
+
+  async getRenjuHeadToHead(
+    playerAId: string,
+    playerBId: string,
+    playerAName: string,
+    playerBName: string,
+  ): Promise<
+    Array<
+      RenjuMatch & {
+        tournamentName: string;
+        stageLabel?: string;
+      }
+    >
+  > {
+    if (playerAId === 'BYE' || playerBId === 'BYE') return [];
+    const supabase = requireSupabase();
+    const [swissRes, bracketRes] = await Promise.all([
+      supabase
+        .from('renju_matches')
+        .select(
+          'id, tournament_id, round_no, board_no, black_id, white_id, match_time, result, black:players!renju_matches_black_id_fkey(id, name), white:players!renju_matches_white_id_fkey(id, name), tournament:tournaments(id, name)',
+        )
+        .or(
+          `and(black_id.eq.${playerAId},white_id.eq.${playerBId}),and(black_id.eq.${playerBId},white_id.eq.${playerAId})`,
+        )
+        .order('match_time', { ascending: false }),
+      supabase
+        .from('renju_bracket_matches')
+        .select('*, tournament:tournaments(id, name)')
+        .or(
+          `and(player1_name.eq."${playerAName}",player2_name.eq."${playerBName}"),and(player1_name.eq."${playerBName}",player2_name.eq."${playerAName}")`,
+        )
+        .order('match_time', { ascending: false }),
+    ]);
+
+    const list: Array<RenjuMatch & { tournamentName: string; stageLabel?: string }> = [];
+    const emptyNoMap = new Map<string, number>();
+
+    if (!swissRes.error && swissRes.data) {
+      for (const raw of swissRes.data as unknown as Array<
+        RenjuMatchRow & { tournament?: { id: number; name: string } | null }
+      >) {
+        list.push({
+          ...mapMatch(raw, emptyNoMap),
+          tournamentName: raw.tournament?.name ?? `赛事 #${raw.tournament_id}`,
+          stageLabel: `第${raw.round_no}轮 第${raw.board_no}台`,
+        });
+      }
+    }
+
+    if (!bracketRes.error && bracketRes.data) {
+      for (const b of bracketRes.data as unknown as Array<{
+        id: number;
+        tournament_id: number;
+        round_label: string;
+        match_time: string;
+        player1_name: string;
+        player1_score: string;
+        player2_name: string;
+        player2_score: string;
+        winner_slot: 1 | 2;
+        tournament?: { id: number; name: string } | null;
+      }>) {
+        const p1Won = b.winner_slot === 1;
+        list.push({
+          id: -1000 - b.id,
+          tournamentId: b.tournament_id,
+          roundNo: 99,
+          boardNo: 1,
+          blackId: b.player1_name === playerAName ? playerAId : playerBId,
+          blackName: b.player1_name,
+          whiteId: b.player2_name === playerBName ? playerBId : playerAId,
+          whiteName: b.player2_name,
+          matchTime: b.match_time,
+          result: p1Won ? '1:0' : '0:1',
+          tournamentName: b.tournament?.name ?? `赛事 #${b.tournament_id}`,
+          stageLabel: `决赛阶段 · ${b.round_label}`,
+        });
+      }
+    }
+
+    return list.sort(
+      (a, b) => new Date(b.matchTime).getTime() - new Date(a.matchTime).getTime(),
+    );
+  },
+
+  async getFootballHeadToHead(
+    teamA: string,
+    teamB: string,
+  ): Promise<Array<FootballMatch & { tournamentName: string }>> {
+    const supabase = requireSupabase();
+    const { data, error } = await supabase
+      .from('football_matches')
+      .select('*, tournament:tournaments(id, name)')
+      .or(
+        `and(home_team.eq."${teamA}",away_team.eq."${teamB}"),and(home_team.eq."${teamB}",away_team.eq."${teamA}")`,
+      )
+      .order('match_time', { ascending: false });
+
+    if (error || !data) return [];
+    return (
+      data as unknown as Array<
+        FootballMatchRow & { tournament?: { id: number; name: string } | null }
+      >
+    ).map((r) => ({
+      id: r.id,
+      tournamentId: r.tournament_id,
+      roundNo: r.round_no,
+      matchTime: r.match_time,
+      homeTeam: r.home_team,
+      awayTeam: r.away_team,
+      homeScore: r.home_score,
+      awayScore: r.away_score,
+      tournamentName: r.tournament?.name ?? `赛事 #${r.tournament_id}`,
+    }));
+  },
 };
