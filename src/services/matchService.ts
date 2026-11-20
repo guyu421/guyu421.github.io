@@ -349,6 +349,7 @@ export const matchService = {
     const b = data as {
       id: number;
       tournament_id: number;
+      match_order: number;
       round_label: string;
       match_time: string;
       player1_name: string;
@@ -392,7 +393,7 @@ export const matchService = {
       whiteName: b.player2_name,
       matchTime: b.match_time,
       result: b.winner_slot === 1 ? '1:0' : '0:1',
-      stageLabel: `决赛阶段 · ${b.round_label}`,
+      stageLabel: `${b.round_label} · 第${b.match_order}台`,
     };
   },
 
@@ -471,6 +472,7 @@ export const matchService = {
       for (const b of bracketRes.data as unknown as Array<{
         id: number;
         tournament_id: number;
+        match_order: number;
         round_label: string;
         match_time: string;
         player1_name: string;
@@ -485,7 +487,7 @@ export const matchService = {
           id: -1000 - b.id,
           tournamentId: b.tournament_id,
           roundNo: 99,
-          boardNo: 1,
+          boardNo: b.match_order,
           blackId: b.player1_name === playerAName ? playerAId : playerBId,
           blackName: b.player1_name,
           whiteId: b.player2_name === playerBName ? playerBId : playerAId,
@@ -493,7 +495,7 @@ export const matchService = {
           matchTime: b.match_time,
           result: p1Won ? '1:0' : '0:1',
           tournamentName: b.tournament?.name ?? `赛事 #${b.tournament_id}`,
-          stageLabel: `决赛阶段 · ${b.round_label}`,
+          stageLabel: `${b.round_label} · 第${b.match_order}台`,
         });
       }
     }
