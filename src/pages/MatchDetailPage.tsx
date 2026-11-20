@@ -316,7 +316,7 @@ export function MatchDetailPage() {
               <span>历史交锋记录</span>
               <span className="h2h-summary tabular-nums">
                 {footballStats.total > 0
-                  ? `共${footballStats.total}场 · ${footballMatch.homeTeam} ${footballStats.homeWins}胜 ${footballStats.draws}平 ${footballStats.awayWins}负`
+                  ? `已完赛${footballStats.total}场 · ${footballMatch.homeTeam}胜 ${footballStats.homeWins} 平 ${footballStats.draws} ${footballMatch.awayTeam}胜 ${footballStats.awayWins}`
                   : '暂无已完赛交锋'}
               </span>
             </div>
@@ -466,7 +466,7 @@ export function MatchDetailPage() {
               <span>历史交锋记录</span>
               <span className="h2h-summary tabular-nums">
                 {renjuStats.total > 0
-                  ? `共${renjuStats.total}局 · ${renjuMatch.blackName} ${renjuStats.aWins}胜 ${renjuStats.draws}平 ${renjuStats.bWins}负`
+                  ? `已完赛${renjuStats.total}场 · ${renjuMatch.blackName}胜 ${renjuStats.aWins} 平 ${renjuStats.draws} ${renjuMatch.whiteName}胜 ${renjuStats.bWins}`
                   : '暂无已完赛交锋'}
               </span>
             </div>

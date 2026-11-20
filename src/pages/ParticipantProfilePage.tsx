@@ -222,11 +222,6 @@ export function ParticipantProfilePage({ kind }: { kind: 'team' | 'player' }) {
             ) : null}
             <div>
               <div style={{ fontSize: '1.05rem', fontWeight: 800 }}>{displayName}</div>
-              <div style={{ fontSize: '0.78rem', opacity: 0.9, marginTop: 2 }}>
-                {kind === 'team'
-                  ? `已完赛 ${teamStats.played} 场 · ${teamStats.wins}胜 ${teamStats.draws}平 ${teamStats.losses}负 · 进${teamStats.gf}球 失${teamStats.ga}球`
-                  : `已完赛 ${playerStats.played} 局 · ${playerStats.wins}胜 ${playerStats.draws}平 ${playerStats.losses}负`}
-              </div>
             </div>
           </div>
         </div>
@@ -236,7 +231,9 @@ export function ParticipantProfilePage({ kind }: { kind: 'team' | 'player' }) {
         <div className="h2h-header">
           <span>全部赛程与战绩</span>
           <span className="h2h-summary tabular-nums">
-            已完赛 {kind === 'team' ? teamStats.played : playerStats.played} 场
+            {kind === 'team'
+              ? `已完赛 ${teamStats.played} 场 · ${teamStats.wins}胜 ${teamStats.draws}平 ${teamStats.losses}负 · 进${teamStats.gf}球 失${teamStats.ga}球`
+              : `已完赛 ${playerStats.played} 场 · ${playerStats.wins}胜 ${playerStats.draws}平 ${playerStats.losses}负`}
           </span>
         </div>
 
