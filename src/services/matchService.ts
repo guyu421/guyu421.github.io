@@ -393,7 +393,7 @@ export const matchService = {
       whiteName: b.player2_name,
       matchTime: b.match_time,
       result: b.winner_slot === 1 ? '1:0' : '0:1',
-      stageLabel: `${b.round_label} · 第${b.match_order}台`,
+      stageLabel: b.round_label,
     };
   },
 
@@ -495,7 +495,7 @@ export const matchService = {
           matchTime: b.match_time,
           result: p1Won ? '1:0' : '0:1',
           tournamentName: b.tournament?.name ?? `赛事 #${b.tournament_id}`,
-          stageLabel: `${b.round_label} · 第${b.match_order}台`,
+          stageLabel: b.round_label,
         });
       }
     }
