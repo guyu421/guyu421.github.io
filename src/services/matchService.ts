@@ -393,7 +393,7 @@ export const matchService = {
     }
 
     return {
-      id: -1000 - b.id,
+      id: b.id,
       tournamentId: b.tournament_id,
       roundNo: 99,
       boardNo: 1,
@@ -496,7 +496,7 @@ export const matchService = {
       }>) {
         const p1Won = b.winner_slot === 1;
         list.push({
-          id: -1000 - b.id,
+          id: b.id,
           tournamentId: b.tournament_id,
           roundNo: 99,
           boardNo: b.match_order,
@@ -701,7 +701,7 @@ export const matchService = {
       }>) {
         const p1Won = b.winner_slot === 1;
         list.push({
-          id: -1000 - b.id,
+          id: b.id,
           tournamentId: b.tournament_id,
           roundNo: 99,
           boardNo: b.match_order,

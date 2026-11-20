@@ -182,8 +182,6 @@ async function main() {
             })`,
         )
         .join(',\n') + ';',
-      '',
-      "select setval(pg_get_serial_sequence('public.football_matches', 'id'), coalesce((select max(id) from public.football_matches), 1), true);",
     ];
     fs.writeFileSync(outPath, lines.join('\n'), 'utf8');
     console.log(`SQL written to ${outPath}`);

@@ -349,7 +349,6 @@ export function ParticipantProfilePage({ kind }: { kind: 'team' | 'player' }) {
                     ? 'win'
                     : 'loss';
               const isBye = m.whiteId === 'BYE' || m.blackId === 'BYE';
-              const targetId = m.id > 0 ? m.id : -m.id - 1000;
               const inner = (
                 <>
                   <div className="h2h-row-league">
@@ -411,11 +410,11 @@ export function ParticipantProfilePage({ kind }: { kind: 'team' | 'player' }) {
               ) : (
                 <Link
                   key={m.id}
-                  to={`/match/${targetId}`}
+                  to={`/match/${m.id}`}
                   state={{
                     sport: 'renju',
                     tournamentId: m.tournamentId,
-                    isBracket: m.id < 0,
+                    isBracket: Boolean(m.stageLabel && !m.stageLabel.includes('第')),
                   }}
                   className="fixture-row fixture-link h2h-row"
                 >

@@ -524,15 +524,14 @@ export function MatchDetailPage() {
                           ? 'draw'
                           : null;
                   const isCurrent = m.id === renjuMatch.id;
-                  const targetId = m.id > 0 ? m.id : -m.id - 1000;
                   return (
                     <Link
                       key={m.id}
-                      to={`/match/${targetId}`}
+                      to={`/match/${m.id}`}
                       state={{
                         sport: 'renju',
                         tournamentId: m.tournamentId,
-                        isBracket: m.id < 0,
+                        isBracket: Boolean(m.stageLabel && !m.stageLabel.includes('第')),
                       }}
                       className={`fixture-row fixture-link h2h-row ${isCurrent ? 'is-current-match' : ''}`}
                     >

@@ -636,10 +636,7 @@ function generateSql(payloads) {
         })`,
     ),
   );
-  lines.push(matchValues.join(',\n') + ';', '');
-  lines.push(
-    "select setval(pg_get_serial_sequence('public.football_matches', 'id'), coalesce((select max(id) from public.football_matches), 1), true);",
-  );
+  lines.push(matchValues.join(',\n') + ';');
 
   return lines.join('\n');
 }
