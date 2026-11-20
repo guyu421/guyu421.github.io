@@ -45,6 +45,12 @@ function parseRenjuOutcome(result: string | null): {
   return { blackText: result, whiteText: '', winner: null };
 }
 
+const OUTCOME_LABEL: Record<'win' | 'draw' | 'loss', string> = {
+  win: 'W',
+  draw: 'D',
+  loss: 'L',
+};
+
 export function MatchDetailPage() {
   const { tournamentId, matchId } = useParams<{
     tournamentId: string;
@@ -299,21 +305,26 @@ export function MatchDetailPage() {
               <div className="fixture-list">
                 {footballH2H.map((m) => {
                   const hasScore = m.homeScore !== null && m.awayScore !== null;
+                  const homeOutcome: 'win' | 'draw' | 'loss' | null = !hasScore
+                    ? null
+                    : m.homeScore! > m.awayScore!
+                      ? 'win'
+                      : m.homeScore! < m.awayScore!
+                        ? 'loss'
+                        : 'draw';
                   const isCurrent = m.id === footballMatch.id;
                   return (
                     <Link
                       key={m.id}
                       to={`/matches/${m.tournamentId}/match/${m.id}`}
-                      className={`fixture-row fixture-link ${isCurrent ? 'is-current-match' : ''}`}
+                      className={`fixture-row fixture-link h2h-row ${isCurrent ? 'is-current-match' : ''}`}
                     >
+                      <div className="h2h-row-league">{m.tournamentName}</div>
                       <div className="fixture-meta tabular-nums">
                         <span>{formatDateTime(m.matchTime).slice(0, 10)}</span>
                         <span>第{m.roundNo}轮</span>
                       </div>
                       <div className="fixture-players">
-                        <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginBottom: 4 }}>
-                          {m.tournamentName}
-                        </div>
                         <div className="fixture-player-line">
                           {teamLogos.get(m.homeTeam) ? (
                             <img
@@ -338,11 +349,35 @@ export function MatchDetailPage() {
                         </div>
                       </div>
                       <div className="fixture-scores tabular-nums">
-                        <div className={`fixture-score-line ${!hasScore ? 'muted' : ''}`}>
+                        <div
+                          className={`fixture-score-line ${
+                            !hasScore
+                              ? 'muted'
+                              : homeOutcome === 'loss'
+                                ? 'loser'
+                                : ''
+                          }`}
+                        >
                           <span>{hasScore ? m.homeScore : '-'}</span>
+                          {homeOutcome ? (
+                            <span className={`result-dot ${homeOutcome}`}>
+                              {OUTCOME_LABEL[homeOutcome]}
+                            </span>
+                          ) : (
+                            <span aria-hidden="true" />
+                          )}
                         </div>
-                        <div className={`fixture-score-line ${!hasScore ? 'muted' : ''}`}>
+                        <div
+                          className={`fixture-score-line ${
+                            !hasScore
+                              ? 'muted'
+                              : homeOutcome === 'win'
+                                ? 'loser'
+                                : ''
+                          }`}
+                        >
                           <span>{hasScore ? m.awayScore : '-'}</span>
+                          <span aria-hidden="true" />
                         </div>
                       </div>
                     </Link>
@@ -412,6 +447,14 @@ export function MatchDetailPage() {
               <div className="fixture-list">
                 {renjuH2H.map((m) => {
                   const parsed = parseRenjuOutcome(m.result);
+                  const blackOutcome: 'win' | 'draw' | 'loss' | null =
+                    parsed.winner === 'black'
+                      ? 'win'
+                      : parsed.winner === 'white'
+                        ? 'loss'
+                        : parsed.winner === 'draw'
+                          ? 'draw'
+                          : null;
                   const isCurrent = m.id === renjuMatch.id;
                   const targetPath =
                     m.id > 0
@@ -421,16 +464,14 @@ export function MatchDetailPage() {
                     <Link
                       key={m.id}
                       to={targetPath}
-                      className={`fixture-row fixture-link ${isCurrent ? 'is-current-match' : ''}`}
+                      className={`fixture-row fixture-link h2h-row ${isCurrent ? 'is-current-match' : ''}`}
                     >
+                      <div className="h2h-row-league">{m.tournamentName}</div>
                       <div className="fixture-meta tabular-nums">
                         <span>{formatDateTime(m.matchTime).slice(0, 10)}</span>
                         <span>{m.stageLabel ?? `第${m.roundNo}轮`}</span>
                       </div>
                       <div className="fixture-players">
-                        <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginBottom: 4 }}>
-                          {m.tournamentName}
-                        </div>
                         <div className="fixture-player-line">
                           <span>● {m.blackName}</span>
                         </div>
@@ -439,11 +480,35 @@ export function MatchDetailPage() {
                         </div>
                       </div>
                       <div className="fixture-scores tabular-nums">
-                        <div className="fixture-score-line">
+                        <div
+                          className={`fixture-score-line ${
+                            !m.result
+                              ? 'muted'
+                              : blackOutcome === 'loss'
+                                ? 'loser'
+                                : ''
+                          }`}
+                        >
                           <span>{parsed.blackText}</span>
+                          {blackOutcome ? (
+                            <span className={`result-dot ${blackOutcome}`}>
+                              {OUTCOME_LABEL[blackOutcome]}
+                            </span>
+                          ) : (
+                            <span aria-hidden="true" />
+                          )}
                         </div>
-                        <div className="fixture-score-line">
+                        <div
+                          className={`fixture-score-line ${
+                            !m.result
+                              ? 'muted'
+                              : blackOutcome === 'win'
+                                ? 'loser'
+                                : ''
+                          }`}
+                        >
                           <span>{parsed.whiteText}</span>
+                          <span aria-hidden="true" />
                         </div>
                       </div>
                     </Link>

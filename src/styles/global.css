@@ -1422,6 +1422,13 @@ a.fixture-row:hover {
   font-size: 0.86rem;
   color: var(--color-text-muted);
 }
+
+.h2h-row-league {
+  grid-column: 1 / -1;
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  margin-bottom: -4px;
+}
 .bracket-section {
   padding: 20px 16px 32px;
   background: var(--color-bg);
