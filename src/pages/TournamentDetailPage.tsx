@@ -284,8 +284,8 @@ export function TournamentDetailPage() {
     if (!Number.isInteger(parsed) || !rounds.includes(parsed)) {
       const target =
         activeTab === 'standings'
-          ? `/${numericId}/standings/round/${defaultRound}`
-          : `/${numericId}/round/${defaultRound}`;
+          ? `/${numericId}/standings/${defaultRound}`
+          : `/${numericId}/${defaultRound}`;
       navigate(target, { replace: true });
     }
   }, [loading, rounds, roundNo, activeTab, numericId, defaultRound, navigate]);
@@ -293,8 +293,8 @@ export function TournamentDetailPage() {
   const goToView = (tab: 'matches' | 'standings', round: number) => {
     navigate(
       tab === 'standings'
-        ? `/${numericId}/standings/round/${round}`
-        : `/${numericId}/round/${round}`,
+        ? `/${numericId}/standings/${round}`
+        : `/${numericId}/${round}`,
     );
   };
 

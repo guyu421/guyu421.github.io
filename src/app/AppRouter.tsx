@@ -26,12 +26,9 @@ export function AppRouter() {
         <Route path="/player/:playerId" element={<ParticipantProfilePage kind="player" />} />
         <Route path="/match/:matchId" element={<MatchDetailPage />} />
         <Route path="/:tournamentId" element={<TournamentDetailPage />} />
-        <Route path="/:tournamentId/round/:roundNo" element={<TournamentDetailPage />} />
         <Route path="/:tournamentId/standings" element={<TournamentDetailPage />} />
-        <Route
-          path="/:tournamentId/standings/round/:roundNo"
-          element={<TournamentDetailPage />}
-        />
+        <Route path="/:tournamentId/standings/:roundNo" element={<TournamentDetailPage />} />
+        <Route path="/:tournamentId/:roundNo" element={<TournamentDetailPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </MainLayout>

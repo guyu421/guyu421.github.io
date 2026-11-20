@@ -247,7 +247,7 @@ export function MatchDetailPage() {
 
   const backPath = renjuMatch?.stageLabel
     ? `/${tournament.id}`
-    : `/${tournament.id}/round/${activeMatch.roundNo}`;
+    : `/${tournament.id}/${activeMatch.roundNo}`;
 
   return (
     <div className="tournament-page">
