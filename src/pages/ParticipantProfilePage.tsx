@@ -232,8 +232,8 @@ export function ParticipantProfilePage({ kind }: { kind: 'team' | 'player' }) {
           <span>全部赛程与战绩</span>
           <span className="h2h-summary tabular-nums">
             {kind === 'team'
-              ? `已完赛 ${teamStats.played} 场 · ${teamStats.wins}胜 ${teamStats.draws}平 ${teamStats.losses}负 · 进${teamStats.gf}球 失${teamStats.ga}球`
-              : `已完赛 ${playerStats.played} 场 · ${playerStats.wins}胜 ${playerStats.draws}平 ${playerStats.losses}负`}
+              ? `已完赛${teamStats.played}场 · ${teamStats.wins}胜 ${teamStats.draws}平 ${teamStats.losses}负 · 进${teamStats.gf}球 失${teamStats.ga}球`
+              : `已完赛${playerStats.played}场 · ${playerStats.wins}胜 ${playerStats.draws}平 ${playerStats.losses}负`}
           </span>
         </div>
 
