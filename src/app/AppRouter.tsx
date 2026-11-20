@@ -5,6 +5,7 @@ import { CategoryPage } from '@/pages/CategoryPage';
 import { MatchDetailPage } from '@/pages/MatchDetailPage';
 import { MatchesPage } from '@/pages/MatchesPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+import { ParticipantProfilePage } from '@/pages/ParticipantProfilePage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { PublishArticlePage } from '@/pages/PublishArticlePage';
 import { SearchPage } from '@/pages/SearchPage';
@@ -24,6 +25,8 @@ export function AppRouter() {
           element={<TournamentDetailPage />}
         />
         <Route path="/matches/:tournamentId/match/:matchId" element={<MatchDetailPage />} />
+        <Route path="/team/:teamName" element={<ParticipantProfilePage kind="team" />} />
+        <Route path="/player/:playerId" element={<ParticipantProfilePage kind="player" />} />
         <Route path="/category/:categoryId" element={<CategoryPage />} />
         <Route path="/article/:id" element={<ArticleDetailPage />} />
         <Route path="/publish" element={<PublishArticlePage />} />

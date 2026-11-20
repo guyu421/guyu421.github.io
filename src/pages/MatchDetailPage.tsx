@@ -273,7 +273,10 @@ export function MatchDetailPage() {
               ) : null}
             </div>
             <div className="match-detail-board">
-              <div className="match-detail-side">
+              <Link
+                to={`/team/${encodeURIComponent(footballMatch.homeTeam)}`}
+                className="match-detail-side match-detail-side-link"
+              >
                 {teamLogos.get(footballMatch.homeTeam) ? (
                   <img
                     src={teamLogos.get(footballMatch.homeTeam)}
@@ -283,7 +286,7 @@ export function MatchDetailPage() {
                 ) : null}
                 <div className="match-detail-name">{footballMatch.homeTeam}</div>
                 <div className="match-detail-tag">主队</div>
-              </div>
+              </Link>
 
               <div className="match-detail-score tabular-nums">
                 {footballMatch.homeScore !== null && footballMatch.awayScore !== null
@@ -291,7 +294,10 @@ export function MatchDetailPage() {
                   : 'VS'}
               </div>
 
-              <div className="match-detail-side">
+              <Link
+                to={`/team/${encodeURIComponent(footballMatch.awayTeam)}`}
+                className="match-detail-side match-detail-side-link"
+              >
                 {teamLogos.get(footballMatch.awayTeam) ? (
                   <img
                     src={teamLogos.get(footballMatch.awayTeam)}
@@ -301,7 +307,7 @@ export function MatchDetailPage() {
                 ) : null}
                 <div className="match-detail-name">{footballMatch.awayTeam}</div>
                 <div className="match-detail-tag">客队</div>
-              </div>
+              </Link>
             </div>
           </div>
 
@@ -415,7 +421,10 @@ export function MatchDetailPage() {
                   {formatDateTime(renjuMatch.matchTime)}
                 </div>
                 <div className="match-detail-board">
-                  <div className="match-detail-side">
+                  <Link
+                    to={`/player/${encodeURIComponent(renjuMatch.blackId)}`}
+                    className="match-detail-side match-detail-side-link"
+                  >
                     <div className="match-detail-name">
                       {renjuMatch.blackNo !== undefined ? (
                         <span className="player-no tabular-nums" style={{ marginRight: 6 }}>
@@ -425,7 +434,7 @@ export function MatchDetailPage() {
                       {renjuMatch.blackName}
                     </div>
                     <div className="match-detail-tag">假先</div>
-                  </div>
+                  </Link>
 
                   <div className="match-detail-score tabular-nums">
                     {renjuMatch.result
@@ -433,7 +442,10 @@ export function MatchDetailPage() {
                       : 'VS'}
                   </div>
 
-                  <div className="match-detail-side">
+                  <Link
+                    to={`/player/${encodeURIComponent(renjuMatch.whiteId)}`}
+                    className="match-detail-side match-detail-side-link"
+                  >
                     <div className="match-detail-name">
                       {renjuMatch.whiteNo !== undefined ? (
                         <span className="player-no tabular-nums" style={{ marginRight: 6 }}>
@@ -443,7 +455,7 @@ export function MatchDetailPage() {
                       {renjuMatch.whiteName}
                     </div>
                     <div className="match-detail-tag">假后</div>
-                  </div>
+                  </Link>
                 </div>
               </div>
             );

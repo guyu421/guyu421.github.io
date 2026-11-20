@@ -547,4 +547,180 @@ export const matchService = {
       tournamentName: r.tournament?.name ?? `赛事 #${r.tournament_id}`,
     }));
   },
+
+  async searchParticipants(query: string): Promise<{
+    teams: Array<{ name: string; logoUrl?: string }>;
+    players: Array<{ id: string; name: string }>;
+  }> {
+    const q = query.trim();
+    if (!q) return { teams: [], players: [] };
+    const supabase = requireSupabase();
+    const [teamsRes, playersRes] = await Promise.all([
+      supabase
+        .from('football_teams')
+        .select('team_name, logo_url')
+        .ilike('team_name', `%${q}%`)
+        .limit(30),
+      supabase
+        .from('players')
+        .select('id, name')
+        .neq('id', 'BYE')
+        .ilike('name', `%${q}%`)
+        .limit(30),
+    ]);
+
+    const teamMap = new Map<string, { name: string; logoUrl?: string }>();
+    for (const r of (teamsRes.data ?? []) as { team_name: string; logo_url: string | null }[]) {
+      const existing = teamMap.get(r.team_name);
+      if (!existing || (!existing.logoUrl && r.logo_url)) {
+        teamMap.set(r.team_name, {
+          name: r.team_name,
+          logoUrl: r.logo_url || undefined,
+        });
+      }
+    }
+
+    const players = ((playersRes.data ?? []) as { id: string; name: string }[]).map((p) => ({
+      id: p.id,
+      name: p.name,
+    }));
+
+    return {
+      teams: Array.from(teamMap.values()),
+      players,
+    };
+  },
+
+  async getTeamProfile(teamName: string): Promise<{
+    name: string;
+    logoUrl?: string;
+    matches: Array<FootballMatch & { tournamentName: string }>;
+    teamLogos: Map<string, string>;
+  }> {
+    const supabase = requireSupabase();
+    const [teamsRes, matchesRes, allLogosRes] = await Promise.all([
+      supabase
+        .from('football_teams')
+        .select('team_name, logo_url')
+        .eq('team_name', teamName),
+      supabase
+        .from('football_matches')
+        .select('*, tournament:tournaments(id, name)')
+        .or(`home_team.eq."${teamName}",away_team.eq."${teamName}"`)
+        .order('match_time', { ascending: false }),
+      supabase.from('football_teams').select('team_name, logo_url'),
+    ]);
+
+    const logoUrl = (
+      (teamsRes.data ?? []) as { team_name: string; logo_url: string | null }[]
+    ).find((t) => Boolean(t.logo_url))?.logo_url ?? undefined;
+
+    const teamLogos = new Map<string, string>();
+    for (const r of (allLogosRes.data ?? []) as { team_name: string; logo_url: string | null }[]) {
+      if (r.logo_url && !teamLogos.has(r.team_name)) {
+        teamLogos.set(r.team_name, r.logo_url);
+      }
+    }
+
+    const matches = (
+      (matchesRes.data ?? []) as unknown as Array<
+        FootballMatchRow & { tournament?: { id: number; name: string } | null }
+      >
+    ).map((r) => ({
+      id: r.id,
+      tournamentId: r.tournament_id,
+      roundNo: r.round_no,
+      matchTime: r.match_time,
+      homeTeam: r.home_team,
+      awayTeam: r.away_team,
+      homeScore: r.home_score,
+      awayScore: r.away_score,
+      tournamentName: r.tournament?.name ?? `赛事 #${r.tournament_id}`,
+    }));
+
+    return { name: teamName, logoUrl, matches, teamLogos };
+  },
+
+  async getPlayerProfile(playerId: string): Promise<{
+    player: PlayerInfo | null;
+    matches: Array<RenjuMatch & { tournamentName: string; stageLabel?: string }>;
+  }> {
+    const supabase = requireSupabase();
+    const { data: playerRow } = await supabase
+      .from('players')
+      .select('id, name')
+      .eq('id', playerId)
+      .maybeSingle();
+
+    if (!playerRow) {
+      return { player: null, matches: [] };
+    }
+
+    const player = playerRow as PlayerInfo;
+    const [swissRes, bracketRes] = await Promise.all([
+      supabase
+        .from('renju_matches')
+        .select(
+          'id, tournament_id, round_no, board_no, black_id, white_id, match_time, result, black:players!renju_matches_black_id_fkey(id, name), white:players!renju_matches_white_id_fkey(id, name), tournament:tournaments(id, name)',
+        )
+        .or(`black_id.eq.${playerId},white_id.eq.${playerId}`)
+        .order('match_time', { ascending: false }),
+      supabase
+        .from('renju_bracket_matches')
+        .select('*, tournament:tournaments(id, name)')
+        .or(`player1_name.eq."${player.name}",player2_name.eq."${player.name}"`)
+        .order('match_time', { ascending: false }),
+    ]);
+
+    const list: Array<RenjuMatch & { tournamentName: string; stageLabel?: string }> = [];
+    const emptyNoMap = new Map<string, number>();
+
+    if (!swissRes.error && swissRes.data) {
+      for (const raw of swissRes.data as unknown as Array<
+        RenjuMatchRow & { tournament?: { id: number; name: string } | null }
+      >) {
+        list.push({
+          ...mapMatch(raw, emptyNoMap),
+          tournamentName: raw.tournament?.name ?? `赛事 #${raw.tournament_id}`,
+          stageLabel: `第${raw.round_no}轮`,
+        });
+      }
+    }
+
+    if (!bracketRes.error && bracketRes.data) {
+      for (const b of bracketRes.data as unknown as Array<{
+        id: number;
+        tournament_id: number;
+        match_order: number;
+        round_label: string;
+        match_time: string;
+        player1_name: string;
+        player2_name: string;
+        winner_slot: 1 | 2;
+        tournament?: { id: number; name: string } | null;
+      }>) {
+        const p1Won = b.winner_slot === 1;
+        list.push({
+          id: -1000 - b.id,
+          tournamentId: b.tournament_id,
+          roundNo: 99,
+          boardNo: b.match_order,
+          blackId: b.player1_name === player.name ? player.id : b.player1_name,
+          blackName: b.player1_name,
+          whiteId: b.player2_name === player.name ? player.id : b.player2_name,
+          whiteName: b.player2_name,
+          matchTime: b.match_time,
+          result: p1Won ? '1:0' : '0:1',
+          tournamentName: b.tournament?.name ?? `赛事 #${b.tournament_id}`,
+          stageLabel: b.round_label,
+        });
+      }
+    }
+
+    list.sort(
+      (a, b) => new Date(b.matchTime).getTime() - new Date(a.matchTime).getTime(),
+    );
+
+    return { player, matches: list };
+  },
 };

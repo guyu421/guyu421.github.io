@@ -16,6 +16,13 @@ export function UnifiedSearchResults() {
 
   const [tournaments, setTournaments] = useState<TournamentItem[]>([]);
   const [tLoading, setTLoading] = useState(true);
+  const [matchedTeams, setMatchedTeams] = useState<
+    Array<{ name: string; logoUrl?: string }>
+  >([]);
+  const [matchedPlayers, setMatchedPlayers] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
+  const [pLoading, setPLoading] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -38,13 +45,47 @@ export function UnifiedSearchResults() {
     return tournaments.filter((t) => t.name.toLowerCase().includes(q));
   }, [tournaments, q]);
 
+  useEffect(() => {
+    let active = true;
+    if (!q) {
+      setMatchedTeams([]);
+      setMatchedPlayers([]);
+      setPLoading(false);
+      return;
+    }
+    setPLoading(true);
+    matchService
+      .searchParticipants(q)
+      .then((res) => {
+        if (!active) return;
+        setMatchedTeams(res.teams);
+        setMatchedPlayers(res.players);
+      })
+      .catch(() => {
+        if (active) {
+          setMatchedTeams([]);
+          setMatchedPlayers([]);
+        }
+      })
+      .finally(() => {
+        if (active) setPLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [q]);
+
   const newsState = useNewsFeed({
     category: 'all',
     search: debouncedSearch,
   });
 
-  const isLoading = tLoading || newsState.loading;
-  const totalCount = matchedTournaments.length + newsState.data.length;
+  const isLoading = tLoading || pLoading || newsState.loading;
+  const totalCount =
+    matchedTeams.length +
+    matchedPlayers.length +
+    matchedTournaments.length +
+    newsState.data.length;
 
   return (
     <div className="container">
@@ -68,6 +109,88 @@ export function UnifiedSearchResults() {
         />
       ) : (
         <>
+          {matchedTeams.length > 0 ? (
+            <section style={{ marginBottom: 20 }}>
+              <div
+                style={{
+                  fontSize: '0.92rem',
+                  fontWeight: 700,
+                  color: 'var(--color-text-secondary)',
+                  marginBottom: 8,
+                }}
+              >
+                球队（{matchedTeams.length}）
+              </div>
+              <div className="card" style={{ overflow: 'hidden' }}>
+                <div className="fixture-list">
+                  {matchedTeams.map((team) => (
+                    <Link
+                      key={team.name}
+                      to={`/team/${encodeURIComponent(team.name)}`}
+                      onClick={() => setSearchQuery('')}
+                      className="fixture-row fixture-link"
+                      style={{ gridTemplateColumns: 'minmax(0, 1fr) auto' }}
+                    >
+                      <div className="fixture-players">
+                        <div className="fixture-player-line">
+                          {team.logoUrl ? (
+                            <img
+                              className="team-logo"
+                              src={team.logoUrl}
+                              alt=""
+                              loading="lazy"
+                            />
+                          ) : null}
+                          <span>{team.name}</span>
+                        </div>
+                      </div>
+                      <div className="fixture-scores">
+                        <ChevronRight size={18} color="var(--color-text-muted)" />
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </section>
+          ) : null}
+
+          {matchedPlayers.length > 0 ? (
+            <section style={{ marginBottom: 20 }}>
+              <div
+                style={{
+                  fontSize: '0.92rem',
+                  fontWeight: 700,
+                  color: 'var(--color-text-secondary)',
+                  marginBottom: 8,
+                }}
+              >
+                棋手（{matchedPlayers.length}）
+              </div>
+              <div className="card" style={{ overflow: 'hidden' }}>
+                <div className="fixture-list">
+                  {matchedPlayers.map((player) => (
+                    <Link
+                      key={player.id}
+                      to={`/player/${encodeURIComponent(player.id)}`}
+                      onClick={() => setSearchQuery('')}
+                      className="fixture-row fixture-link"
+                      style={{ gridTemplateColumns: 'minmax(0, 1fr) auto' }}
+                    >
+                      <div className="fixture-players">
+                        <div className="fixture-player-line">
+                          <span>{player.name}</span>
+                        </div>
+                      </div>
+                      <div className="fixture-scores">
+                        <ChevronRight size={18} color="var(--color-text-muted)" />
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </section>
+          ) : null}
+
           {matchedTournaments.length > 0 ? (
             <section style={{ marginBottom: 20 }}>
               <div

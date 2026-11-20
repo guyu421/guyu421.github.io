@@ -1377,6 +1377,18 @@ a.fixture-row:hover {
   gap: 6px;
 }
 
+.match-detail-side-link {
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--radius-md);
+  padding: 6px 8px;
+  transition: background-color 0.15s ease;
+}
+
+.match-detail-side-link:hover {
+  background-color: #f8fafc;
+}
+
 .match-detail-logo {
   width: 44px;
   height: 44px;
