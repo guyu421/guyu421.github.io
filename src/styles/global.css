@@ -1454,6 +1454,16 @@ a.fixture-row:hover {
   margin-bottom: -4px;
 }
 
+.standings-entity-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.standings-entity-link:hover span:last-child {
+  text-decoration: underline;
+  color: var(--color-primary);
+}
+
 .live-clock-pill {
   display: inline-flex;
   align-items: center;

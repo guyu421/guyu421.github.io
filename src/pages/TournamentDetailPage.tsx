@@ -333,9 +333,12 @@ export function TournamentDetailPage() {
       : null;
 
     const playerNoByName = new Map<string, number>();
+    const playerIdByName = new Map<string, string>();
     for (const m of matches) {
       if (m.blackNo !== undefined) playerNoByName.set(m.blackName, m.blackNo);
       if (m.whiteNo !== undefined) playerNoByName.set(m.whiteName, m.whiteNo);
+      if (m.blackId !== 'BYE') playerIdByName.set(m.blackName, m.blackId);
+      if (m.whiteId !== 'BYE') playerIdByName.set(m.whiteName, m.whiteId);
     }
 
     const rankedNames = [champion, runnerUp, thirdPlace, fourthPlace].filter(
@@ -345,6 +348,7 @@ export function TournamentDetailPage() {
       rank: idx + 1,
       playerName: name,
       playerNo: playerNoByName.get(name),
+      playerId: playerIdByName.get(name),
     }));
 
     return {
@@ -614,7 +618,10 @@ export function TournamentDetailPage() {
                             {row.rank}
                           </td>
                           <td style={{ fontWeight: 600 }}>
-                            <span className="team-cell">
+                            <Link
+                              to={`/team/${encodeURIComponent(row.teamName)}`}
+                              className="team-cell standings-entity-link"
+                            >
                               {footballTeamLogos.get(row.teamName) ? (
                                 <img
                                   className="team-logo"
@@ -624,7 +631,7 @@ export function TournamentDetailPage() {
                                 />
                               ) : null}
                               <span>{row.teamName}</span>
-                            </span>
+                            </Link>
                           </td>
                           <td className="tabular-nums">{row.played}</td>
                           <td
@@ -820,14 +827,28 @@ export function TournamentDetailPage() {
                           {row.rank}
                         </td>
                         <td style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
-                          <span className="team-cell">
-                            {row.playerNo !== undefined ? (
-                              <span className="player-no tabular-nums">
-                                {row.playerNo}
-                              </span>
-                            ) : null}
-                            <span>{row.playerName}</span>
-                          </span>
+                          {row.playerId ? (
+                            <Link
+                              to={`/player/${encodeURIComponent(row.playerId)}`}
+                              className="team-cell standings-entity-link"
+                            >
+                              {row.playerNo !== undefined ? (
+                                <span className="player-no tabular-nums">
+                                  {row.playerNo}
+                                </span>
+                              ) : null}
+                              <span>{row.playerName}</span>
+                            </Link>
+                          ) : (
+                            <span className="team-cell">
+                              {row.playerNo !== undefined ? (
+                                <span className="player-no tabular-nums">
+                                  {row.playerNo}
+                                </span>
+                              ) : null}
+                              <span>{row.playerName}</span>
+                            </span>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -920,14 +941,28 @@ export function TournamentDetailPage() {
                           {row.rank}
                         </td>
                         <td style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
-                          <span className="team-cell">
-                            {row.playerNo !== undefined ? (
-                              <span className="player-no tabular-nums">
-                                {row.playerNo}
-                              </span>
-                            ) : null}
-                            <span>{row.playerName}</span>
-                          </span>
+                          {row.playerId ? (
+                            <Link
+                              to={`/player/${encodeURIComponent(row.playerId)}`}
+                              className="team-cell standings-entity-link"
+                            >
+                              {row.playerNo !== undefined ? (
+                                <span className="player-no tabular-nums">
+                                  {row.playerNo}
+                                </span>
+                              ) : null}
+                              <span>{row.playerName}</span>
+                            </Link>
+                          ) : (
+                            <span className="team-cell">
+                              {row.playerNo !== undefined ? (
+                                <span className="player-no tabular-nums">
+                                  {row.playerNo}
+                                </span>
+                              ) : null}
+                              <span>{row.playerName}</span>
+                            </span>
+                          )}
                         </td>
                         <td className="tabular-nums">{row.played}</td>
                         <td
