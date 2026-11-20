@@ -977,7 +977,10 @@ export function TournamentDetailPage() {
               <div className="v-bracket-clean">
                 {finalsInfo.semi1 ? (
                   <>
-                    <div className="v-match-row">
+                    <Link
+                      to={`/matches/${numericId}/bracket-match/${finalsInfo.semi1.id}`}
+                      className="v-match-row v-match-link"
+                    >
                       <span
                         className={`v-player ${
                           finalsInfo.semi1.winnerSlot === 1 ? 'winner' : 'loser'
@@ -1007,7 +1010,7 @@ export function TournamentDetailPage() {
                         ) : null}
                         <span>{finalsInfo.semi1.player2Name}</span>
                       </span>
-                    </div>
+                    </Link>
                     <svg
                       className="v-fork-svg"
                       viewBox="0 0 200 36"
@@ -1054,7 +1057,10 @@ export function TournamentDetailPage() {
                 ) : null}
 
                 {finalsInfo.finalMatch ? (
-                  <div className="v-match-row v-final-row">
+                  <Link
+                    to={`/matches/${numericId}/bracket-match/${finalsInfo.finalMatch.id}`}
+                    className="v-match-row v-final-row v-match-link"
+                  >
                     <span
                       className={`v-player ${
                         finalsInfo.finalMatch.winnerSlot === 1 ? 'winner' : 'loser'
@@ -1085,7 +1091,7 @@ export function TournamentDetailPage() {
                       ) : null}
                       <span>{finalsInfo.finalMatch.player2Name}</span>
                     </span>
-                  </div>
+                  </Link>
                 ) : null}
 
                 {finalsInfo.semi2 ? (
@@ -1132,7 +1138,10 @@ export function TournamentDetailPage() {
                         </>
                       )}
                     </svg>
-                    <div className="v-match-row">
+                    <Link
+                      to={`/matches/${numericId}/bracket-match/${finalsInfo.semi2.id}`}
+                      className="v-match-row v-match-link"
+                    >
                       <span
                         className={`v-player ${
                           finalsInfo.semi2.winnerSlot === 1 ? 'winner' : 'loser'
@@ -1162,7 +1171,7 @@ export function TournamentDetailPage() {
                         ) : null}
                         <span>{finalsInfo.semi2.player2Name}</span>
                       </span>
-                    </div>
+                    </Link>
                   </>
                 ) : null}
               </div>
@@ -1172,7 +1181,10 @@ export function TournamentDetailPage() {
                   <div className="v-stage-label" style={{ marginBottom: 8 }}>
                     季军赛
                   </div>
-                  <div className="v-match-row v-final-row">
+                  <Link
+                    to={`/matches/${numericId}/bracket-match/${finalsInfo.thirdMatch.id}`}
+                    className="v-match-row v-final-row v-match-link"
+                  >
                     <span
                       className={`v-player ${
                         finalsInfo.thirdMatch.winnerSlot === 1 ? 'winner' : 'loser'
@@ -1203,7 +1215,7 @@ export function TournamentDetailPage() {
                       ) : null}
                       <span>{finalsInfo.thirdMatch.player2Name}</span>
                     </span>
-                  </div>
+                  </Link>
                 </div>
               ) : null}
 

@@ -1,6 +1,6 @@
 import { ChevronLeft } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { EmptyState } from '@/components/common/EmptyState';
 import { overlayEspnLiveScores } from '@/services/espnLiveService';
 import { matchService } from '@/services/matchService';
@@ -57,11 +57,15 @@ export function MatchDetailPage() {
     tournamentId: string;
     matchId: string;
   }>();
+  const location = useLocation();
+  const isBracketMatch = location.pathname.includes('/bracket-match/');
   const tid = Number(tournamentId);
   const mid = Number(matchId);
 
   const [tournament, setTournament] = useState<TournamentItem | null>(null);
-  const [renjuMatch, setRenjuMatch] = useState<RenjuMatch | null>(null);
+  const [renjuMatch, setRenjuMatch] = useState<
+    (RenjuMatch & { stageLabel?: string }) | null
+  >(null);
   const [footballMatch, setFootballMatch] = useState<FootballMatch | null>(null);
   const [teamLogos, setTeamLogos] = useState<Map<string, string>>(new Map());
   const [renjuH2H, setRenjuH2H] = useState<
@@ -112,7 +116,9 @@ export function MatchDetailPage() {
             if (active) setFootballH2H(h2h);
           }
         } else {
-          const mData = await matchService.getRenjuMatchById(mid);
+          const mData = isBracketMatch
+            ? await matchService.getRenjuBracketMatchById(mid)
+            : await matchService.getRenjuMatchById(mid);
           if (!active) return;
           setRenjuMatch(mData);
           setFootballMatch(null);
@@ -137,7 +143,7 @@ export function MatchDetailPage() {
     return () => {
       active = false;
     };
-  }, [tid, mid]);
+  }, [tid, mid, isBracketMatch]);
 
   const footballStats = useMemo(() => {
     if (!footballMatch) return { total: 0, homeWins: 0, draws: 0, awayWins: 0 };
@@ -206,7 +212,9 @@ export function MatchDetailPage() {
     );
   }
 
-  const backPath = `/matches/${tid}/round/${activeMatch.roundNo}`;
+  const backPath = isBracketMatch
+    ? `/matches/${tid}`
+    : `/matches/${tid}/round/${activeMatch.roundNo}`;
 
   return (
     <div className="tournament-page">
@@ -249,8 +257,9 @@ export function MatchDetailPage() {
               </span>
             </div>
             <div style={{ fontSize: '0.78rem', opacity: 0.9, marginTop: 2 }}>
-              第{activeMatch.roundNo}轮
-              {renjuMatch ? ` · 第${renjuMatch.boardNo}台` : ''}
+              {renjuMatch?.stageLabel
+                ? renjuMatch.stageLabel
+                : `第${activeMatch.roundNo}轮${renjuMatch ? ` · 第${renjuMatch.boardNo}台` : ''}`}
             </div>
           </div>
         </div>
@@ -472,7 +481,7 @@ export function MatchDetailPage() {
                   const targetPath =
                     m.id > 0
                       ? `/matches/${m.tournamentId}/match/${m.id}`
-                      : `/matches/${m.tournamentId}`;
+                      : `/matches/${m.tournamentId}/bracket-match/${-m.id - 1000}`;
                   return (
                     <Link
                       key={m.id}

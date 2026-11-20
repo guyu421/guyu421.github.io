@@ -335,6 +335,67 @@ export const matchService = {
     return mapMatch(row, noMap);
   },
 
+  async getRenjuBracketMatchById(
+    bracketMatchId: number,
+  ): Promise<(RenjuMatch & { stageLabel: string }) | null> {
+    const supabase = requireSupabase();
+    const { data, error } = await supabase
+      .from('renju_bracket_matches')
+      .select('*')
+      .eq('id', bracketMatchId)
+      .maybeSingle();
+
+    if (error || !data) return null;
+    const b = data as {
+      id: number;
+      tournament_id: number;
+      round_label: string;
+      match_time: string;
+      player1_name: string;
+      player2_name: string;
+      winner_slot: 1 | 2;
+    };
+
+    const { data: playersData } = await supabase
+      .from('players')
+      .select('id, name')
+      .in('name', [b.player1_name, b.player2_name]);
+
+    const idByName = new Map<string, string>();
+    for (const p of playersData ?? []) {
+      idByName.set(p.name as string, p.id as string);
+    }
+    const p1Id = idByName.get(b.player1_name) ?? b.player1_name;
+    const p2Id = idByName.get(b.player2_name) ?? b.player2_name;
+
+    const { data: tpData } = await supabase
+      .from('tournament_players')
+      .select('player_id, player_no')
+      .eq('tournament_id', b.tournament_id)
+      .in('player_id', [p1Id, p2Id]);
+
+    const noMap = new Map<string, number>();
+    for (const tp of tpData ?? []) {
+      noMap.set(tp.player_id as string, tp.player_no as number);
+    }
+
+    return {
+      id: -1000 - b.id,
+      tournamentId: b.tournament_id,
+      roundNo: 99,
+      boardNo: 1,
+      blackId: p1Id,
+      blackNo: noMap.get(p1Id),
+      blackName: b.player1_name,
+      whiteId: p2Id,
+      whiteNo: noMap.get(p2Id),
+      whiteName: b.player2_name,
+      matchTime: b.match_time,
+      result: b.winner_slot === 1 ? '1:0' : '0:1',
+      stageLabel: `决赛阶段 · ${b.round_label}`,
+    };
+  },
+
   async getFootballMatchById(matchId: number): Promise<FootballMatch | null> {
     const supabase = requireSupabase();
     const { data, error } = await supabase

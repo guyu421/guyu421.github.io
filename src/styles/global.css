@@ -1222,6 +1222,18 @@ a.fixture-row:hover {
   text-align: center;
 }
 
+.v-match-link {
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--radius-md);
+  padding: 4px 6px;
+  transition: background-color 0.15s ease;
+}
+
+.v-match-link:hover {
+  background-color: #f8fafc;
+}
+
 .v-final-row {
   max-width: 280px;
   margin: 0 auto;
