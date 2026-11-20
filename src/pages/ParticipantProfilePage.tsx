@@ -247,13 +247,18 @@ export function ParticipantProfilePage({ kind }: { kind: 'team' | 'player' }) {
             <div className="fixture-list">
               {footballMatches.map((m) => {
                 const hasScore = m.homeScore !== null && m.awayScore !== null;
-                const homeOutcome: 'win' | 'draw' | 'loss' | null = !hasScore
+                const isHome = m.homeTeam === decodedTeamName;
+                const myScore = hasScore ? (isHome ? m.homeScore! : m.awayScore!) : null;
+                const oppScore = hasScore ? (isHome ? m.awayScore! : m.homeScore!) : null;
+                const myOutcome: 'win' | 'draw' | 'loss' | null = !hasScore
                   ? null
-                  : m.homeScore! > m.awayScore!
+                  : myScore! > oppScore!
                     ? 'win'
-                    : m.homeScore! < m.awayScore!
+                    : myScore! < oppScore!
                       ? 'loss'
                       : 'draw';
+                const homeLost = hasScore && m.homeScore! < m.awayScore!;
+                const awayLost = hasScore && m.awayScore! < m.homeScore!;
                 return (
                   <Link
                     key={m.id}
@@ -277,11 +282,7 @@ export function ParticipantProfilePage({ kind }: { kind: 'team' | 'player' }) {
                             loading="lazy"
                           />
                         ) : null}
-                        <span
-                          style={
-                            m.homeTeam === decodedTeamName ? { fontWeight: 800 } : undefined
-                          }
-                        >
+                        <span style={isHome ? { fontWeight: 800 } : undefined}>
                           {m.homeTeam}
                         </span>
                       </div>
@@ -294,11 +295,7 @@ export function ParticipantProfilePage({ kind }: { kind: 'team' | 'player' }) {
                             loading="lazy"
                           />
                         ) : null}
-                        <span
-                          style={
-                            m.awayTeam === decodedTeamName ? { fontWeight: 800 } : undefined
-                          }
-                        >
+                        <span style={!isHome ? { fontWeight: 800 } : undefined}>
                           {m.awayTeam}
                         </span>
                       </div>
@@ -306,13 +303,13 @@ export function ParticipantProfilePage({ kind }: { kind: 'team' | 'player' }) {
                     <div className="fixture-scores tabular-nums">
                       <div
                         className={`fixture-score-line ${
-                          !hasScore ? 'muted' : homeOutcome === 'loss' ? 'loser' : ''
+                          !hasScore ? 'muted' : homeLost ? 'loser' : ''
                         }`}
                       >
                         <span>{hasScore ? m.homeScore : '-'}</span>
-                        {homeOutcome ? (
-                          <span className={`result-dot ${homeOutcome}`}>
-                            {OUTCOME_LABEL[homeOutcome]}
+                        {isHome && myOutcome ? (
+                          <span className={`result-dot ${myOutcome}`}>
+                            {OUTCOME_LABEL[myOutcome]}
                           </span>
                         ) : (
                           <span aria-hidden="true" />
@@ -320,11 +317,17 @@ export function ParticipantProfilePage({ kind }: { kind: 'team' | 'player' }) {
                       </div>
                       <div
                         className={`fixture-score-line ${
-                          !hasScore ? 'muted' : homeOutcome === 'win' ? 'loser' : ''
+                          !hasScore ? 'muted' : awayLost ? 'loser' : ''
                         }`}
                       >
                         <span>{hasScore ? m.awayScore : '-'}</span>
-                        <span aria-hidden="true" />
+                        {!isHome && myOutcome ? (
+                          <span className={`result-dot ${myOutcome}`}>
+                            {OUTCOME_LABEL[myOutcome]}
+                          </span>
+                        ) : (
+                          <span aria-hidden="true" />
+                        )}
                       </div>
                     </div>
                   </Link>
@@ -338,14 +341,15 @@ export function ParticipantProfilePage({ kind }: { kind: 'team' | 'player' }) {
           <div className="fixture-list">
             {renjuMatches.map((m) => {
               const parsed = parseRenjuOutcome(m.result);
-              const blackOutcome: 'win' | 'draw' | 'loss' | null =
-                parsed.winner === 'black'
-                  ? 'win'
-                  : parsed.winner === 'white'
-                    ? 'loss'
-                    : parsed.winner === 'draw'
-                      ? 'draw'
-                      : null;
+              const isBlack = m.blackId === decodedPlayerId;
+              const myOutcome: 'win' | 'draw' | 'loss' | null = !parsed.winner
+                ? null
+                : parsed.winner === 'draw'
+                  ? 'draw'
+                  : (isBlack && parsed.winner === 'black') ||
+                      (!isBlack && parsed.winner === 'white')
+                    ? 'win'
+                    : 'loss';
               const isBye = m.whiteId === 'BYE' || m.blackId === 'BYE';
               const targetId = m.id > 0 ? m.id : -m.id - 1000;
               const inner = (
@@ -359,16 +363,12 @@ export function ParticipantProfilePage({ kind }: { kind: 'team' | 'player' }) {
                   </div>
                   <div className="fixture-players">
                     <div className="fixture-player-line">
-                      <span
-                        style={m.blackId === decodedPlayerId ? { fontWeight: 800 } : undefined}
-                      >
+                      <span style={isBlack ? { fontWeight: 800 } : undefined}>
                         {m.blackName}
                       </span>
                     </div>
                     <div className="fixture-player-line">
-                      <span
-                        style={m.whiteId === decodedPlayerId ? { fontWeight: 800 } : undefined}
-                      >
+                      <span style={!isBlack ? { fontWeight: 800 } : undefined}>
                         {m.whiteName}
                       </span>
                     </div>
@@ -376,13 +376,13 @@ export function ParticipantProfilePage({ kind }: { kind: 'team' | 'player' }) {
                   <div className="fixture-scores tabular-nums">
                     <div
                       className={`fixture-score-line ${
-                        !m.result ? 'muted' : blackOutcome === 'loss' ? 'loser' : ''
+                        !m.result ? 'muted' : parsed.winner === 'white' ? 'loser' : ''
                       }`}
                     >
                       <span>{parsed.blackText}</span>
-                      {blackOutcome ? (
-                        <span className={`result-dot ${blackOutcome}`}>
-                          {OUTCOME_LABEL[blackOutcome]}
+                      {isBlack && myOutcome ? (
+                        <span className={`result-dot ${myOutcome}`}>
+                          {OUTCOME_LABEL[myOutcome]}
                         </span>
                       ) : (
                         <span aria-hidden="true" />
@@ -390,11 +390,17 @@ export function ParticipantProfilePage({ kind }: { kind: 'team' | 'player' }) {
                     </div>
                     <div
                       className={`fixture-score-line ${
-                        !m.result ? 'muted' : blackOutcome === 'win' ? 'loser' : ''
+                        !m.result ? 'muted' : parsed.winner === 'black' ? 'loser' : ''
                       }`}
                     >
                       <span>{parsed.whiteText}</span>
-                      <span aria-hidden="true" />
+                      {!isBlack && myOutcome ? (
+                        <span className={`result-dot ${myOutcome}`}>
+                          {OUTCOME_LABEL[myOutcome]}
+                        </span>
+                      ) : (
+                        <span aria-hidden="true" />
+                      )}
                     </div>
                   </div>
                 </>
