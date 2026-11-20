@@ -331,7 +331,7 @@ export function MatchDetailPage() {
 
           <div className="h2h-section">
             <div className="h2h-header">
-              <span>历史交锋记录</span>
+              <span>历史交锋</span>
               <span className="h2h-summary tabular-nums">
                 {footballStats.total > 0
                   ? `已完赛${footballStats.total}场 · ${footballMatch.homeTeam}胜${footballStats.homeWins} 平${footballStats.draws} ${footballMatch.awayTeam}胜${footballStats.awayWins}`
@@ -481,7 +481,7 @@ export function MatchDetailPage() {
 
           <div className="h2h-section">
             <div className="h2h-header">
-              <span>历史交锋记录</span>
+              <span>历史交锋</span>
               <span className="h2h-summary tabular-nums">
                 {renjuStats.total > 0
                   ? `已完赛${renjuStats.total}场 · ${renjuMatch.blackName}胜${renjuStats.aWins} 平${renjuStats.draws} ${renjuMatch.whiteName}胜${renjuStats.bWins}`

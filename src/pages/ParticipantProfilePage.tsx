@@ -229,7 +229,7 @@ export function ParticipantProfilePage({ kind }: { kind: 'team' | 'player' }) {
 
       <div className="h2h-section" style={{ marginTop: 0 }}>
         <div className="h2h-header">
-          <span>全部赛程与战绩</span>
+          <span>全部战绩</span>
           <span className="h2h-summary tabular-nums">
             {kind === 'team'
               ? `已完赛${teamStats.played}场 · ${teamStats.wins}胜 ${teamStats.draws}平 ${teamStats.losses}负 · 进${teamStats.gf}球 失${teamStats.ga}球`
