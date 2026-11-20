@@ -651,13 +651,84 @@ async function supabaseRequest(endpoint, method, body) {
       apikey: SERVICE_ROLE_KEY,
       Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
       'Content-Type': 'application/json',
-      Prefer: 'resolution=merge-duplicates,return=minimal',
+      Prefer:
+        method === 'GET'
+          ? 'return=representation'
+          : 'resolution=merge-duplicates,return=minimal',
     },
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`Supabase ${method} ${endpoint} failed (${res.status}): ${text}`);
+  }
+  return method === 'GET' ? res.json() : null;
+}
+
+async function syncLatestOnly() {
+  if (!SERVICE_ROLE_KEY) {
+    throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY environment variable.');
+  }
+
+  for (const league of LEAGUES) {
+    const [scoreboardData, existingRows] = await Promise.all([
+      fetchJson(
+        `https://site.api.espn.com/apis/site/v2/sports/soccer/${league.code}/scoreboard`,
+      ),
+      supabaseRequest(
+        `football_matches?tournament_id=eq.${league.id}&select=id,round_no,match_time,home_team,away_team,home_score,away_score`,
+        'GET',
+      ),
+    ]);
+
+    const byPair = new Map();
+    for (const row of existingRows || []) {
+      byPair.set(`${row.home_team}__${row.away_team}`, row);
+    }
+
+    let updated = 0;
+    const events = scoreboardData.events || [];
+    for (const ev of events) {
+      const comp = ev.competitions?.[0];
+      const home = comp?.competitors?.find((c) => c.homeAway === 'home');
+      const away = comp?.competitors?.find((c) => c.homeAway === 'away');
+      if (!home || !away) continue;
+
+      const homeTeam = toZh(home.team?.displayName || '');
+      const awayTeam = toZh(away.team?.displayName || '');
+      const existing = byPair.get(`${homeTeam}__${awayTeam}`);
+      if (!existing) continue;
+
+      const state = comp?.status?.type?.state;
+      const isFinishedOrLive = state === 'post' || state === 'in';
+      const rawHs =
+        home.score?.value ?? (typeof home.score === 'string' ? Number(home.score) : null);
+      const rawAs =
+        away.score?.value ?? (typeof away.score === 'string' ? Number(away.score) : null);
+      const homeScore =
+        isFinishedOrLive && Number.isFinite(Number(rawHs)) ? Number(rawHs) : null;
+      const awayScore =
+        isFinishedOrLive && Number.isFinite(Number(rawAs)) ? Number(rawAs) : null;
+      const matchTime = ev.date || existing.match_time;
+
+      const timeChanged =
+        new Date(existing.match_time).getTime() !== new Date(matchTime).getTime();
+      const scoreChanged =
+        existing.home_score !== homeScore || existing.away_score !== awayScore;
+
+      if (scoreChanged || timeChanged) {
+        await supabaseRequest(`football_matches?id=eq.${existing.id}`, 'PATCH', {
+          home_score: homeScore,
+          away_score: awayScore,
+          match_time: matchTime,
+        });
+        updated += 1;
+      }
+    }
+
+    console.log(
+      `[Latest] ${league.name} (${league.code}): checked ${events.length} events, updated ${updated} matches`,
+    );
   }
 }
 
@@ -719,6 +790,13 @@ async function syncToSupabase(payloads) {
 
 async function main() {
   const sqlArgIdx = process.argv.indexOf('--sql');
+  const isFull = process.argv.includes('--full');
+
+  if (sqlArgIdx === -1 && !isFull) {
+    await syncLatestOnly();
+    return;
+  }
+
   const payloads = [];
   for (const league of LEAGUES) {
     const p = await fetchLeaguePayload(league);
