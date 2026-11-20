@@ -77,7 +77,18 @@ export function Header() {
                 className="search-input"
                 placeholder="搜索球队、赛事或关键词..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSearchQuery(val);
+                  const trimmed = val.trim();
+                  if (trimmed) {
+                    navigate(`/search?q=${encodeURIComponent(trimmed)}`, {
+                      replace: location.pathname === '/search',
+                    });
+                  } else if (location.pathname === '/search') {
+                    navigate(-1);
+                  }
+                }}
                 aria-label="搜索体育资讯"
               />
             </div>
