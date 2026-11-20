@@ -10,7 +10,7 @@ import { useAppStore } from '@/store/AppContext';
 import type { TournamentItem } from '@/types/match';
 
 export function UnifiedSearchResults() {
-  const { searchQuery, setSearchQuery } = useAppStore();
+  const { activeCategory, searchQuery, setSearchQuery } = useAppStore();
   const debouncedSearch = useDebounce(searchQuery, 250);
   const q = debouncedSearch.trim().toLowerCase();
 
@@ -42,8 +42,11 @@ export function UnifiedSearchResults() {
 
   const matchedTournaments = useMemo(() => {
     if (!q) return [];
-    return tournaments.filter((t) => t.name.toLowerCase().includes(q));
-  }, [tournaments, q]);
+    return tournaments.filter((t) => {
+      if (activeCategory !== 'all' && t.sport !== activeCategory) return false;
+      return t.name.toLowerCase().includes(q);
+    });
+  }, [tournaments, q, activeCategory]);
 
   useEffect(() => {
     let active = true;
@@ -58,8 +61,8 @@ export function UnifiedSearchResults() {
       .searchParticipants(q)
       .then((res) => {
         if (!active) return;
-        setMatchedTeams(res.teams);
-        setMatchedPlayers(res.players);
+        setMatchedTeams(activeCategory === 'renju' ? [] : res.teams);
+        setMatchedPlayers(activeCategory === 'football' ? [] : res.players);
       })
       .catch(() => {
         if (active) {
@@ -73,10 +76,10 @@ export function UnifiedSearchResults() {
     return () => {
       active = false;
     };
-  }, [q]);
+  }, [q, activeCategory]);
 
   const newsState = useNewsFeed({
-    category: 'all',
+    category: activeCategory,
     search: debouncedSearch,
   });
 
