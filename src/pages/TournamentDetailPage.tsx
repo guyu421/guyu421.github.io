@@ -713,7 +713,11 @@ export function TournamentDetailPage() {
                   >
                     <div className="fixture-meta tabular-nums">
                       <span>{dt.date}</span>
-                      <span>{dt.time}</span>
+                      {m.liveClock ? (
+                        <span className="live-clock-pill">{m.liveClock}</span>
+                      ) : (
+                        <span>{dt.time}</span>
+                      )}
                     </div>
 
                     <div className="fixture-players">

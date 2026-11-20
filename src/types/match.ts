@@ -83,6 +83,7 @@ export interface FootballMatch {
   awayTeam: string;
   homeScore: number | null;
   awayScore: number | null;
+  liveClock?: string;
 }
 
 export interface FootballStanding {

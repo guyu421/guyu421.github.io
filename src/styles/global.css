@@ -1429,6 +1429,18 @@ a.fixture-row:hover {
   color: var(--color-text-muted);
   margin-bottom: -4px;
 }
+
+.live-clock-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #15803d;
+  background: #dcfce7;
+}
 .bracket-section {
   padding: 20px 16px 32px;
   background: var(--color-bg);

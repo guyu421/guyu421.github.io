@@ -2,6 +2,7 @@ import { ChevronLeft } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { EmptyState } from '@/components/common/EmptyState';
+import { overlayEspnLiveScores } from '@/services/espnLiveService';
 import { matchService } from '@/services/matchService';
 import type { FootballMatch, RenjuMatch, TournamentItem } from '@/types/match';
 
@@ -99,6 +100,11 @@ export function MatchDetailPage() {
           setRenjuMatch(null);
           setTeamLogos(logos);
           if (mData) {
+            void overlayEspnLiveScores(tid, tData.name, [mData])
+              .then((merged) => {
+                if (active && merged[0]) setFootballMatch(merged[0]);
+              })
+              .catch(() => {});
             const h2h = await matchService.getFootballHeadToHead(
               mData.homeTeam,
               mData.awayTeam,
@@ -254,7 +260,12 @@ export function MatchDetailPage() {
         <>
           <div className="match-detail-hero">
             <div className="match-detail-time tabular-nums">
-              {formatDateTime(footballMatch.matchTime)}
+              <span>{formatDateTime(footballMatch.matchTime)}</span>
+              {footballMatch.liveClock ? (
+                <span className="live-clock-pill" style={{ marginLeft: 8 }}>
+                  {footballMatch.liveClock}
+                </span>
+              ) : null}
             </div>
             <div className="match-detail-board">
               <div className="match-detail-side">

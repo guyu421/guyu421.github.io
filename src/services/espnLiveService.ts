@@ -145,7 +145,10 @@ interface EspnScoreboardResponse {
   events?: Array<{
     date?: string;
     competitions?: Array<{
-      status?: { type?: { state?: string } };
+      status?: {
+        displayClock?: string;
+        type?: { state?: string; shortDetail?: string };
+      };
       competitors?: Array<{
         homeAway?: string;
         score?: string;
@@ -156,7 +159,7 @@ interface EspnScoreboardResponse {
 }
 
 /**
- * 拉取 ESPN 实时赛果并覆盖到数据库赛程上（用于两次定时同步之间的实时比分展示）。
+ * 拉取 ESPN 实时赛果与进行时间并覆盖到数据库赛程上（用于两次定时同步之间的实时比分展示）。
  */
 export async function overlayEspnLiveScores(
   tournamentId: number,
@@ -174,7 +177,7 @@ export async function overlayEspnLiveScores(
   const data = (await res.json()) as EspnScoreboardResponse;
   const liveByPair = new Map<
     string,
-    { homeScore: number; awayScore: number; matchTime?: string }
+    { homeScore: number; awayScore: number; matchTime?: string; liveClock?: string }
   >();
 
   for (const ev of data.events ?? []) {
@@ -190,8 +193,23 @@ export async function overlayEspnLiveScores(
     const as = Number(away.score);
     if (!Number.isFinite(hs) || !Number.isFinite(as)) continue;
 
+    let liveClock: string | undefined;
+    if (state === 'in') {
+      const shortDetail = comp?.status?.type?.shortDetail;
+      const clock = comp?.status?.displayClock;
+      if (shortDetail === 'HT') liveClock = '中场';
+      else if (clock) liveClock = clock;
+      else if (shortDetail) liveClock = shortDetail;
+      else liveClock = '进行中';
+    }
+
     const key = `${toZh(home.team?.displayName ?? '')}__${toZh(away.team?.displayName ?? '')}`;
-    liveByPair.set(key, { homeScore: hs, awayScore: as, matchTime: ev.date });
+    liveByPair.set(key, {
+      homeScore: hs,
+      awayScore: as,
+      matchTime: ev.date,
+      liveClock,
+    });
   }
 
   if (liveByPair.size === 0) return matches;
@@ -204,6 +222,7 @@ export async function overlayEspnLiveScores(
       homeScore: live.homeScore,
       awayScore: live.awayScore,
       matchTime: live.matchTime ?? m.matchTime,
+      liveClock: live.liveClock,
     };
   });
 }
