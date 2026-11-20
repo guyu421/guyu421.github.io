@@ -694,41 +694,34 @@ async function syncLatestOnly() {
       const away = comp?.competitors?.find((c) => c.homeAway === 'away');
       if (!home || !away) continue;
 
+      const state = comp?.status?.type?.state;
+      if (state !== 'post') continue;
+
       const homeTeam = toZh(home.team?.displayName || '');
       const awayTeam = toZh(away.team?.displayName || '');
       const existing = byPair.get(`${homeTeam}__${awayTeam}`);
       if (!existing) continue;
 
-      const kickoffTs = new Date(existing.match_time).getTime();
-      if (Number.isFinite(kickoffTs) && kickoffTs < Date.now() - 4 * 3600 * 1000) {
+      if (existing.home_score !== null && existing.away_score !== null) {
         continue;
       }
 
-      const state = comp?.status?.type?.state;
-      const isFinishedOrLive = state === 'post' || state === 'in';
       const rawHs =
         home.score?.value ?? (typeof home.score === 'string' ? Number(home.score) : null);
       const rawAs =
         away.score?.value ?? (typeof away.score === 'string' ? Number(away.score) : null);
-      const homeScore =
-        isFinishedOrLive && Number.isFinite(Number(rawHs)) ? Number(rawHs) : null;
-      const awayScore =
-        isFinishedOrLive && Number.isFinite(Number(rawAs)) ? Number(rawAs) : null;
+      if (!Number.isFinite(Number(rawHs)) || !Number.isFinite(Number(rawAs))) continue;
+
+      const homeScore = Number(rawHs);
+      const awayScore = Number(rawAs);
       const matchTime = ev.date || existing.match_time;
 
-      const timeChanged =
-        new Date(existing.match_time).getTime() !== new Date(matchTime).getTime();
-      const scoreChanged =
-        existing.home_score !== homeScore || existing.away_score !== awayScore;
-
-      if (scoreChanged || timeChanged) {
-        await supabaseRequest(`football_matches?id=eq.${existing.id}`, 'PATCH', {
-          home_score: homeScore,
-          away_score: awayScore,
-          match_time: matchTime,
-        });
-        updated += 1;
-      }
+      await supabaseRequest(`football_matches?id=eq.${existing.id}`, 'PATCH', {
+        home_score: homeScore,
+        away_score: awayScore,
+        match_time: matchTime,
+      });
+      updated += 1;
     }
 
     console.log(
