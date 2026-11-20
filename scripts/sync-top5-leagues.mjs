@@ -700,12 +700,9 @@ async function syncLatestOnly() {
       if (!existing) continue;
 
       const kickoffTs = new Date(existing.match_time).getTime();
-      const isSettledFinished =
-        existing.home_score !== null &&
-        existing.away_score !== null &&
-        Number.isFinite(kickoffTs) &&
-        Date.now() - kickoffTs > 4 * 3600 * 1000;
-      if (isSettledFinished) continue;
+      if (Number.isFinite(kickoffTs) && kickoffTs < Date.now() - 4 * 3600 * 1000) {
+        continue;
+      }
 
       const state = comp?.status?.type?.state;
       const isFinishedOrLive = state === 'post' || state === 'in';
