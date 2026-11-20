@@ -38,6 +38,14 @@ export function Header() {
     if (isMatchesRoute) {
       e.preventDefault();
       navigate('/matches');
+    } else if (location.pathname === '/search') {
+      e.preventDefault();
+      const trimmed = searchQuery.trim();
+      navigate(
+        trimmed
+          ? `/search?q=${encodeURIComponent(trimmed)}&category=${sport}`
+          : `/search?category=${sport}`,
+      );
     }
   }
 
@@ -87,9 +95,10 @@ export function Header() {
                   setSearchQuery(val);
                   const trimmed = val.trim();
                   if (trimmed) {
-                    navigate(`/search?q=${encodeURIComponent(trimmed)}`, {
-                      replace: location.pathname === '/search',
-                    });
+                    navigate(
+                      `/search?q=${encodeURIComponent(trimmed)}&category=${activeCategory}`,
+                      { replace: location.pathname === '/search' },
+                    );
                   } else if (location.pathname === '/search') {
                     navigate(-1);
                   }
