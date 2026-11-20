@@ -19,6 +19,49 @@ const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 const LEAGUES = [
   {
+    id: 2,
+    code: 'chn.1',
+    name: '2026年中国足球超级联赛',
+    totalRounds: 30,
+    qualifyCount: 2,
+    qualifyLabel: '降级',
+    logoUrl:
+      'https://cqhktfwogmffcorwfrxm.supabase.co/storage/v1/object/public/media/leagues/csl.png',
+    preserveCustomLogos: true,
+    tiebreakers: ['h2h_points', 'h2h_gd', 'h2h_gf', 'gd', 'gf'],
+    rulesText:
+      '积分排名规则\n1.每队胜一场得3分，平一场得1分，负一场得0分\n2.联赛结束，积分多的队名次靠前\n3.如果两队或两队以上积分相等，依下列顺序排列名次\na)相互战绩（依次比较相互对战积分，相互对战净胜球，相互对战总进球）\nb)总净胜球\nc)总进球数\nd)公平竞赛积分（每张黄牌减1分、每张红牌减3分，两黄变红按照1张红牌计算）\ne)抽签\n注：只有相关球队比赛全部结束后，才比较胜负关系。',
+    standingsZones: [
+      {
+        fromRank: 1,
+        toRank: 1,
+        bgColor: '#ffe4e6',
+        cutoffBefore: true,
+        cutoffLabel: '亚冠精英正赛',
+        cutoffColor: '#f43f5e',
+        cutoffLineColor: '#fda4af',
+      },
+      {
+        fromRank: 2,
+        toRank: 2,
+        bgColor: '#fff1f2',
+        cutoffBefore: true,
+        cutoffLabel: '亚冠精英小组赛',
+        cutoffColor: '#f43f5e',
+        cutoffLineColor: '#fda4af',
+      },
+      {
+        fromRank: 15,
+        toRank: 16,
+        bgColor: '#f1f5f9',
+        cutoffBefore: true,
+        cutoffLabel: '降级',
+        cutoffColor: '#64748b',
+        cutoffLineColor: '#cbd5e1',
+      },
+    ],
+  },
+  {
     id: 4,
     code: 'eng.1',
     name: '2026-27赛季英格兰足球超级联赛',
@@ -284,6 +327,23 @@ const LEAGUES = [
 ];
 
 const TEAM_ZH = {
+  // 中超
+  'Shanghai Port FC': '上海海港',
+  'Shanghai Shenhua FC': '上海申花',
+  'Chengdu Rongcheng': '成都蓉城',
+  'Beijing Guoan': '北京国安',
+  'Shandong Taishan': '山东泰山',
+  'Tianjin Jinmen Tiger': '天津津门虎',
+  'Zhejiang Professional FC': '浙江队',
+  'Yunnan Yukun': '云南玉昆',
+  'Qingdao West Coast': '青岛西海岸',
+  Henan: '河南队',
+  'Dalian Yingbo': '大连英博',
+  'Shenzhen Xinpengcheng': '深圳新鹏城',
+  'Wuhan Three Towns': '武汉三镇',
+  'Qingdao Hainiu': '青岛海牛',
+  'Chongqing Tonglianglong': '重庆铜梁龙',
+  'Liaoning Tieren': '辽宁铁人',
   // 英超
   Arsenal: '阿森纳',
   'Brighton & Hove Albion': '布莱顿',
@@ -416,7 +476,8 @@ async function fetchLeaguePayload(league) {
     logoUrl: e.team.logos?.[0]?.href || '',
   }));
 
-  const leagueLogoUrl = scoreboardData.leagues?.[0]?.logos?.[0]?.href || '';
+  const leagueLogoUrl =
+    league.logoUrl || scoreboardData.leagues?.[0]?.logos?.[0]?.href || '';
 
   const eventMap = new Map();
   const ingestEvents = (events) => {
@@ -493,11 +554,13 @@ async function fetchLeaguePayload(league) {
     league,
     leagueLogoUrl,
     eventDate,
-    teams: teamRows.map((t) => ({
-      tournament_id: league.id,
-      team_name: t.name,
-      logo_url: t.logoUrl,
-    })),
+    teams: league.preserveCustomLogos
+      ? []
+      : teamRows.map((t) => ({
+          tournament_id: league.id,
+          team_name: t.name,
+          logo_url: t.logoUrl,
+        })),
     matches,
   };
 }
@@ -622,11 +685,13 @@ async function syncToSupabase(payloads) {
   await supabaseRequest('tournaments?on_conflict=id', 'POST', tournamentRows);
 
   const teamRows = payloads.flatMap((p) => p.teams);
-  await supabaseRequest(
-    'football_teams?on_conflict=tournament_id,team_name',
-    'POST',
-    teamRows,
-  );
+  if (teamRows.length > 0) {
+    await supabaseRequest(
+      'football_teams?on_conflict=tournament_id,team_name',
+      'POST',
+      teamRows,
+    );
+  }
 
   for (const p of payloads) {
     await supabaseRequest(

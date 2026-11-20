@@ -1,6 +1,7 @@
 import type { FootballMatch } from '@/types/match';
 
 const LEAGUE_CODE_BY_ID: Record<number, string> = {
+  2: 'chn.1',
   4: 'eng.1',
   5: 'esp.1',
   6: 'ita.1',
@@ -9,6 +10,22 @@ const LEAGUE_CODE_BY_ID: Record<number, string> = {
 };
 
 const TEAM_ZH: Record<string, string> = {
+  'Shanghai Port FC': '上海海港',
+  'Shanghai Shenhua FC': '上海申花',
+  'Chengdu Rongcheng': '成都蓉城',
+  'Beijing Guoan': '北京国安',
+  'Shandong Taishan': '山东泰山',
+  'Tianjin Jinmen Tiger': '天津津门虎',
+  'Zhejiang Professional FC': '浙江队',
+  'Yunnan Yukun': '云南玉昆',
+  'Qingdao West Coast': '青岛西海岸',
+  Henan: '河南队',
+  'Dalian Yingbo': '大连英博',
+  'Shenzhen Xinpengcheng': '深圳新鹏城',
+  'Wuhan Three Towns': '武汉三镇',
+  'Qingdao Hainiu': '青岛海牛',
+  'Chongqing Tonglianglong': '重庆铜梁龙',
+  'Liaoning Tieren': '辽宁铁人',
   Arsenal: '阿森纳',
   'Brighton & Hove Albion': '布莱顿',
   'Manchester City': '曼城',
@@ -114,6 +131,8 @@ function toZh(name: string): string {
 export function getEspnLeagueCode(tournamentId: number, tournamentName?: string): string | null {
   if (LEAGUE_CODE_BY_ID[tournamentId]) return LEAGUE_CODE_BY_ID[tournamentId];
   if (!tournamentName) return null;
+  if (tournamentName.includes('2026') && tournamentName.includes('中超')) return 'chn.1';
+  if (tournamentName.includes('2026') && tournamentName.includes('中国足球超级联赛')) return 'chn.1';
   if (tournamentName.includes('英格兰') || tournamentName.includes('英超')) return 'eng.1';
   if (tournamentName.includes('西班牙') || tournamentName.includes('西甲')) return 'esp.1';
   if (tournamentName.includes('意大利') || tournamentName.includes('意甲')) return 'ita.1';
