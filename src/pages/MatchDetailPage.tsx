@@ -408,7 +408,6 @@ export function MatchDetailPage() {
                       ) : null}
                       {renjuMatch.blackName}
                     </div>
-                    <div className="match-detail-tag">● 黑方</div>
                   </div>
 
                   <div className="match-detail-score tabular-nums">
@@ -426,7 +425,6 @@ export function MatchDetailPage() {
                       ) : null}
                       {renjuMatch.whiteName}
                     </div>
-                    <div className="match-detail-tag">○ 白方</div>
                   </div>
                 </div>
               </div>
@@ -477,10 +475,10 @@ export function MatchDetailPage() {
                       </div>
                       <div className="fixture-players">
                         <div className="fixture-player-line">
-                          <span>● {m.blackName}</span>
+                          <span>{m.blackName}</span>
                         </div>
                         <div className="fixture-player-line">
-                          <span>○ {m.whiteName}</span>
+                          <span>{m.whiteName}</span>
                         </div>
                       </div>
                       <div className="fixture-scores tabular-nums">
