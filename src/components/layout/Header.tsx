@@ -20,6 +20,11 @@ export function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const isMatchesRoute = location.pathname.startsWith('/matches');
+  const isStoreCategoryRoute =
+    isMatchesRoute ||
+    location.pathname === '/search' ||
+    location.pathname.startsWith('/team/') ||
+    location.pathname.startsWith('/player/');
   const hideSportNav =
     /^\/matches\/\d+/.test(location.pathname) ||
     location.pathname.startsWith('/article/');
@@ -57,7 +62,7 @@ export function Header() {
                     className={({ isActive }) =>
                       cn(
                         'nav-link',
-                        (isMatchesRoute ? activeCategory === sport : isActive) &&
+                        (isStoreCategoryRoute ? activeCategory === sport : isActive) &&
                           'active',
                       )
                     }
@@ -160,7 +165,7 @@ export function Header() {
                     className={({ isActive }) =>
                       cn(
                         'mobile-nav-link',
-                        (isMatchesRoute ? activeCategory === sport : isActive) &&
+                        (isStoreCategoryRoute ? activeCategory === sport : isActive) &&
                           'active',
                       )
                     }
