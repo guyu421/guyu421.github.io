@@ -408,6 +408,7 @@ export function MatchDetailPage() {
                       ) : null}
                       {renjuMatch.blackName}
                     </div>
+                    <div className="match-detail-tag">假先</div>
                   </div>
 
                   <div className="match-detail-score tabular-nums">
@@ -425,6 +426,7 @@ export function MatchDetailPage() {
                       ) : null}
                       {renjuMatch.whiteName}
                     </div>
+                    <div className="match-detail-tag">假后</div>
                   </div>
                 </div>
               </div>
