@@ -122,7 +122,7 @@ export function UnifiedSearchResults() {
                   marginBottom: 8,
                 }}
               >
-                足球（{matchedTeams.length}）
+                足球球队（{matchedTeams.length}）
               </div>
               <div className="card" style={{ overflow: 'hidden' }}>
                 <div className="fixture-list">
@@ -167,7 +167,7 @@ export function UnifiedSearchResults() {
                   marginBottom: 8,
                 }}
               >
-                五子棋（{matchedPlayers.length}）
+                五子棋棋手（{matchedPlayers.length}）
               </div>
               <div className="card" style={{ overflow: 'hidden' }}>
                 <div className="fixture-list">
