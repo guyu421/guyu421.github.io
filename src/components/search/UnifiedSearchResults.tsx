@@ -211,7 +211,7 @@ export function UnifiedSearchResults() {
                   {matchedTournaments.map((item) => (
                     <Link
                       key={item.id}
-                      to={`/matches/${item.id}`}
+                      to={`/${item.id}`}
                       onClick={() => setSearchQuery('')}
                       className="fixture-row"
                       style={{ gridTemplateColumns: 'minmax(0, 1fr) auto' }}

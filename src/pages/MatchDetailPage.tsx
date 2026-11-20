@@ -227,8 +227,8 @@ export function MatchDetailPage() {
   }
 
   const backPath = renjuMatch?.stageLabel
-    ? `/matches/${tid}`
-    : `/matches/${tid}/round/${activeMatch.roundNo}`;
+    ? `/${tid}`
+    : `/${tid}/round/${activeMatch.roundNo}`;
 
   return (
     <div className="tournament-page">
@@ -356,7 +356,7 @@ export function MatchDetailPage() {
                   return (
                     <Link
                       key={m.id}
-                      to={`/matches/${m.tournamentId}/match/${m.id}`}
+                      to={`/${m.tournamentId}/match/${m.id}`}
                       className={`fixture-row fixture-link h2h-row ${isCurrent ? 'is-current-match' : ''}`}
                     >
                       <div className="h2h-row-league">
@@ -506,8 +506,8 @@ export function MatchDetailPage() {
                   const isCurrent = m.id === renjuMatch.id;
                   const targetPath =
                     m.id > 0
-                      ? `/matches/${m.tournamentId}/match/${m.id}`
-                      : `/matches/${m.tournamentId}/match/${-m.id - 1000}`;
+                      ? `/${m.tournamentId}/match/${m.id}`
+                      : `/${m.tournamentId}/match/${-m.id - 1000}`;
                   return (
                     <Link
                       key={m.id}

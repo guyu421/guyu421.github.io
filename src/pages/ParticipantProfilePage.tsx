@@ -259,7 +259,7 @@ export function ParticipantProfilePage({ kind }: { kind: 'team' | 'player' }) {
                 return (
                   <Link
                     key={m.id}
-                    to={`/matches/${m.tournamentId}/match/${m.id}`}
+                    to={`/${m.tournamentId}/match/${m.id}`}
                     className="fixture-row fixture-link h2h-row"
                   >
                     <div className="h2h-row-league">
@@ -410,7 +410,7 @@ export function ParticipantProfilePage({ kind }: { kind: 'team' | 'player' }) {
               ) : (
                 <Link
                   key={m.id}
-                  to={`/matches/${m.tournamentId}/match/${targetId}`}
+                  to={`/${m.tournamentId}/match/${targetId}`}
                   className="fixture-row fixture-link h2h-row"
                 >
                   {inner}

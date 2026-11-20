@@ -63,7 +63,7 @@ export function MatchesPage() {
           {visibleTournaments.map((item) => (
             <Link
               key={item.id}
-              to={`/matches/${item.id}`}
+              to={`/${item.id}`}
               className="fixture-row"
               style={{ gridTemplateColumns: 'minmax(0, 1fr) auto' }}
             >

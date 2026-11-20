@@ -284,8 +284,8 @@ export function TournamentDetailPage() {
     if (!Number.isInteger(parsed) || !rounds.includes(parsed)) {
       const target =
         activeTab === 'standings'
-          ? `/matches/${numericId}/standings/round/${defaultRound}`
-          : `/matches/${numericId}/round/${defaultRound}`;
+          ? `/${numericId}/standings/round/${defaultRound}`
+          : `/${numericId}/round/${defaultRound}`;
       navigate(target, { replace: true });
     }
   }, [loading, rounds, roundNo, activeTab, numericId, defaultRound, navigate]);
@@ -293,8 +293,8 @@ export function TournamentDetailPage() {
   const goToView = (tab: 'matches' | 'standings', round: number) => {
     navigate(
       tab === 'standings'
-        ? `/matches/${numericId}/standings/round/${round}`
-        : `/matches/${numericId}/round/${round}`,
+        ? `/${numericId}/standings/round/${round}`
+        : `/${numericId}/round/${round}`,
     );
   };
 
@@ -715,7 +715,7 @@ export function TournamentDetailPage() {
                 return (
                   <Link
                     key={m.id}
-                    to={`/matches/${numericId}/match/${m.id}`}
+                    to={`/${numericId}/match/${m.id}`}
                     className="fixture-row fixture-link"
                   >
                     <div className="fixture-meta tabular-nums">
@@ -1013,7 +1013,7 @@ export function TournamentDetailPage() {
                 {finalsInfo.semi1 ? (
                   <>
                     <Link
-                      to={`/matches/${numericId}/match/${finalsInfo.semi1.id}`}
+                      to={`/${numericId}/match/${finalsInfo.semi1.id}`}
                       className="v-match-row v-match-link"
                     >
                       <span
@@ -1093,7 +1093,7 @@ export function TournamentDetailPage() {
 
                 {finalsInfo.finalMatch ? (
                   <Link
-                    to={`/matches/${numericId}/match/${finalsInfo.finalMatch.id}`}
+                    to={`/${numericId}/match/${finalsInfo.finalMatch.id}`}
                     className="v-match-row v-final-row v-match-link"
                   >
                     <span
@@ -1174,7 +1174,7 @@ export function TournamentDetailPage() {
                       )}
                     </svg>
                     <Link
-                      to={`/matches/${numericId}/match/${finalsInfo.semi2.id}`}
+                      to={`/${numericId}/match/${finalsInfo.semi2.id}`}
                       className="v-match-row v-match-link"
                     >
                       <span
@@ -1217,7 +1217,7 @@ export function TournamentDetailPage() {
                     季军赛
                   </div>
                   <Link
-                    to={`/matches/${numericId}/match/${finalsInfo.thirdMatch.id}`}
+                    to={`/${numericId}/match/${finalsInfo.thirdMatch.id}`}
                     className="v-match-row v-final-row v-match-link"
                   >
                     <span
@@ -1368,7 +1368,7 @@ export function TournamentDetailPage() {
               ) : (
                 <Link
                   key={match.id}
-                  to={`/matches/${numericId}/match/${match.id}`}
+                  to={`/${numericId}/match/${match.id}`}
                   className="fixture-row fixture-link"
                 >
                   {rowContent}

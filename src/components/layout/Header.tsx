@@ -26,7 +26,7 @@ export function Header() {
     location.pathname.startsWith('/team/') ||
     location.pathname.startsWith('/player/');
   const hideSportNav =
-    /^\/matches\/\d+/.test(location.pathname) ||
+    /^\/\d+/.test(location.pathname) ||
     location.pathname.startsWith('/article/');
 
   function handleNavClick(
