@@ -24,6 +24,7 @@ export function AppRouter() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/team/:teamName" element={<ParticipantProfilePage kind="team" />} />
         <Route path="/player/:playerId" element={<ParticipantProfilePage kind="player" />} />
+        <Route path="/match/:matchId" element={<MatchDetailPage />} />
         <Route path="/:tournamentId" element={<TournamentDetailPage />} />
         <Route path="/:tournamentId/round/:roundNo" element={<TournamentDetailPage />} />
         <Route path="/:tournamentId/standings" element={<TournamentDetailPage />} />
@@ -31,7 +32,6 @@ export function AppRouter() {
           path="/:tournamentId/standings/round/:roundNo"
           element={<TournamentDetailPage />}
         />
-        <Route path="/:tournamentId/match/:matchId" element={<MatchDetailPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </MainLayout>

@@ -1,6 +1,6 @@
 import { ChevronLeft } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { EmptyState } from '@/components/common/EmptyState';
 import { overlayEspnLiveScores } from '@/services/espnLiveService';
 import { matchService } from '@/services/matchService';
@@ -53,11 +53,13 @@ const OUTCOME_LABEL: Record<'win' | 'draw' | 'loss', string> = {
 };
 
 export function MatchDetailPage() {
-  const { tournamentId, matchId } = useParams<{
-    tournamentId: string;
-    matchId: string;
-  }>();
-  const tid = Number(tournamentId);
+  const { matchId } = useParams<{ matchId: string }>();
+  const location = useLocation();
+  const routeState = (location.state as {
+    sport?: 'renju' | 'football';
+    tournamentId?: number;
+    isBracket?: boolean;
+  } | null) ?? null;
   const mid = Number(matchId);
 
   const [tournament, setTournament] = useState<TournamentItem | null>(null);
@@ -76,7 +78,7 @@ export function MatchDetailPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!Number.isInteger(tid) || tid <= 0 || !Number.isInteger(mid) || mid <= 0) {
+    if (!Number.isInteger(mid) || mid <= 0) {
       setLoading(false);
       return;
     }
@@ -85,68 +87,85 @@ export function MatchDetailPage() {
     setLoading(true);
     setError(null);
 
-    matchService
-      .getTournamentById(tid)
-      .then(async (tData) => {
+    async function load() {
+      const hintSport = routeState?.sport;
+      const hintTid = routeState?.tournamentId;
+
+      if (hintSport === 'football') {
+        const fMatch = await matchService.getFootballMatchById(mid);
+        if (!active || !fMatch) {
+          if (active) setLoading(false);
+          return;
+        }
+        const [tData, logos, h2h] = await Promise.all([
+          matchService.getTournamentById(fMatch.tournamentId),
+          matchService.getFootballTeamLogos(fMatch.tournamentId),
+          matchService.getFootballHeadToHead(fMatch.homeTeam, fMatch.awayTeam),
+        ]);
         if (!active) return;
         setTournament(tData);
-        if (!tData) return;
-
-        if (tData.sport === 'football') {
-          const [mData, logos] = await Promise.all([
-            matchService.getFootballMatchById(mid),
-            matchService.getFootballTeamLogos(tid),
-          ]);
-          if (!active) return;
-          setFootballMatch(mData);
-          setRenjuMatch(null);
-          setTeamLogos(logos);
-          if (mData) {
-            void overlayEspnLiveScores(tid, tData.name, [mData])
-              .then((merged) => {
-                if (active && merged[0]) setFootballMatch(merged[0]);
-              })
-              .catch(() => {});
-            const h2h = await matchService.getFootballHeadToHead(
-              mData.homeTeam,
-              mData.awayTeam,
-            );
-            const curTs = new Date(mData.matchTime).getTime();
-            if (active) {
-              setFootballH2H(
-                h2h.filter(
-                  (m) =>
-                    m.id !== mData.id &&
-                    new Date(m.matchTime).getTime() < curTs,
-                ),
-              );
-            }
-          }
-        } else {
-          const mData = await matchService.getRenjuMatchById(mid, tid);
-          if (!active) return;
-          setRenjuMatch(mData);
-          setFootballMatch(null);
-          if (mData) {
-            const h2h = await matchService.getRenjuHeadToHead(
-              mData.blackId,
-              mData.whiteId,
-              mData.blackName,
-              mData.whiteName,
-            );
-            const curTs = new Date(mData.matchTime).getTime();
-            if (active) {
-              setRenjuH2H(
-                h2h.filter(
-                  (m) =>
-                    m.id !== mData.id &&
-                    new Date(m.matchTime).getTime() < curTs,
-                ),
-              );
-            }
-          }
+        setFootballMatch(fMatch);
+        setRenjuMatch(null);
+        setTeamLogos(logos);
+        const curTs = new Date(fMatch.matchTime).getTime();
+        setFootballH2H(
+          h2h.filter((m) => m.id !== fMatch.id && new Date(m.matchTime).getTime() < curTs),
+        );
+        if (tData) {
+          void overlayEspnLiveScores(fMatch.tournamentId, tData.name, [fMatch])
+            .then((merged) => {
+              if (active && merged[0]) setFootballMatch(merged[0]);
+            })
+            .catch(() => {});
         }
-      })
+        return;
+      }
+
+      const rMatch = routeState?.isBracket
+        ? await matchService.getRenjuBracketMatchById(mid, hintTid)
+        : await matchService.getRenjuMatchById(mid, hintTid);
+
+      if (rMatch) {
+        const [tData, h2h] = await Promise.all([
+          matchService.getTournamentById(rMatch.tournamentId),
+          matchService.getRenjuHeadToHead(
+            rMatch.blackId,
+            rMatch.whiteId,
+            rMatch.blackName,
+            rMatch.whiteName,
+          ),
+        ]);
+        if (!active) return;
+        setTournament(tData);
+        setRenjuMatch(rMatch);
+        setFootballMatch(null);
+        const curTs = new Date(rMatch.matchTime).getTime();
+        setRenjuH2H(
+          h2h.filter((m) => m.id !== rMatch.id && new Date(m.matchTime).getTime() < curTs),
+        );
+        return;
+      }
+
+      const fMatch = await matchService.getFootballMatchById(mid);
+      if (fMatch) {
+        const [tData, logos, h2h] = await Promise.all([
+          matchService.getTournamentById(fMatch.tournamentId),
+          matchService.getFootballTeamLogos(fMatch.tournamentId),
+          matchService.getFootballHeadToHead(fMatch.homeTeam, fMatch.awayTeam),
+        ]);
+        if (!active) return;
+        setTournament(tData);
+        setFootballMatch(fMatch);
+        setRenjuMatch(null);
+        setTeamLogos(logos);
+        const curTs = new Date(fMatch.matchTime).getTime();
+        setFootballH2H(
+          h2h.filter((m) => m.id !== fMatch.id && new Date(m.matchTime).getTime() < curTs),
+        );
+      }
+    }
+
+    load()
       .catch((err: unknown) => {
         if (active) setError(err instanceof Error ? err.message : '加载对局详情失败');
       })
@@ -157,7 +176,7 @@ export function MatchDetailPage() {
     return () => {
       active = false;
     };
-  }, [tid, mid]);
+  }, [mid, routeState?.sport, routeState?.tournamentId, routeState?.isBracket]);
 
   const footballStats = useMemo(() => {
     if (!footballMatch) return { total: 0, homeWins: 0, draws: 0, awayWins: 0 };
@@ -227,8 +246,8 @@ export function MatchDetailPage() {
   }
 
   const backPath = renjuMatch?.stageLabel
-    ? `/${tid}`
-    : `/${tid}/round/${activeMatch.roundNo}`;
+    ? `/${tournament.id}`
+    : `/${tournament.id}/round/${activeMatch.roundNo}`;
 
   return (
     <div className="tournament-page">
@@ -356,7 +375,8 @@ export function MatchDetailPage() {
                   return (
                     <Link
                       key={m.id}
-                      to={`/${m.tournamentId}/match/${m.id}`}
+                      to={`/match/${m.id}`}
+                      state={{ sport: 'football', tournamentId: m.tournamentId }}
                       className={`fixture-row fixture-link h2h-row ${isCurrent ? 'is-current-match' : ''}`}
                     >
                       <div className="h2h-row-league">
@@ -504,14 +524,16 @@ export function MatchDetailPage() {
                           ? 'draw'
                           : null;
                   const isCurrent = m.id === renjuMatch.id;
-                  const targetPath =
-                    m.id > 0
-                      ? `/${m.tournamentId}/match/${m.id}`
-                      : `/${m.tournamentId}/match/${-m.id - 1000}`;
+                  const targetId = m.id > 0 ? m.id : -m.id - 1000;
                   return (
                     <Link
                       key={m.id}
-                      to={targetPath}
+                      to={`/match/${targetId}`}
+                      state={{
+                        sport: 'renju',
+                        tournamentId: m.tournamentId,
+                        isBracket: m.id < 0,
+                      }}
                       className={`fixture-row fixture-link h2h-row ${isCurrent ? 'is-current-match' : ''}`}
                     >
                       <div className="h2h-row-league">

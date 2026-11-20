@@ -715,7 +715,8 @@ export function TournamentDetailPage() {
                 return (
                   <Link
                     key={m.id}
-                    to={`/${numericId}/match/${m.id}`}
+                    to={`/match/${m.id}`}
+                    state={{ sport: 'football', tournamentId: numericId }}
                     className="fixture-row fixture-link"
                   >
                     <div className="fixture-meta tabular-nums">
@@ -1013,7 +1014,8 @@ export function TournamentDetailPage() {
                 {finalsInfo.semi1 ? (
                   <>
                     <Link
-                      to={`/${numericId}/match/${finalsInfo.semi1.id}`}
+                      to={`/match/${finalsInfo.semi1.id}`}
+                      state={{ sport: 'renju', tournamentId: numericId, isBracket: true }}
                       className="v-match-row v-match-link"
                     >
                       <span
@@ -1093,7 +1095,8 @@ export function TournamentDetailPage() {
 
                 {finalsInfo.finalMatch ? (
                   <Link
-                    to={`/${numericId}/match/${finalsInfo.finalMatch.id}`}
+                    to={`/match/${finalsInfo.finalMatch.id}`}
+                    state={{ sport: 'renju', tournamentId: numericId, isBracket: true }}
                     className="v-match-row v-final-row v-match-link"
                   >
                     <span
@@ -1174,7 +1177,8 @@ export function TournamentDetailPage() {
                       )}
                     </svg>
                     <Link
-                      to={`/${numericId}/match/${finalsInfo.semi2.id}`}
+                      to={`/match/${finalsInfo.semi2.id}`}
+                      state={{ sport: 'renju', tournamentId: numericId, isBracket: true }}
                       className="v-match-row v-match-link"
                     >
                       <span
@@ -1217,7 +1221,8 @@ export function TournamentDetailPage() {
                     季军赛
                   </div>
                   <Link
-                    to={`/${numericId}/match/${finalsInfo.thirdMatch.id}`}
+                    to={`/match/${finalsInfo.thirdMatch.id}`}
+                    state={{ sport: 'renju', tournamentId: numericId, isBracket: true }}
                     className="v-match-row v-final-row v-match-link"
                   >
                     <span
@@ -1368,7 +1373,8 @@ export function TournamentDetailPage() {
               ) : (
                 <Link
                   key={match.id}
-                  to={`/${numericId}/match/${match.id}`}
+                  to={`/match/${match.id}`}
+                  state={{ sport: 'renju', tournamentId: numericId }}
                   className="fixture-row fixture-link"
                 >
                   {rowContent}
