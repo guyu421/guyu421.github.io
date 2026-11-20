@@ -111,7 +111,16 @@ export function MatchDetailPage() {
               mData.homeTeam,
               mData.awayTeam,
             );
-            if (active) setFootballH2H(h2h);
+            const curTs = new Date(mData.matchTime).getTime();
+            if (active) {
+              setFootballH2H(
+                h2h.filter(
+                  (m) =>
+                    m.id !== mData.id &&
+                    new Date(m.matchTime).getTime() < curTs,
+                ),
+              );
+            }
           }
         } else {
           const mData = await matchService.getRenjuMatchById(mid, tid);
@@ -125,7 +134,16 @@ export function MatchDetailPage() {
               mData.blackName,
               mData.whiteName,
             );
-            if (active) setRenjuH2H(h2h);
+            const curTs = new Date(mData.matchTime).getTime();
+            if (active) {
+              setRenjuH2H(
+                h2h.filter(
+                  (m) =>
+                    m.id !== mData.id &&
+                    new Date(m.matchTime).getTime() < curTs,
+                ),
+              );
+            }
           }
         }
       })
@@ -316,7 +334,7 @@ export function MatchDetailPage() {
               <span>历史交锋记录</span>
               <span className="h2h-summary tabular-nums">
                 {footballStats.total > 0
-                  ? `已完赛${footballStats.total}场 · ${footballMatch.homeTeam}胜 ${footballStats.homeWins} 平 ${footballStats.draws} ${footballMatch.awayTeam}胜 ${footballStats.awayWins}`
+                  ? `已完赛${footballStats.total}场 · ${footballMatch.homeTeam}胜${footballStats.homeWins} 平${footballStats.draws} ${footballMatch.awayTeam}胜${footballStats.awayWins}`
                   : '暂无已完赛交锋'}
               </span>
             </div>
@@ -466,7 +484,7 @@ export function MatchDetailPage() {
               <span>历史交锋记录</span>
               <span className="h2h-summary tabular-nums">
                 {renjuStats.total > 0
-                  ? `已完赛${renjuStats.total}场 · ${renjuMatch.blackName}胜 ${renjuStats.aWins} 平 ${renjuStats.draws} ${renjuMatch.whiteName}胜 ${renjuStats.bWins}`
+                  ? `已完赛${renjuStats.total}场 · ${renjuMatch.blackName}胜${renjuStats.aWins} 平${renjuStats.draws} ${renjuMatch.whiteName}胜${renjuStats.bWins}`
                   : '暂无已完赛交锋'}
               </span>
             </div>
