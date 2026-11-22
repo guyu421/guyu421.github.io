@@ -218,22 +218,32 @@
 
     var crumbs = document.getElementById('mpg-crumbs');
     if (crumbs) {
-      crumbs.innerHTML = '<a href="#" id="mpg-back-link" style="font-weight:600;text-decoration:none;color:inherit;">← ' +
-        (zh ? '返回列表' : 'Back') + '</a> <span style="opacity:.45">/</span> <span>' + esc(label) + '</span>';
+      crumbs.innerHTML = '<a href="#" id="mpg-back-link" class="mv-crumb">← ' +
+        (zh ? '返回列表' : 'Back') + '</a><span class="mv-sep">/</span><span class="mv-crumb">' + esc(label) + '</span>';
     }
+
+    var played = g.status === 'post' || (g.status === 'in' && g.home_score != null);
+    var scoreHTML = played
+      ? '<span class="mpg-score">' + esc(g.home_score) + '<span class="mc-dash">–</span>' + esc(g.away_score) + '</span>'
+      : '<span class="mpg-time">—</span>';
 
     var head = document.getElementById('mpg-head');
     if (head) {
       head.innerHTML = '' +
-        '<div style="display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;padding:10px 0;">' +
-          '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;">' +
-            crestHTML(g.home_logo) +
-            '<h1 style="margin:0;font-size:1.25rem;font-weight:800;">' + esc(home) + '</h1>' +
+        '<div class="mpg-sb">' +
+          '<div class="mpg-crest is-home">' +
+            (g.home_logo ? '<img class="mpg-crest-img" src="' + esc(g.home_logo) + '" alt="" onerror="this.remove()">' : '') +
           '</div>' +
-          '<div style="font-size:1.1rem;font-weight:700;color:hsl(var(--muted-foreground));">VS</div>' +
-          '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;">' +
-            crestHTML(g.away_logo) +
-            '<h1 style="margin:0;font-size:1.25rem;font-weight:800;">' + esc(away) + '</h1>' +
+          '<div class="mpg-c">' +
+            '<span class="mpg-day">' + esc(label) + '</span>' +
+            scoreHTML +
+          '</div>' +
+          '<div class="mpg-crest is-away">' +
+            (g.away_logo ? '<img class="mpg-crest-img" src="' + esc(g.away_logo) + '" alt="" onerror="this.remove()">' : '') +
+          '</div>' +
+          '<div class="mpg-names">' +
+            '<span class="mpg-nm is-home">' + esc(home) + '</span>' +
+            '<span class="mpg-nm is-away">' + esc(away) + '</span>' +
           '</div>' +
         '</div>';
     }
@@ -242,6 +252,18 @@
     var xg = pred.expected_goals;
     var top1 = (pred.top_scorelines || [])[0];
     var mat = pred.score_matrix || [];
+
+    var snap = document.getElementById('mpg-snap');
+    if (snap) {
+      snap.innerHTML = '' +
+        '<div class="tpg-tile"><div class="tpg-tl">' + esc(home) + ' xG</div><div class="tpg-big">' + xg.home.toFixed(2) + '</div></div>' +
+        '<div class="tpg-tile"><div class="tpg-tl">' + esc(away) + ' xG</div><div class="tpg-big">' + xg.away.toFixed(2) + '</div></div>' +
+        '<div class="tpg-tile"><div class="tpg-tl">' + (zh ? '主胜概率' : 'Home Win') + '</div><div class="tpg-big">' + (p.home_win * 100).toFixed(1) + '%</div></div>' +
+        '<div class="tpg-tile"><div class="tpg-tl">' + (zh ? '平局概率' : 'Draw') + '</div><div class="tpg-big">' + (p.draw * 100).toFixed(1) + '%</div></div>' +
+        '<div class="tpg-tile"><div class="tpg-tl">' + (zh ? '客胜概率' : 'Away Win') + '</div><div class="tpg-big">' + (p.away_win * 100).toFixed(1) + '%</div></div>' +
+        '<div class="tpg-tile"><div class="tpg-tl">' + (zh ? '最可能比分' : 'Likeliest Score') + '</div><div class="tpg-big">' +
+          (top1 ? esc(top1.score) + '（' + (top1.probability * 100).toFixed(1) + '%）' : '—') + '</div></div>';
+    }
 
     var matRows = '';
     if (mat.length) {
@@ -264,40 +286,12 @@
     if (main) {
       main.style.gridColumn = '1 / -1';
       main.innerHTML = '' +
-        '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;font-variant-numeric:tabular-nums;">' +
-          '<div style="padding:12px;border:1px solid hsl(var(--border));border-radius:8px;">' +
-            '<div style="font-size:12px;color:hsl(var(--muted-foreground));">' + esc(home) + ' xG</div>' +
-            '<div style="font-size:1.5rem;font-weight:800;">' + xg.home.toFixed(2) + '</div>' +
-          '</div>' +
-          '<div style="padding:12px;border:1px solid hsl(var(--border));border-radius:8px;">' +
-            '<div style="font-size:12px;color:hsl(var(--muted-foreground));">' + esc(away) + ' xG</div>' +
-            '<div style="font-size:1.5rem;font-weight:800;">' + xg.away.toFixed(2) + '</div>' +
-          '</div>' +
-        '</div>' +
-        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;font-variant-numeric:tabular-nums;">' +
-          '<div style="padding:12px;border:1px solid hsl(var(--border));border-radius:8px;">' +
-            '<div style="font-size:12px;color:hsl(var(--muted-foreground));">' + (zh ? '主胜概率' : 'Home Win') + '</div>' +
-            '<div style="font-size:1.35rem;font-weight:800;">' + (p.home_win * 100).toFixed(1) + '%</div>' +
-          '</div>' +
-          '<div style="padding:12px;border:1px solid hsl(var(--border));border-radius:8px;">' +
-            '<div style="font-size:12px;color:hsl(var(--muted-foreground));">' + (zh ? '平局概率' : 'Draw') + '</div>' +
-            '<div style="font-size:1.35rem;font-weight:800;">' + (p.draw * 100).toFixed(1) + '%</div>' +
-          '</div>' +
-          '<div style="padding:12px;border:1px solid hsl(var(--border));border-radius:8px;">' +
-            '<div style="font-size:12px;color:hsl(var(--muted-foreground));">' + (zh ? '客胜概率' : 'Away Win') + '</div>' +
-            '<div style="font-size:1.35rem;font-weight:800;">' + (p.away_win * 100).toFixed(1) + '%</div>' +
-          '</div>' +
-        '</div>' +
-        '<div style="padding:12px;border:1px solid hsl(var(--border));border-radius:8px;margin-bottom:14px;font-variant-numeric:tabular-nums;">' +
-          '<div style="font-size:12px;font-weight:700;color:hsl(var(--muted-foreground));margin-bottom:6px;">' + (zh ? '最可能比分' : 'Likeliest Scoreline') + '</div>' +
-          '<div style="font-size:1.15rem;font-weight:800;">' +
-            (top1 ? esc(top1.score) + '（' + (top1.probability * 100).toFixed(1) + '%）' : '—') +
-          '</div>' +
-        '</div>' +
-        '<div>' +
-          '<div style="font-size:12px;font-weight:700;color:hsl(var(--muted-foreground));margin-bottom:8px;">' + (zh ? '比分矩阵 (0–9)' : 'Score Matrix (0–9)') + '</div>' +
+        '<section class="mpg-blk">' +
+          '<h2 class="mpg-sec-h" style="margin:0 0 0.6rem;font-size:0.85rem;font-weight:700;color:var(--secondary-text-color);">' +
+            (zh ? '比分矩阵 (0–9)' : 'Score Matrix (0–9)') +
+          '</h2>' +
           '<div class="poisson-matrix-wrap"><table class="poisson-matrix">' + matRows + '</table></div>' +
-        '</div>';
+        '</section>';
     }
 
     var side = document.getElementById('mpg-side');
@@ -394,7 +388,7 @@
 
     // 预测结果直接读取存在数据库里面的静态结果（之前未预测过的历史比赛不显示）
     var pred = lockedPredictions[g.id] || null;
-    var hPctHTML = '', aPctHTML = '', drawHTML = '';
+    var hPctHTML = '<span class="mc-pct"></span>', aPctHTML = '<span class="mc-pct"></span>', drawHTML = '';
     if (pred) {
       var p = pred.probabilities_1x2;
       var pH = (p.home_win * 100).toFixed(1);

@@ -81,32 +81,39 @@
             window.RENJU_GAME_BASE = '';
             window.POISSON_API = 'https://saishi-d6gz1139g33c076b0-1304984528.ap-shanghai.app.tcloudbase.com/predict';
         </script>
-        <script src="/app.js?v=22" defer></script>
+        <script src="/app.js?v=23" defer></script>
 
         <!-- Umami Cloud analytics -->
         
         <!-- The page's JSON-LD (its list or match): the edge fills this
              slot (functions/_lib/ssr.js); the static file leaves it empty. -->
         <style>
+            .mc-main:has(.mc-side.has-logo) {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) 5.6rem minmax(0, 1fr);
+                align-items: center;
+                gap: 0.35rem;
+            }
             .mc-side.has-logo {
                 display: flex;
                 flex-direction: row;
                 align-items: center;
-                justify-content: flex-end;
-                gap: 0.55rem;
+                justify-content: space-between;
+                width: 100%;
+                gap: 0.4rem;
             }
             .mc-side.has-logo.is-away {
                 flex-direction: row;
-                justify-content: flex-start;
                 text-align: center;
             }
             .mc-team-stack {
+                flex: 1 1 0;
+                min-width: 0;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
                 gap: 0.25rem;
-                min-width: 0;
             }
             .mc-side.has-logo .mc-nm {
                 flex: 0 1 auto;
@@ -120,12 +127,15 @@
                 text-align: center;
             }
             .mc-side.has-logo .mc-pct {
-                flex: 0 0 auto;
+                flex: 0 0 3.7rem;
+                width: 3.7rem;
+                text-align: center;
             }
             .poisson-matrix-wrap {
                 overflow-x: auto;
                 border: 1px solid hsl(var(--border));
-                border-radius: 8px;
+                border-radius: 12px;
+                background: hsl(var(--card));
             }
             .poisson-matrix {
                 width: 100%;
@@ -138,7 +148,7 @@
             .poisson-matrix th,
             .poisson-matrix td {
                 width: 9.0909%;
-                height: 38px;
+                height: 40px;
                 padding: 0;
                 text-align: center;
                 vertical-align: middle;
