@@ -8,7 +8,6 @@
   var DB_KEY = String(window.RENJU_KEY || '');
   // 棋谱详情页前缀：没配置就不把卡片做成链接（避免线上点到 404）
   var GAME_BASE = String(window.RENJU_GAME_BASE || '').replace(/\/+$/, '');
-  var POISSON_API = String(window.POISSON_API || 'https://saishi-d6gz1139g33c076b0-1304984528.ap-shanghai.app.tcloudbase.com/predict').replace(/\/+$/, '');
 
   var esc = function (s) {
     return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
