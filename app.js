@@ -3,13 +3,9 @@
 (function () {
   var html = document.documentElement;
 
-  // 接口前缀：本地为空（同源 express）；Pages 版由构建脚本注入云函数地址
-  var API = String(window.RENJU_API || '').replace(/\/+$/, '');
-  // 数据库直连：CloudBase PG 的 REST 基址 + Publishable Key（页面直接读库，不走静态文件）
+  // 数据库直连：CloudBase PG 的 REST 基址 + Publishable Key（页面直接读库）
   var DB = String(window.RENJU_DB || '').replace(/\/+$/, '');
   var DB_KEY = String(window.RENJU_KEY || '');
-  // 静态数据目录（留作后备：DB 没配时读构建时导出的 JSON）
-  var DATA = String(window.RENJU_DATA || '').replace(/\/+$/, '');
   // 棋谱详情页前缀：没配置就不把卡片做成链接（避免线上点到 404）
   var GAME_BASE = String(window.RENJU_GAME_BASE || '').replace(/\/+$/, '');
 
@@ -116,9 +112,10 @@
   }
 
   function cardHTML(g, tour) {
+    // 抬头：赛事 第x轮 第x台
     var rd = g.round ? T().round(g.round) : '';
-    // 按轮次分组时，卡片的抬头只写台次；没有台次才退回「赛事 + 轮次」
-    var label = g.board != null ? T().board(g.board) : [tour, rd].filter(Boolean).join(' ');
+    var label = [tour, rd, g.board != null ? T().board(g.board) : '']
+      .filter(Boolean).join(' ');
     // 有详情页前缀才渲染成链接，否则用同款 div（线上静态站不产生 404 链接）
     var tag = GAME_BASE ? 'a' : 'div';
     var open = GAME_BASE
@@ -162,14 +159,11 @@
       '<div class="mc-meta"><span class="mc-lead">' + esc(msg) + '</span></div></div></div>';
   }
 
-  // 一组（一轮）的抬头：轮次 · 2026年11月16日 星期一 08:30
+  // 一组（一轮）的抬头：2026年11月14日 星期六 08:00
   function groupHead(grp) {
-    var parts = [];
-    if (grp.round != null) parts.push(T().round(grp.round));
     var d = dayLabel(grp.start_date);
-    if (d) parts.push(d);
-    if (grp.start_time) parts.push(grp.start_time);
-    return parts.filter(Boolean).join(' · ') || grp.tournament || '';
+    if (!grp.start_time) return d || grp.tournament || '';
+    return d ? d + (state.lang === 'en' ? ' · ' : ' ') + grp.start_time : grp.start_time;
   }
 
   function feedHTML(groups) {
@@ -215,14 +209,7 @@
     if (extra) extra.innerHTML = '';
   }
 
-  var TOURS_PER_PAGE = 7;
-  var feedCache = {};        // scope -> { groups, hasMore }
-
-  function moreHTML() {
-    return '<div class="upcoming-show-more-wrap">' +
-      '<button type="button" class="btn-outline upcoming-show-more-btn" data-more="1">' +
-      esc(T().more) + '</button></div>';
-  }
+  var feedCache = {};        // scope -> { groups }
 
   function renderList() {
     var list = document.getElementById('today-matches');
@@ -230,7 +217,6 @@
     var c = feedCache[state.scope];
     if (!c) { list.innerHTML = ''; return; }
     var out = feedHTML(c.groups);
-    if (c.hasMore) out += moreHTML();
     list.innerHTML = out;
   }
 
@@ -246,25 +232,29 @@
     });
   }
 
-  // 棋手一次取全（46 人），对局按「轮次倒序、台次正序」取回后在本地分组
+  // 赛事名、棋手一次取全；对局按「轮次倒序、台次正序」取回后在本地按轮分组
   function feedFromDb(scope) {
     if (scope === 'future') return Promise.resolve({ groups: [], hasMore: false });
     return Promise.all([
-      dbGet('/players?select=id,name&limit=1000'),
-      dbGet('/renju_matches?select=id,round_no,board_no,black_id,white_id,result,match_time' +
-        '&order=round_no.desc,board_no.asc&limit=2000')
+      dbGet('/tournaments?select=id,name&limit=100'),
+      dbGet('/players?select=id,name&limit=2000'),
+      dbGet('/renju_matches?select=id,tournament_id,round_no,board_no,black_id,white_id,result,match_time' +
+        '&order=round_no.desc,board_no.asc&limit=5000')
     ]).then(function (res) {
+      var tours = {};
+      (res[0] || []).forEach(function (t) { tours[t.id] = t.name; });
       var names = {};
-      (res[0] || []).forEach(function (p) { names[p.id] = p.name; });
+      (res[1] || []).forEach(function (p) { names[p.id] = p.name; });
 
       var groups = [];
       var byRound = {};
-      (res[1] || []).forEach(function (m) {
+      (res[2] || []).forEach(function (m) {
         var grp = byRound[m.round_no];
         if (!grp) {
           var t = shanghai(m.match_time) || {};
           grp = byRound[m.round_no] = {
             round: m.round_no,
+            tournament: tours[m.tournament_id] || '',
             start_date: t.date || '',
             start_time: t.time || '',
             total: 0,
@@ -290,36 +280,13 @@
     });
   }
 
-  // append=true：接着上一批赛事往下取（每页 TOURS_PER_PAGE 个赛事，赛事内全量）
   function loadFeed(append) {
     var scope = state.scope;
-
-    // 有 DB 就直接读库：一次全量，不分页
-    if (DB) {
-      if (append) return Promise.resolve();
-      return feedFromDb(scope)
-        .then(function (d) {
-          feedCache[scope] = d;
-          if (state.scope === scope) renderList();
-          html.classList.add('app-ready');
-        })
-        .catch(function (err) {
-          console.error(err);
-          html.classList.add('app-failed');
-        });
-    }
-
-    var loaded = (append && feedCache[scope]) ? feedCache[scope].groups.length : 0;
-    var url = DATA
-      ? DATA + '/' + (scope === 'future' ? 'future' : 'past') + '/' + loaded + '.json'
-      : API + '/api/feed?tours=' + TOURS_PER_PAGE + '&offset=' + loaded +
-        '&scope=' + (scope === 'future' ? 'future' : 'past');
-
-    return fetch(url)
-      .then(function (r) { return r.json(); })
+    // 一次全量，不分页
+    if (append || !DB) return Promise.resolve();
+    return feedFromDb(scope)
       .then(function (d) {
-        var prev = (append && feedCache[scope]) ? feedCache[scope].groups : [];
-        feedCache[scope] = { groups: prev.concat(d.groups || []), hasMore: !!d.hasMore };
+        feedCache[scope] = d;
         if (state.scope === scope) renderList();
         html.classList.add('app-ready');
       })
@@ -505,15 +472,6 @@
     if (!acc) return;
     var open = acc.classList.toggle('is-open');
     btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-  });
-
-  // 「加载更早的赛事」：往下再接一页赛事
-  document.addEventListener('click', function (e) {
-    var more = e.target.closest('[data-more]');
-    if (!more) return;
-    e.preventDefault();
-    more.disabled = true;
-    loadFeed(true);
   });
 
   // ── 启动 ───────────────────────────────────────────────
