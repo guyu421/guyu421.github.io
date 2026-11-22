@@ -5,7 +5,10 @@
 
   // 接口前缀：本地为空（同源 express）；Pages 版由构建脚本注入云函数地址
   var API = String(window.RENJU_API || '').replace(/\/+$/, '');
-  // 静态数据目录（Pages 版：构建时导出的 JSON，不依赖后端与跨域）
+  // 数据库直连：CloudBase PG 的 REST 基址 + Publishable Key（页面直接读库，不走静态文件）
+  var DB = String(window.RENJU_DB || '').replace(/\/+$/, '');
+  var DB_KEY = String(window.RENJU_KEY || '');
+  // 静态数据目录（留作后备：DB 没配时读构建时导出的 JSON）
   var DATA = String(window.RENJU_DATA || '').replace(/\/+$/, '');
   // 棋谱详情页前缀：没配置就不把卡片做成链接（避免线上点到 404）
   var GAME_BASE = String(window.RENJU_GAME_BASE || '').replace(/\/+$/, '');
@@ -21,6 +24,7 @@
       title: '连珠对局库', sr: '连珠对局库', all: '全部',
       schedule: '赛程', results: '赛果',
       round: function (n) { return '第' + n + '轮'; },
+      board: function (n) { return '第' + n + '台'; },
       noSchedule: '暂无赛程',
       noResults: '暂无赛果',
       locale: 'zh-CN',
@@ -33,6 +37,7 @@
       title: 'Renju Games', sr: 'Renju games', all: 'All',
       schedule: 'Schedule', results: 'Results',
       round: function (n) { return 'Round ' + n; },
+      board: function (n) { return 'Board ' + n; },
       noSchedule: 'No scheduled games',
       noResults: 'No results',
       locale: 'en-US',
@@ -73,6 +78,20 @@
     return o ? fmtDate(o) : '';
   }
 
+  // timestamptz → 北京时间（+08:00）的 { date, time }
+  function shanghai(ts) {
+    var d = new Date(ts);
+    if (isNaN(d.getTime())) return null;
+    var f = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Shanghai', hourCycle: 'h23',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit'
+    });
+    var p = {};
+    f.formatToParts(d).forEach(function (x) { p[x.type] = x.value; });
+    return { date: p.year + '-' + p.month + '-' + p.day, time: p.hour + ':' + p.minute };
+  }
+
   function todayLabel() {
     var n = new Date();
     return fmtDate({ y: n.getFullYear(), m: n.getMonth() + 1, d: n.getDate(),
@@ -98,7 +117,8 @@
 
   function cardHTML(g, tour) {
     var rd = g.round ? T().round(g.round) : '';
-    var label = [tour, rd].filter(Boolean).join(' ');
+    // 按轮次分组时，卡片的抬头只写台次；没有台次才退回「赛事 + 轮次」
+    var label = g.board != null ? T().board(g.board) : [tour, rd].filter(Boolean).join(' ');
     // 有详情页前缀才渲染成链接，否则用同款 div（线上静态站不产生 404 链接）
     var tag = GAME_BASE ? 'a' : 'div';
     var open = GAME_BASE
@@ -142,16 +162,26 @@
       '<div class="mc-meta"><span class="mc-lead">' + esc(msg) + '</span></div></div></div>';
   }
 
+  // 一组（一轮）的抬头：轮次 · 2026年11月16日 星期一 08:30
+  function groupHead(grp) {
+    var parts = [];
+    if (grp.round != null) parts.push(T().round(grp.round));
+    var d = dayLabel(grp.start_date);
+    if (d) parts.push(d);
+    if (grp.start_time) parts.push(grp.start_time);
+    return parts.filter(Boolean).join(' · ') || grp.tournament || '';
+  }
+
   function feedHTML(groups) {
     if (!groups.length) {
       // 赛程为空就留白，不写「暂无赛程」；赛果为空才给一句提示
       if (state.scope === 'future') return '';
       return groupHTML(todayLabel(), emptyHTML(T().noResults));
     }
-    // 同一天的多个赛事并到同一张卡片里，避免连着出现两条一样的日期
+    // 同一天同一时间的多个赛事并到同一张卡片里，避免连着出现两条一样的抬头
     var buckets = [];
     groups.forEach(function (grp) {
-      var label = dayLabel(grp.start_date) || grp.tournament;
+      var label = groupHead(grp);
       var rows = grp.rows.map(function (g) { return cardHTML(g, grp.tournament); });
       var last = buckets[buckets.length - 1];
       if (last && last.label === label) last.rows = last.rows.concat(rows);
@@ -165,12 +195,6 @@
   // ── 渲染 ───────────────────────────────────────────────
   function renderHead() {
     document.title = T().docTitle;
-
-    var name = document.getElementById('hpg-name');
-    if (name) name.innerHTML = esc(T().title);
-
-    var sub = document.getElementById('hpg-sub');
-    if (sub) sub.textContent = todayLabel();
 
     var si = document.getElementById('nav-search-input');
     if (si) {
@@ -210,9 +234,81 @@
     list.innerHTML = out;
   }
 
+  // ── 读库（CloudBase PG REST）─────────────────────────────
+  var RESULT_SCORE = { B: 1, W: 0, D: 0.5, '+': 1, '-': 0 };
+
+  function dbGet(path) {
+    return fetch(DB + path, {
+      headers: { apikey: DB_KEY, Authorization: 'Bearer ' + DB_KEY }
+    }).then(function (r) {
+      if (!r.ok) throw new Error('DB ' + r.status + ' ' + path);
+      return r.json();
+    });
+  }
+
+  // 棋手一次取全（46 人），对局按「轮次倒序、台次正序」取回后在本地分组
+  function feedFromDb(scope) {
+    if (scope === 'future') return Promise.resolve({ groups: [], hasMore: false });
+    return Promise.all([
+      dbGet('/players?select=id,name&limit=1000'),
+      dbGet('/renju_matches?select=id,round_no,board_no,black_id,white_id,result,match_time' +
+        '&order=round_no.desc,board_no.asc&limit=2000')
+    ]).then(function (res) {
+      var names = {};
+      (res[0] || []).forEach(function (p) { names[p.id] = p.name; });
+
+      var groups = [];
+      var byRound = {};
+      (res[1] || []).forEach(function (m) {
+        var grp = byRound[m.round_no];
+        if (!grp) {
+          var t = shanghai(m.match_time) || {};
+          grp = byRound[m.round_no] = {
+            round: m.round_no,
+            start_date: t.date || '',
+            start_time: t.time || '',
+            total: 0,
+            rows: []
+          };
+          groups.push(grp);
+        }
+        var score = RESULT_SCORE[m.result];
+        grp.rows.push({
+          id: m.id,
+          board: m.board_no,
+          round: m.round_no,
+          black_result: score === undefined ? null : score,
+          black: names[m.black_id] || '',
+          black_zh: names[m.black_id] || '',
+          white: names[m.white_id] || '',
+          white_zh: names[m.white_id] || ''
+        });
+        grp.total = grp.rows.length;
+      });
+
+      return { groups: groups, hasMore: false };
+    });
+  }
+
   // append=true：接着上一批赛事往下取（每页 TOURS_PER_PAGE 个赛事，赛事内全量）
   function loadFeed(append) {
     var scope = state.scope;
+
+    // 有 DB 就直接读库：一次全量，不分页
+    if (DB) {
+      if (append) return Promise.resolve();
+      return feedFromDb(scope)
+        .then(function (d) {
+          feedCache[scope] = d;
+          if (state.scope === scope) renderList();
+          html.classList.add('app-ready');
+        })
+        .catch(function (err) {
+          console.error(err);
+          html.classList.add('app-failed');
+        });
+    }
+
     var loaded = (append && feedCache[scope]) ? feedCache[scope].groups.length : 0;
     var url = DATA
       ? DATA + '/' + (scope === 'future' ? 'future' : 'past') + '/' + loaded + '.json'

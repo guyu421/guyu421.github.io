@@ -72,14 +72,19 @@
              DOMContentLoaded. -->
         
         
-        <!-- 数据接口地址：本地同源留空；部署到 GitHub Pages 时由构建脚本注入
-             云函数的 HTTP 访问地址（window.RENJU_API）。 -->
+        <!-- 数据来源（部署时由构建脚本注入）：
+             RENJU_DB  = CloudBase PG 的 REST 基址，页面直接读库
+             RENJU_KEY = Publishable Key（前端公开，受安全域名限制）
+             RENJU_API = 云函数地址（留空则不用）
+             RENJU_DATA= 静态 JSON 目录（留空则不用，DB 优先） -->
         <script>
+            window.RENJU_DB = 'https://saishi-d6gz1139g33c076b0.api.tcloudbasegateway.com/v1/rdb/rest';
+            window.RENJU_KEY = 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjcwMjI0MzdmLWY2MWQtNGI3Yy1iNjNmLWJkZWY5ODcwMTBmOSJ9.eyJpc3MiOiJodHRwczovL3NhaXNoaS1kNmd6MTEzOWczM2MwNzZiMC5hcC1zaGFuZ2hhaS50Y2ItYXBpLnRlbmNlbnRjbG91ZGFwaS5jb20iLCJzdWIiOiJhbm9uIiwiYXVkIjoic2Fpc2hpLWQ2Z3oxMTM5ZzMzYzA3NmIwIiwiZXhwIjo0MDk5MDA3MzMwLCJpYXQiOjE3OTUzMjQxMzAsIm5vbmNlIjoiWEtScE1jLTBUaXl6M1J3OEtXSDFhUSIsImF0X2hhc2giOiJYS1JwTWMtMFRpeXozUnc4S1dIMWFRIiwibmFtZSI6IkFub255bW91cyIsInNjb3BlIjoiYW5vbnltb3VzIiwicHJvamVjdF9pZCI6InNhaXNoaS1kNmd6MTEzOWczM2MwNzZiMCIsIm1ldGEiOnsicGxhdGZvcm0iOiJQdWJsaXNoYWJsZUtleSJ9LCJyb2xlIjoiYW5vbiIsImlzX2Fub255bW91cyI6dHJ1ZSwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiYW5vbnltb3VzIiwicHJvdmlkZXJzIjpbImFub255bW91cyJdfSwidXNlcl9tZXRhZGF0YSI6eyJuYW1lIjoiQW5vbnltb3VzIn0sInVzZXJfdHlwZSI6IiIsImNsaWVudF90eXBlIjoiY2xpZW50X3VzZXIiLCJpc19zeXN0ZW1fYWRtaW4iOmZhbHNlfQ.cgRMfLDqP_3Nwo9VzNKxGVzMDFKN7rbSJ_7wEFtbVgsaw2qtPpeBNExNKaMb7_YRzf1S6XTXomiOP1dGQ55_x3wwDQzTXVe_dDBwgLKYw_1UTOoKjTyGYYLgdKpzq0bA8DewSmn0K9b2pAAkU9oNoN3WH7s4q6aziN_PoqxfpozxKqSVtUjwSAXjp9KWpddwSq7VZdmg8cXG-PXw_wNCOaP34kCGhnJFJeGVl7aUqE2mdSRXVdcP7g5BSpcYNC6YP2fqYK1uCAuqttPs3vc9MC_zJI-hKvZVdMezffnfq1AlirR1d268hB4OXjFy5Y2AsS20WiYuInHzAAfaK1rjCQ';
             window.RENJU_API = '';
             window.RENJU_GAME_BASE = '';
-            window.RENJU_DATA = 'data';
+            window.RENJU_DATA = '';
         </script>
-        <script src="/app.js?v=10" defer></script>
+        <script src="/app.js?v=11" defer></script>
 
         <!-- Umami Cloud analytics -->
         
@@ -385,7 +390,7 @@
                      filled by mrgold.js renderHomePage() and by the edge renderer
                      on a cold load; the two buttons by the app alone. No
                      <section> inside: the edge's edits end at </section>. -->
-                <section id="home-head" class="lpg-head hpg-head" style="display: block" data-ssr>
+                <section id="home-head" class="lpg-head hpg-head" style="display: none" data-ssr>
                     <header class="tpg-top lpg-top hpg-top">
                         <div class="tpg-id lpg-id">
                             <div class="tpg-who">
