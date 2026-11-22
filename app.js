@@ -289,14 +289,59 @@
       }
     }
 
+    var rawSum = (p.home_win + p.draw + p.away_win) || 1;
+    var segH = ((p.home_win / rawSum) * 100).toFixed(2);
+    var segD = ((p.draw / rawSum) * 100).toFixed(2);
+    var segA = ((p.away_win / rawSum) * 100).toFixed(2);
+
+    var outcomeBlock = '' +
+      '<section class="mpg-acc is-open">' +
+        '<h2 class="mpg-acc-hd"><button type="button" class="mpg-acc-h" aria-expanded="true">' +
+          '<span class="mpg-acc-l">' + (zh ? '胜平负概率' : 'Outcome') + '</span>' +
+          '<span class="mpg-acc-x">' +
+            esc(home) + ' ' + (p.home_win * 100).toFixed(1) + '% · ' +
+            (zh ? '平 ' : 'Draw ') + (p.draw * 100).toFixed(1) + '% · ' +
+            esc(away) + ' ' + (p.away_win * 100).toFixed(1) + '%' +
+          '</span>' +
+        '</button></h2>' +
+        '<div class="mpg-acc-b">' +
+          '<div class="sc-outcome">' +
+            '<div class="sc-outcome-side">' +
+              '<span class="sc-outcome-pct ms-team1' + (hFav ? ' is-lead' : '') + '">' + (p.home_win * 100).toFixed(1) + '%</span>' +
+              '<span class="sc-outcome-name">' + esc(home) + '</span>' +
+            '</div>' +
+            '<div class="sc-outcome-side">' +
+              '<span class="sc-outcome-pct sc-outcome-draw' + (dFav ? ' is-lead' : '') + '">' + (p.draw * 100).toFixed(1) + '%</span>' +
+              '<span class="sc-outcome-name">' + (zh ? '平局' : 'Draw') + '</span>' +
+            '</div>' +
+            '<div class="sc-outcome-side">' +
+              '<span class="sc-outcome-pct ms-team2' + (aFav ? ' is-lead' : '') + '">' + (p.away_win * 100).toFixed(1) + '%</span>' +
+              '<span class="sc-outcome-name">' + esc(away) + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="ms-h2h-bar sc-outcome-bar">' +
+            '<span class="ms-h2h-seg ms-h2h-seg-1' + (hFav ? ' is-lead' : '') + '" style="width:' + segH + '%"></span>' +
+            '<span class="ms-h2h-seg ms-h2h-seg-d' + (dFav ? ' is-lead' : '') + '" style="width:' + segD + '%"></span>' +
+            '<span class="ms-h2h-seg ms-h2h-seg-2' + (aFav ? ' is-lead' : '') + '" style="width:' + segA + '%"></span>' +
+          '</div>' +
+        '</div>' +
+      '</section>';
+
+    var matrixBlock = '' +
+      '<section class="mpg-acc is-open">' +
+        '<h2 class="mpg-acc-hd"><button type="button" class="mpg-acc-h" aria-expanded="true">' +
+          '<span class="mpg-acc-l">' + (zh ? '比分矩阵 (0–9)' : 'Score Matrix (0–9)') + '</span>' +
+          '<span class="mpg-acc-x">' + (top1 ? esc(top1.score) + '（' + (top1.probability * 100).toFixed(1) + '%）' : '') + '</span>' +
+        '</button></h2>' +
+        '<div class="mpg-acc-b">' +
+          '<div class="poisson-matrix-wrap"><table class="poisson-matrix">' + matRows + '</table></div>' +
+        '</div>' +
+      '</section>';
+
     var main = document.getElementById('mpg-main');
     if (main) {
       main.style.gridColumn = '1 / -1';
-      main.innerHTML = '' +
-        '<section class="mpg-blk">' +
-          '<h2 class="tpg-h">' + (zh ? '比分矩阵 (0–9)' : 'Score Matrix (0–9)') + '</h2>' +
-          '<div class="poisson-matrix-wrap"><table class="poisson-matrix">' + matRows + '</table></div>' +
-        '</section>';
+      main.innerHTML = outcomeBlock + matrixBlock;
     }
 
     var side = document.getElementById('mpg-side');
