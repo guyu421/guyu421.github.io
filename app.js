@@ -194,95 +194,9 @@
       ' loading="lazy" onerror="this.remove()">';
   }
 
-  // ── 泊松分布预测（仅预测未来赛事；开赛后固定读取云端锁定结果）────────────────
-  var poissonHourly = null;   // GET /hourly
-  var poissonHourlyMap = {};  // "home__away" -> prediction
-  var poissonModel = null;    // GET /model-info
-  var poissonTeams = {};      // lowercase team/alias -> { attack, defense }
+  // ── 泊松分布静态预测（直接读取云端数据库 football_predictions）────────────
   var lockedPredictions = {}; // match_id -> stored prediction from CloudBase PG
-
-  var POISSON_ALIASES = {
-    'man city': 'man city', 'manchester city': 'man city',
-    'man utd': 'man united', 'man united': 'man united', 'manchester united': 'man united',
-    'spurs': 'tottenham', 'tottenham hotspur': 'tottenham',
-    'wolves': 'wolves', 'wolverhampton': 'wolves', 'wolverhampton wanderers': 'wolves',
-    'newcastle united': 'newcastle', 'west ham united': 'west ham',
-    'brighton & hove albion': 'brighton', 'brighton and hove albion': 'brighton',
-    "nott'm forest": "nott'm forest", 'nottingham forest': "nott'm forest",
-    'leeds united': 'leeds', 'leicester city': 'leicester',
-    'norwich city': 'norwich', 'sheffield united': 'sheffield united',
-    'luton town': 'luton', 'ipswich town': 'ipswich',
-    'afc bournemouth': 'bournemouth', 'sunderland': 'sunderland'
-  };
-
-  function normTeam(name) {
-    var k = String(name || '').trim().toLowerCase();
-    return POISSON_ALIASES[k] || k;
-  }
-
-  function poissonPmf(k, lam) {
-    var f = 1;
-    for (var i = 2; i <= k; i++) f *= i;
-    return Math.exp(-lam) * Math.pow(lam, k) / f;
-  }
-
-  function computePoissonLocal(homeName, awayName) {
-    if (!poissonModel || !poissonModel.params) return null;
-    var h = poissonTeams[normTeam(homeName)] || { attack: 0, defense: 0 };
-    var a = poissonTeams[normTeam(awayName)] || { attack: 0, defense: 0 };
-    var mu = poissonModel.params.mu;
-    var gamma = poissonModel.params.gamma;
-    var maxG = 6;
-    var lamH = Math.exp(mu + gamma + h.attack + a.defense);
-    var lamA = Math.exp(mu + a.attack + h.defense);
-    var ph = [], pa = [], mat = [], total = 0;
-    for (var k = 0; k <= maxG; k++) {
-      ph.push(poissonPmf(k, lamH));
-      pa.push(poissonPmf(k, lamA));
-    }
-    var pHome = 0, pDraw = 0, pAway = 0, pOver25 = 0, pBtts = 0, scores = [];
-    for (var i = 0; i <= maxG; i++) {
-      mat[i] = [];
-      for (var j = 0; j <= maxG; j++) {
-        var p = ph[i] * pa[j];
-        mat[i][j] = p;
-        total += p;
-      }
-    }
-    for (i = 0; i <= maxG; i++) {
-      for (j = 0; j <= maxG; j++) {
-        var normP = mat[i][j] / total;
-        mat[i][j] = normP;
-        if (i > j) pHome += normP;
-        else if (i === j) pDraw += normP;
-        else pAway += normP;
-        if (i + j >= 3) pOver25 += normP;
-        if (i > 0 && j > 0) pBtts += normP;
-        scores.push({ score: i + '-' + j, probability: normP });
-      }
-    }
-    scores.sort(function (x, y) { return y.probability - x.probability; });
-    return {
-      expected_goals: { home: lamH, away: lamA },
-      probabilities_1x2: { home_win: pHome, draw: pDraw, away_win: pAway },
-      fair_odds_1x2: {
-        home_win: Math.round(100 / Math.max(pHome, 1e-4)) / 100,
-        draw: Math.round(100 / Math.max(pDraw, 1e-4)) / 100,
-        away_win: Math.round(100 / Math.max(pAway, 1e-4)) / 100
-      },
-      over_under: { over_2_5: pOver25, under_2_5: 1 - pOver25 },
-      btts: { yes: pBtts, no: 1 - pBtts },
-      top_scorelines: scores.slice(0, 5),
-      score_matrix: mat.slice(0, 5).map(function (r) { return r.slice(0, 5); }),
-      from_hourly: false
-    };
-  }
-
-  function getPoissonPrediction(homeName, awayName) {
-    var key = normTeam(homeName) + '__' + normTeam(awayName);
-    if (poissonHourlyMap[key]) return poissonHourlyMap[key];
-    return computePoissonLocal(homeName, awayName);
-  }
+  var latestPredUpdatedAt = '';
 
   function poissonDetailHTML(g, pred) {
     if (!pred) return '';
@@ -341,10 +255,8 @@
       ? esc(g.home_score) + '<span class="mc-dash">–</span>' + esc(g.away_score)
       : '—';
 
-    // 只预测未来的赛事（pre）；已开赛或已完赛只展示云端锁定的预测结果
-    var pred = g.status === 'pre'
-      ? getPoissonPrediction(g.home, g.away)
-      : (lockedPredictions[g.id] || null);
+    // 预测结果直接读取存在数据库里面的静态结果（之前未预测过的历史比赛不显示）
+    var pred = lockedPredictions[g.id] || null;
     var hPctHTML = '', aPctHTML = '', drawHTML = '';
     if (pred) {
       var p = pred.probabilities_1x2;
@@ -379,8 +291,10 @@
             '</div>' +
             '<div class="mc-main">' +
               '<div class="mc-side is-home has-logo">' +
-                crestHTML(g.home_logo) +
-                '<span class="mc-nm"><span class="mc-name">' + esc(home) + '</span></span>' +
+                '<span class="mc-team-stack">' +
+                  crestHTML(g.home_logo) +
+                  '<span class="mc-nm"><span class="mc-name">' + esc(home) + '</span></span>' +
+                '</span>' +
                 hPctHTML +
               '</div>' +
               '<div class="mc-c">' +
@@ -389,8 +303,10 @@
               '</div>' +
               '<div class="mc-side is-away has-logo">' +
                 aPctHTML +
-                '<span class="mc-nm"><span class="mc-name">' + esc(away) + '</span></span>' +
-                crestHTML(g.away_logo) +
+                '<span class="mc-team-stack">' +
+                  crestHTML(g.away_logo) +
+                  '<span class="mc-nm"><span class="mc-name">' + esc(away) + '</span></span>' +
+                '</span>' +
               '</div>' +
             '</div>' +
           '</div>' +
@@ -596,36 +512,6 @@
     return groups;
   }
 
-  function fetchPoissonData() {
-    if (!POISSON_API) return Promise.resolve();
-    var getJson = function (u) {
-      return fetch(u).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
-    };
-    return Promise.all([
-      getJson(POISSON_API + '/hourly'),
-      getJson(POISSON_API + '/model-info'),
-      getJson(POISSON_API + '/teams')
-    ]).then(function (pRes) {
-      var h = pRes[0], m = pRes[1], t = pRes[2];
-      if (h && Array.isArray(h.matches)) {
-        poissonHourly = h;
-        poissonHourlyMap = {};
-        h.matches.forEach(function (pm) {
-          if (!pm.match) return;
-          var key = normTeam(pm.match.home_team) + '__' + normTeam(pm.match.away_team);
-          poissonHourlyMap[key] = pm;
-        });
-      }
-      if (m) poissonModel = m;
-      if (t && Array.isArray(t.teams)) {
-        poissonTeams = {};
-        t.teams.forEach(function (tm) {
-          poissonTeams[normTeam(tm.team)] = { attack: tm.attack, defense: tm.defense };
-        });
-      }
-    });
-  }
-
   function loadFeed() {
     if (!DB) return Promise.resolve();
     return Promise.all([
@@ -638,12 +524,16 @@
       dbGet('/football_matches?select=id,league,round_no,match_time,status,' +
         'home_team_id,away_team_id,home_score,away_score&order=match_time.desc&limit=3000'),
       dbGet('/football_predictions?select=match_id,xg_home,xg_away,p_home,p_draw,p_away,' +
-        'over_2_5,btts_yes,top_scorelines,score_matrix&limit=3000').catch(function () { return []; }),
-      fetchPoissonData()
+        'over_2_5,btts_yes,top_scorelines,score_matrix,locked_at&limit=3000').catch(function () { return []; })
     ])
       .then(function (res) {
         lockedPredictions = {};
+        var maxLockedMs = 0;
         (res[5] || []).forEach(function (r) {
+          if (r.locked_at) {
+            var ms = Date.parse(r.locked_at);
+            if (ms > maxLockedMs) maxLockedMs = ms;
+          }
           lockedPredictions[r.match_id] = {
             expected_goals: { home: Number(r.xg_home), away: Number(r.xg_away) },
             probabilities_1x2: { home_win: Number(r.p_home), draw: Number(r.p_draw), away_win: Number(r.p_away) },
@@ -659,6 +549,9 @@
             locked: true
           };
         });
+        latestPredUpdatedAt = maxLockedMs
+          ? new Date(maxLockedMs + 8 * 3600 * 1000).toISOString().slice(0, 16).replace('T', ' ')
+          : '';
         store = {
           renju: renjuGroups(res),
           football: footballGroups([res[3], res[4]])
@@ -666,7 +559,7 @@
         renderList();
         var upd = document.getElementById('footer-updated');
         if (upd) {
-          var ts = (poissonHourly && poissonHourly.hour_slot) ? poissonHourly.hour_slot : '';
+          var ts = latestPredUpdatedAt;
           if (!ts) {
             var now = new Date(Date.now() + 8 * 3600 * 1000);
             ts = now.toISOString().slice(0, 16).replace('T', ' ');

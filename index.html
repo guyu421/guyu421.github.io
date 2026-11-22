@@ -81,7 +81,7 @@
             window.RENJU_GAME_BASE = '';
             window.POISSON_API = 'https://saishi-d6gz1139g33c076b0-1304984528.ap-shanghai.app.tcloudbase.com/predict';
         </script>
-        <script src="/app.js?v=19" defer></script>
+        <script src="/app.js?v=20" defer></script>
 
         <!-- Umami Cloud analytics -->
         
@@ -93,21 +93,31 @@
                 flex-direction: row;
                 align-items: center;
                 justify-content: flex-end;
-                gap: 0.45rem;
+                gap: 0.55rem;
             }
             .mc-side.has-logo.is-away {
                 flex-direction: row;
                 justify-content: flex-start;
-                text-align: left;
+                text-align: center;
+            }
+            .mc-team-stack {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 0.25rem;
+                min-width: 0;
             }
             .mc-side.has-logo .mc-nm {
                 flex: 0 1 auto;
                 min-width: auto;
+                justify-content: center;
             }
             .mc-side.has-logo .mc-name {
                 white-space: normal;
                 overflow: visible;
                 text-overflow: clip;
+                text-align: center;
             }
             .mc-side.has-logo .mc-pct {
                 flex: 0 0 auto;
