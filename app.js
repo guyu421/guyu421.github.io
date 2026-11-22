@@ -664,6 +664,15 @@
           football: footballGroups([res[3], res[4]])
         };
         renderList();
+        var upd = document.getElementById('footer-updated');
+        if (upd) {
+          var ts = (poissonHourly && poissonHourly.hour_slot) ? poissonHourly.hour_slot : '';
+          if (!ts) {
+            var now = new Date(Date.now() + 8 * 3600 * 1000);
+            ts = now.toISOString().slice(0, 16).replace('T', ' ');
+          }
+          upd.textContent = (state.lang === 'zh' ? ' · 上次更新：' : ' · Last updated: ') + ts;
+        }
         html.classList.add('app-ready');
       })
       .catch(function (err) {
