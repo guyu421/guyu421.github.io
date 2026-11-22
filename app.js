@@ -196,7 +196,147 @@
 
   // ── 泊松分布静态预测（直接读取云端数据库 football_predictions）────────────
   var lockedPredictions = {}; // match_id -> stored prediction from CloudBase PG
+  var footballById = {};      // match_id -> match row
   var latestPredUpdatedAt = '';
+
+  function openFootballDetail(matchId, push) {
+    var g = footballById[matchId];
+    var pred = lockedPredictions[matchId];
+    if (!g || !pred) return;
+
+    var mv = document.getElementById('match-view');
+    var vp = document.getElementById('view-pills');
+    var tm = document.getElementById('today-matches-container');
+    var um = document.getElementById('upcoming-matches-container');
+    var tb = document.getElementById('main-tab-bar-container');
+    if (!mv) return;
+
+    var zh = state.lang === 'zh';
+    var home = zh ? (g.home_zh || g.home) : g.home;
+    var away = zh ? (g.away_zh || g.away) : g.away;
+    var label = [leagueLabel(g.league), g.round ? T().round(g.round) : ''].filter(Boolean).join(' ');
+
+    var crumbs = document.getElementById('mpg-crumbs');
+    if (crumbs) {
+      crumbs.innerHTML = '<a href="#" id="mpg-back-link" style="font-weight:600;text-decoration:none;color:inherit;">← ' +
+        (zh ? '返回列表' : 'Back') + '</a> <span style="opacity:.45">/</span> <span>' + esc(label) + '</span>';
+    }
+
+    var head = document.getElementById('mpg-head');
+    if (head) {
+      head.innerHTML = '' +
+        '<div style="display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;padding:10px 0;">' +
+          '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;">' +
+            crestHTML(g.home_logo) +
+            '<h1 style="margin:0;font-size:1.25rem;font-weight:800;">' + esc(home) + '</h1>' +
+          '</div>' +
+          '<div style="font-size:1.1rem;font-weight:700;color:hsl(var(--muted-foreground));">VS</div>' +
+          '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;">' +
+            crestHTML(g.away_logo) +
+            '<h1 style="margin:0;font-size:1.25rem;font-weight:800;">' + esc(away) + '</h1>' +
+          '</div>' +
+        '</div>';
+    }
+
+    var p = pred.probabilities_1x2;
+    var xg = pred.expected_goals;
+    var top = (pred.top_scorelines || []).slice(0, 6);
+    var mat = pred.score_matrix || [];
+
+    var matRows = '';
+    if (mat.length) {
+      var cols = mat[0].length;
+      matRows += '<tr><th>' + (zh ? '主\\客' : 'H\\A') + '</th>';
+      for (var c = 0; c < cols; c++) matRows += '<th>' + c + '</th>';
+      matRows += '</tr>';
+      for (var r = 0; r < mat.length; r++) {
+        matRows += '<tr><th>' + r + '</th>';
+        for (var c2 = 0; c2 < cols; c2++) {
+          var v = Number(mat[r][c2] || 0);
+          var a = Math.min(0.42, v * 3.4).toFixed(2);
+          matRows += '<td style="background:hsla(142,76%,36%,' + a + ')">' + (v * 100).toFixed(1) + '%</td>';
+        }
+        matRows += '</tr>';
+      }
+    }
+
+    var main = document.getElementById('mpg-main');
+    if (main) {
+      main.style.gridColumn = '1 / -1';
+      main.innerHTML = '' +
+        '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;font-variant-numeric:tabular-nums;">' +
+          '<div style="padding:12px;border:1px solid hsl(var(--border));border-radius:8px;">' +
+            '<div style="font-size:12px;color:hsl(var(--muted-foreground));">' + esc(home) + ' xG</div>' +
+            '<div style="font-size:1.5rem;font-weight:800;">' + xg.home.toFixed(2) + '</div>' +
+          '</div>' +
+          '<div style="padding:12px;border:1px solid hsl(var(--border));border-radius:8px;">' +
+            '<div style="font-size:12px;color:hsl(var(--muted-foreground));">' + esc(away) + ' xG</div>' +
+            '<div style="font-size:1.5rem;font-weight:800;">' + xg.away.toFixed(2) + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;font-variant-numeric:tabular-nums;">' +
+          '<div style="padding:12px;border:1px solid hsl(var(--border));border-radius:8px;">' +
+            '<div style="font-size:12px;color:hsl(var(--muted-foreground));">' + (zh ? '主胜概率' : 'Home Win') + '</div>' +
+            '<div style="font-size:1.35rem;font-weight:800;">' + Math.round(p.home_win * 100) + '%</div>' +
+          '</div>' +
+          '<div style="padding:12px;border:1px solid hsl(var(--border));border-radius:8px;">' +
+            '<div style="font-size:12px;color:hsl(var(--muted-foreground));">' + (zh ? '平局概率' : 'Draw') + '</div>' +
+            '<div style="font-size:1.35rem;font-weight:800;">' + Math.round(p.draw * 100) + '%</div>' +
+          '</div>' +
+          '<div style="padding:12px;border:1px solid hsl(var(--border));border-radius:8px;">' +
+            '<div style="font-size:12px;color:hsl(var(--muted-foreground));">' + (zh ? '客胜概率' : 'Away Win') + '</div>' +
+            '<div style="font-size:1.35rem;font-weight:800;">' + Math.round(p.away_win * 100) + '%</div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="padding:12px;border:1px solid hsl(var(--border));border-radius:8px;margin-bottom:14px;font-variant-numeric:tabular-nums;">' +
+          '<div style="font-size:12px;font-weight:700;color:hsl(var(--muted-foreground));margin-bottom:8px;">' + (zh ? '最可能比分' : 'Likeliest Scorelines') + '</div>' +
+          '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
+            top.map(function (s) {
+              return '<span style="padding:4px 10px;border-radius:6px;background:hsl(var(--muted));font-size:13px;"><b>' +
+                esc(s.score) + '</b> ' + (s.probability * 100).toFixed(1) + '%</span>';
+            }).join('') +
+          '</div>' +
+        '</div>' +
+        '<div>' +
+          '<div style="font-size:12px;font-weight:700;color:hsl(var(--muted-foreground));margin-bottom:8px;">' + (zh ? '比分矩阵 (0–9)' : 'Score Matrix (0–9)') + '</div>' +
+          '<div class="poisson-matrix-wrap"><table class="poisson-matrix">' + matRows + '</table></div>' +
+        '</div>';
+    }
+
+    var side = document.getElementById('mpg-side');
+    if (side) side.style.display = 'none';
+
+    if (vp) vp.style.display = 'none';
+    if (tm) tm.style.display = 'none';
+    if (um) um.style.display = 'none';
+    if (tb) tb.style.display = 'none';
+    mv.style.display = 'block';
+    window.scrollTo(0, 0);
+
+    if (push) {
+      var u = new URL(location.href);
+      u.searchParams.set('match', String(matchId));
+      history.pushState({ matchId: matchId }, '', u.toString());
+    }
+  }
+
+  function closeFootballDetail(push) {
+    var mv = document.getElementById('match-view');
+    var vp = document.getElementById('view-pills');
+    var tm = document.getElementById('today-matches-container');
+    var um = document.getElementById('upcoming-matches-container');
+    var tb = document.getElementById('main-tab-bar-container');
+    if (mv) mv.style.display = 'none';
+    if (vp) vp.style.display = 'flex';
+    if (tm) tm.style.display = 'block';
+    if (um) um.style.display = 'block';
+    if (tb) tb.style.display = 'block';
+    if (push) {
+      var u = new URL(location.href);
+      u.searchParams.delete('match');
+      history.pushState({}, '', u.toString());
+    }
+  }
 
   function poissonDetailHTML(g, pred) {
     if (!pred) return '';
@@ -310,7 +450,6 @@
               '</div>' +
             '</div>' +
           '</div>' +
-          poissonDetailHTML(g, pred) +
         '</div>' +
       '</div>';
   }
@@ -496,7 +635,7 @@
       }
       var h = teams[m.home_team_id] || {};
       var a = teams[m.away_team_id] || {};
-      grp.rows.push({
+      var rowObj = {
         id: m.id,
         status: m.status,
         league: m.league,
@@ -505,7 +644,9 @@
         away: a.name || '', away_zh: a.name_zh || '', away_logo: a.logo || '',
         home_score: m.home_score == null ? null : Number(m.home_score),
         away_score: m.away_score == null ? null : Number(m.away_score)
-      });
+      };
+      footballById[m.id] = rowObj;
+      grp.rows.push(rowObj);
     });
     // 同一时段内：已结束的在前，按 id 稳定排序
     groups.forEach(function (g) { g.rows.sort(function (x, y) { return x.id - y.id; }); });
@@ -557,6 +698,10 @@
           football: footballGroups([res[3], res[4]])
         };
         renderList();
+        var initMatch = new URLSearchParams(location.search).get('match');
+        if (initMatch && footballById[initMatch] && lockedPredictions[initMatch]) {
+          openFootballDetail(initMatch, false);
+        }
         var upd = document.getElementById('footer-updated');
         if (upd) {
           var ts = latestPredUpdatedAt;
@@ -766,14 +911,27 @@
     }
   });
 
-  // 足球卡片点击展开/收起泊松预测详情
+  // 足球卡片点击跳转到赛事详情页；返回列表 & 浏览器后退支持
   document.addEventListener('click', function (e) {
+    var back = e.target.closest('#mpg-back-link');
+    if (back) {
+      e.preventDefault();
+      closeFootballDetail(true);
+      return;
+    }
     var card = e.target.closest('.upcoming-match-row[data-football-pred="1"]');
     if (!card) return;
-    var detail = card.querySelector('.poisson-detail');
-    if (!detail) return;
-    var open = detail.style.display !== 'none';
-    detail.style.display = open ? 'none' : 'block';
+    var mid = card.getAttribute('data-match-id');
+    if (mid) openFootballDetail(mid, true);
+  });
+
+  window.addEventListener('popstate', function () {
+    var mid = new URLSearchParams(location.search).get('match');
+    if (mid && footballById[mid] && lockedPredictions[mid]) {
+      openFootballDetail(mid, false);
+    } else {
+      closeFootballDetail(false);
+    }
   });
 
   // 折叠块开关
