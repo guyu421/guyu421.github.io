@@ -240,7 +240,7 @@
 
     var p = pred.probabilities_1x2;
     var xg = pred.expected_goals;
-    var top = (pred.top_scorelines || []).slice(0, 6);
+    var top1 = (pred.top_scorelines || [])[0];
     var mat = pred.score_matrix || [];
 
     var matRows = '';
@@ -277,24 +277,21 @@
         '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;font-variant-numeric:tabular-nums;">' +
           '<div style="padding:12px;border:1px solid hsl(var(--border));border-radius:8px;">' +
             '<div style="font-size:12px;color:hsl(var(--muted-foreground));">' + (zh ? '主胜概率' : 'Home Win') + '</div>' +
-            '<div style="font-size:1.35rem;font-weight:800;">' + Math.round(p.home_win * 100) + '%</div>' +
+            '<div style="font-size:1.35rem;font-weight:800;">' + (p.home_win * 100).toFixed(1) + '%</div>' +
           '</div>' +
           '<div style="padding:12px;border:1px solid hsl(var(--border));border-radius:8px;">' +
             '<div style="font-size:12px;color:hsl(var(--muted-foreground));">' + (zh ? '平局概率' : 'Draw') + '</div>' +
-            '<div style="font-size:1.35rem;font-weight:800;">' + Math.round(p.draw * 100) + '%</div>' +
+            '<div style="font-size:1.35rem;font-weight:800;">' + (p.draw * 100).toFixed(1) + '%</div>' +
           '</div>' +
           '<div style="padding:12px;border:1px solid hsl(var(--border));border-radius:8px;">' +
             '<div style="font-size:12px;color:hsl(var(--muted-foreground));">' + (zh ? '客胜概率' : 'Away Win') + '</div>' +
-            '<div style="font-size:1.35rem;font-weight:800;">' + Math.round(p.away_win * 100) + '%</div>' +
+            '<div style="font-size:1.35rem;font-weight:800;">' + (p.away_win * 100).toFixed(1) + '%</div>' +
           '</div>' +
         '</div>' +
         '<div style="padding:12px;border:1px solid hsl(var(--border));border-radius:8px;margin-bottom:14px;font-variant-numeric:tabular-nums;">' +
-          '<div style="font-size:12px;font-weight:700;color:hsl(var(--muted-foreground));margin-bottom:8px;">' + (zh ? '最可能比分' : 'Likeliest Scorelines') + '</div>' +
-          '<div style="display:flex;flex-wrap:wrap;gap:8px;">' +
-            top.map(function (s) {
-              return '<span style="padding:4px 10px;border-radius:6px;background:hsl(var(--muted));font-size:13px;"><b>' +
-                esc(s.score) + '</b> ' + (s.probability * 100).toFixed(1) + '%</span>';
-            }).join('') +
+          '<div style="font-size:12px;font-weight:700;color:hsl(var(--muted-foreground));margin-bottom:6px;">' + (zh ? '最可能比分' : 'Likeliest Scoreline') + '</div>' +
+          '<div style="font-size:1.15rem;font-weight:800;">' +
+            (top1 ? esc(top1.score) + '（' + (top1.probability * 100).toFixed(1) + '%）' : '—') +
           '</div>' +
         '</div>' +
         '<div>' +
@@ -400,14 +397,14 @@
     var hPctHTML = '', aPctHTML = '', drawHTML = '';
     if (pred) {
       var p = pred.probabilities_1x2;
-      var pH = Math.round(p.home_win * 100);
-      var pD = Math.round(p.draw * 100);
-      var pA = Math.round(p.away_win * 100);
+      var pH = (p.home_win * 100).toFixed(1);
+      var pD = (p.draw * 100).toFixed(1);
+      var pA = (p.away_win * 100).toFixed(1);
       var hFav = p.home_win >= p.away_win && p.home_win >= p.draw;
       var aFav = p.away_win > p.home_win && p.away_win >= p.draw;
       var dFav = p.draw > p.home_win && p.draw > p.away_win;
-      var hCls = 'mc-pct' + (hFav ? ' is-fav is-lean ' + (pH >= 50 ? 'lean-green' : 'lean-grey') : '');
-      var aCls = 'mc-pct' + (aFav ? ' is-fav is-lean ' + (pA >= 50 ? 'lean-green' : 'lean-grey') : '');
+      var hCls = 'mc-pct' + (hFav ? ' is-fav is-lean ' + (p.home_win >= 0.5 ? 'lean-green' : 'lean-grey') : '');
+      var aCls = 'mc-pct' + (aFav ? ' is-fav is-lean ' + (p.away_win >= 0.5 ? 'lean-green' : 'lean-grey') : '');
       hPctHTML = '<span class="' + hCls + '">' + pH + '%</span>';
       aPctHTML = '<span class="' + aCls + '">' + pA + '%</span>';
       var drawLabel = state.lang === 'zh' ? '平 ' + pD + '%' : 'Draw ' + pD + '%';
