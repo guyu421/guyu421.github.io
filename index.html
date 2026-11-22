@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b0f0c">
-  <meta name="description" content="MATCHDAY 英超赛程中心，浏览精选对阵、赛果概率、预期进球与比分预测。">
+  <meta name="description" content="MATCHDAY 英超赛程与预测。">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23c8f45a'/%3E%3Ctext x='32' y='44' text-anchor='middle' font-family='Arial' font-weight='700' font-size='38' fill='%23152005'%3EM%3C/text%3E%3C/svg%3E">
   <title>MATCHDAY — 英超赛程与预测</title>
   <link rel="preconnect" href="https://miaoda.feishu.cn">
@@ -150,7 +150,7 @@
     .date-btn.active .date-num { color: var(--accent-ink); }
 
     /* ===== 赛程布局 ===== */
-    .schedule-layout { display: grid; grid-template-columns: minmax(0, 1fr) 322px; gap: 24px; padding: 30px 0 44px; align-items: start; }
+    .schedule-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 30px 0 44px; align-items: start; }
     .panel { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
     .fixture-panel { min-width: 0; overflow: hidden; }
     .fixture-toolbar { display: flex; align-items: center; gap: 20px; min-height: 66px; padding: 0 20px; border-bottom: 1px solid var(--line); }
@@ -164,6 +164,7 @@
     .group-title .icon { width: 15px; height: 15px; color: var(--muted); }
     .group-tag { color: var(--muted-2); font-size: 11px; }
     .fixture-list { padding: 0 10px 10px; }
+    .fixture-list.bare { padding-top: 10px; }
     .fixture-row {
       position: relative;
       display: grid;
@@ -341,7 +342,7 @@
     .toast.show { opacity: 1; transform: translate(-50%,0); }
 
     @media (max-width: 1080px) {
-      .schedule-layout { grid-template-columns: minmax(0,1fr) 280px; gap: 18px; }
+      .schedule-layout { grid-template-columns: minmax(0,1fr); gap: 18px; }
       .fixture-row { grid-template-columns: 66px minmax(190px,1fr) 178px 30px; gap: 10px; }
       .main-nav { display: none; }
       .team-en { display: none; }
@@ -432,32 +433,20 @@
         <span class="brand-mark"><svg class="icon"><use href="#i-ball"/></svg></span>
         <span class="brand-name">MATCHDAY<span>+</span></span>
       </a>
-      <nav class="main-nav" aria-label="主导航">
-        <button class="nav-link active" id="navFixtures">赛程</button>
-        <button class="nav-link" id="navTeams">球队实力</button>
-        <button class="nav-link" id="navModel">模型说明</button>
-      </nav>
       <div class="top-actions">
         <label class="search-box" id="searchBox">
           <svg class="icon"><use href="#i-search"/></svg>
           <input id="searchInput" type="search" autocomplete="off" placeholder="搜索球队或对阵" aria-label="搜索球队或对阵">
           <span class="search-key">/</span>
         </label>
-        <div class="service-pill" id="servicePill"><span class="service-dot"></span><span id="serviceText">连接服务中</span></div>
+        <div class="service-pill" id="servicePill"><span class="service-dot"></span><span id="serviceText">同步中</span></div>
       </div>
     </div>
   </header>
 
   <main>
     <section class="container league-head" aria-labelledby="pageTitle">
-      <div>
-        <div class="eyebrow">England · Premier League</div>
-        <h1 id="pageTitle">英超赛程</h1>
-        <p class="league-sub" id="leagueSub">精选对阵、赛果概率与赛前数据分析</p>
-      </div>
-      <button class="refresh-btn" id="refreshBtn" aria-label="刷新赛程">
-        <svg class="icon"><use href="#i-refresh"/></svg><span>刷新赛程</span>
-      </button>
+      <h1 id="pageTitle">英超赛程</h1>
     </section>
 
     <div class="date-wrap">
@@ -469,7 +458,6 @@
         <div class="fixture-toolbar">
           <div class="filter-tabs" role="tablist" aria-label="比赛类型">
             <button class="filter-tab active" data-filter="all" role="tab" aria-selected="true">全部比赛</button>
-            <button class="filter-tab" data-filter="featured" role="tab" aria-selected="false">焦点战</button>
             <button class="filter-tab" data-filter="favorites" role="tab" aria-selected="false">我的收藏</button>
           </div>
           <span class="match-count num" id="matchCount">加载中</span>
@@ -477,51 +465,12 @@
         <div id="fixturesContent">
           <div class="state-box" aria-live="polite">
             <div class="state-icon"><svg class="icon"><use href="#i-calendar"/></svg></div>
-            <h2 class="state-title">正在获取最新赛程</h2>
-            <p class="state-text">正在连接 CloudBase 预测服务，请稍候。</p>
+            <h2 class="state-title">正在获取赛程</h2>
           </div>
         </div>
       </section>
-
-      <aside class="side-stack" aria-label="赛程辅助信息">
-        <section class="panel feature-card" id="featureCard">
-          <div class="feature-label">MATCH OF THE DAY <svg class="icon"><use href="#i-star"/></svg></div>
-          <div class="state-box" style="padding:40px 0"><div class="skeleton" style="width:80%;height:18px"></div></div>
-        </section>
-
-        <section class="panel side-card" id="modelCard">
-          <h2 class="side-title">模型状态 <span>5 年数据</span></h2>
-          <div class="model-stats">
-            <div class="model-stat"><strong>—</strong><span>训练比赛</span></div>
-            <div class="model-stat"><strong>—</strong><span>覆盖球队</span></div>
-            <div class="model-stat"><strong>—</strong><span>回测准确率</span></div>
-          </div>
-          <div class="update-line"><svg class="icon"><use href="#i-clock"/></svg><span id="updateText">等待数据同步</span></div>
-        </section>
-
-        <section class="panel side-card" id="rankingCard">
-          <h2 class="side-title">球队实力榜 <span>点击筛选对阵</span></h2>
-          <div class="rank-list" id="rankList">
-            <div class="skeleton" style="height:28px"></div>
-            <div class="skeleton" style="height:28px"></div>
-            <div class="skeleton" style="height:28px"></div>
-          </div>
-        </section>
-
-        <div class="disclaimer">
-          <svg class="icon"><use href="#i-info"/></svg>
-          <span>预测由 Poisson 历史数据模型生成，仅供参考，不代表实际赛果。赛程时间以官方发布为准。</span>
-        </div>
-      </aside>
     </div>
   </main>
-
-  <footer class="footer">
-    <div class="container footer-inner">
-      <div><div class="footer-brand">MATCHDAY+</div><div>让每一场比赛，都有据可循。</div></div>
-      <div class="footer-note">数据来源：CloudBase · EPL-Poisson-Baseline-5Y<br>整点自动更新 · 仅提供赛前分析与赛程展示</div>
-    </div>
-  </footer>
 
   <div class="modal-shell" id="matchDialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle" hidden>
     <section class="match-dialog">
@@ -555,7 +504,7 @@
         'Watford': ['沃特福德','WAT','#b59b22'], 'Sheffield United': ['谢菲尔德联','SHU','#c82b35'],
         'Norwich': ['诺维奇','NOR','#7c9a35']
       };
-      const state = { matches: [], teams: [], model: null, hourly: null, filter: 'all', date: 'all', query: '', favorites: new Set(), loading: false };
+      const state = { matches: [], hourly: null, filter: 'all', date: 'all', query: '', favorites: new Set(), loading: false };
       const $ = (selector, root = document) => root.querySelector(selector);
       const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
       const icon = name => `<svg class="icon" aria-hidden="true"><use href="#i-${name}"/></svg>`;
@@ -597,16 +546,10 @@
         return new Intl.DateTimeFormat('zh-CN', long ? { timeZone: 'Asia/Shanghai', month: 'long', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false } : { timeZone: 'Asia/Shanghai', hour: '2-digit', minute: '2-digit', hour12: false }).format(date);
       }
       function dateLabel(key) {
-        if (key === 'unscheduled') return '精选对阵';
         const date = new Date(`${key}T12:00:00+08:00`);
         return new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', month: 'long', day: 'numeric', weekday: 'long' }).format(date);
       }
       function isLive(match) { return String(match.status_state || '').toLowerCase() === 'in'; }
-      function matchMeta(match) {
-        if (match.status_detail === 'Featured Matchup') return '焦点战';
-        if (match.round === 'Matchday Featured') return '英超精选';
-        return match.status_detail || match.round || '英超';
-      }
       function matchName(match) { return `${cn(match.match.home_team)} vs ${cn(match.match.away_team)}`; }
       function renderDates() {
         const days = [{ key: 'all', day: '全部赛程', num: 'ALL' }];
@@ -622,7 +565,6 @@
         const q = state.query.trim().toLowerCase();
         return state.matches.filter(match => {
           if (state.date !== 'all' && shanghaiDateKey(match.kickoff) !== state.date) return false;
-          if (state.filter === 'featured' && !match.is_big_game) return false;
           if (state.filter === 'favorites' && !state.favorites.has(match.id)) return false;
           if (q) {
             const home = match.match.home_team, away = match.match.away_team;
@@ -643,7 +585,7 @@
         const live = isLive(match);
         const score = match.actual_score && typeof match.actual_score === 'object' ? `${match.actual_score.home ?? 0} - ${match.actual_score.away ?? 0}` : '';
         return `<article class="fixture-row" data-match="${esc(match.id)}" tabindex="0" role="button" aria-label="查看 ${esc(matchName(match))} 预测详情">
-          <div class="kickoff">${live ? '<span class="live-tag">进行中</span>' : `<div class="kickoff-time">${esc(kickoffText(match))}</div>`}<div class="kickoff-meta">${score ? esc(score) : esc(matchMeta(match))}</div></div>
+          <div class="kickoff">${live ? '<span class="live-tag">进行中</span>' : `<div class="kickoff-time">${esc(kickoffText(match))}</div>`}${score ? `<div class="kickoff-meta">${esc(score)}</div>` : ''}</div>
           <div class="teams-stack">
             <div class="team-line">${badge(home)}<span class="team-name">${esc(cn(home))}</span><span class="team-en">${esc(meta(home)[1])}</span></div>
             <div class="team-line">${badge(away)}<span class="team-name">${esc(cn(away))}</span><span class="team-en">${esc(meta(away)[1])}</span></div>
@@ -657,42 +599,13 @@
         $('#matchCount').textContent = `${matches.length} 场比赛`;
         if (!matches.length) {
           const isSearch = !!state.query.trim();
-          $('#fixturesContent').innerHTML = `<div class="state-box"><div class="state-icon">${icon(isSearch ? 'search' : 'calendar')}</div><h2 class="state-title">${isSearch ? '没有找到相关对阵' : state.filter === 'favorites' ? '还没有收藏比赛' : '该日期暂无赛程'}</h2><p class="state-text">${isSearch ? '试试球队中文名、英文名或缩写。' : state.filter === 'favorites' ? '点击比赛右侧的星标，即可把焦点对阵加入收藏。' : '可以切换到“全部赛程”查看当前精选对阵。'}</p><button class="ghost-btn" id="resetFilters">查看全部比赛</button></div>`;
+          $('#fixturesContent').innerHTML = `<div class="state-box"><div class="state-icon">${icon(isSearch ? 'search' : 'calendar')}</div><h2 class="state-title">${isSearch ? '没有找到相关对阵' : state.filter === 'favorites' ? '还没有收藏比赛' : '该日期暂无赛程'}</h2><button class="ghost-btn" id="resetFilters">查看全部比赛</button></div>`;
           return;
         }
         const groups = new Map();
         matches.forEach(match => { const key = shanghaiDateKey(match.kickoff); if (!groups.has(key)) groups.set(key, []); groups.get(key).push(match); });
         const ordered = [...groups.entries()].sort(([a],[b]) => a === 'unscheduled' ? 1 : b === 'unscheduled' ? -1 : a.localeCompare(b));
-        $('#fixturesContent').innerHTML = ordered.map(([key, items]) => `<section><div class="group-head"><h2 class="group-title">${icon('calendar')}${dateLabel(key)}</h2><span class="group-tag">${key === 'unscheduled' ? '开球时间待定' : `${items.length} 场`}</span></div><div class="fixture-list">${items.map(fixtureRow).join('')}</div></section>`).join('');
-      }
-      function renderFeature() {
-        const match = state.matches.find(m => m.is_big_game) || state.matches[0];
-        if (!match) { $('#featureCard').innerHTML = '<div class="feature-label">MATCH OF THE DAY</div><p class="state-text">暂无焦点对阵</p>'; return; }
-        const home = match.match.home_team, away = match.match.away_team;
-        const top = (match.top_scorelines || [])[0];
-        $('#featureCard').innerHTML = `<div class="feature-label">MATCH OF THE DAY ${icon('star')}</div>
-          <div class="feature-teams">
-            <div class="feature-team">${badge(home,true)}<div class="feature-team-name">${esc(cn(home))}</div></div>
-            <div><div class="versus">VS</div><div class="feature-kickoff">${esc(kickoffText(match))}</div></div>
-            <div class="feature-team">${badge(away,true)}<div class="feature-team-name">${esc(cn(away))}</div></div>
-          </div>
-          <div class="feature-score"><div class="feature-score-label">模型最可能比分</div><div class="feature-score-value">${esc(top?.score || '—')}<span>${top ? pct(top.probability) : ''}</span></div></div>
-          <button class="primary-btn" data-open-match="${esc(match.id)}">查看完整预测 ${icon('arrow')}</button>`;
-      }
-      function renderModel() {
-        const model = state.model || state.hourly?.model_summary;
-        const accuracy = model?.backtest_2526?.accuracy;
-        $('#modelCard').innerHTML = `<h2 class="side-title">模型状态 <span>5 年数据</span></h2>
-          <div class="model-stats">
-            <div class="model-stat"><strong class="num">${model?.total_matches ?? '—'}</strong><span>训练比赛</span></div>
-            <div class="model-stat"><strong class="num">${model?.total_teams ?? '—'}</strong><span>覆盖球队</span></div>
-            <div class="model-stat"><strong class="num">${accuracy == null ? '—' : pct(accuracy)}</strong><span>回测准确率</span></div>
-          </div>
-          <div class="update-line">${icon('clock')}<span id="updateText">${state.hourly?.generated_at ? `更新于 ${new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(state.hourly.generated_at))}` : '整点自动同步未来赛事'}</span></div>`;
-      }
-      function renderRankings() {
-        const teams = [...state.teams].sort((a,b) => b.net_rating - a.net_rating).slice(0,5);
-        $('#rankList').innerHTML = teams.length ? teams.map((team,index) => `<button class="rank-row" data-team-search="${esc(team.team)}"><span class="rank-pos">${String(index+1).padStart(2,'0')}</span>${badge(team.team)}<span class="rank-name">${esc(cn(team.team))}</span><strong class="rank-value">${Number(team.net_rating).toFixed(2)}</strong></button>`).join('') : '<span class="state-text">球队数据暂不可用</span>';
+        $('#fixturesContent').innerHTML = ordered.map(([key, items]) => `<section>${key === 'unscheduled' ? '' : `<div class="group-head"><h2 class="group-title">${icon('calendar')}${dateLabel(key)}</h2><span class="group-tag">${items.length} 场</span></div>`}<div class="fixture-list${key === 'unscheduled' ? ' bare' : ''}">${items.map(fixtureRow).join('')}</div></section>`).join('');
       }
       function matrixMarkup(match) {
         const matrix = match.score_matrix || [];
@@ -710,7 +623,7 @@
           }
           html += '</tr>';
         }
-        return html + '</tbody></table></div><p class="matrix-note">单位：概率 % · 展示 0–5 球区间</p>';
+        return html + '</tbody></table></div>';
       }
       function openMatch(id) {
         const match = state.matches.find(m => String(m.id) === String(id));
@@ -722,14 +635,14 @@
             <div><div class="dialog-vs">VS</div><div class="dialog-time">${esc(kickoffText(match,true))}</div></div>
             <div class="dialog-team">${badge(away,true)}<div><div class="dialog-team-name">${esc(cn(away))}</div><div class="dialog-team-en">${esc(away.toUpperCase())}</div></div></div>
           </div>
-          <section><h2 class="dialog-section-title">预期进球 <span>Expected Goals</span></h2><div class="xg-grid"><div class="xg-card"><div class="xg-label">${esc(cn(home))}</div><div class="xg-value">${Number(xg.home || 0).toFixed(2)}</div></div><div class="xg-card"><div class="xg-label">${esc(cn(away))}</div><div class="xg-value">${Number(xg.away || 0).toFixed(2)}</div></div></div></section>
-          <section class="dialog-section"><h2 class="dialog-section-title">赛果概率 <span>1X2 Probability</span></h2><div class="outcome-values"><div><span>主胜</span><strong style="color:var(--accent)">${pct(p.home_win)}</strong></div><div><span>平局</span><strong>${pct(p.draw)}</strong></div><div><span>客胜</span><strong style="color:var(--blue)">${pct(p.away_win)}</strong></div></div><div class="outcome-bar"><div class="outcome-home" style="width:${(p.home_win||0)*100}%"></div><div class="outcome-draw" style="width:${(p.draw||0)*100}%"></div><div class="outcome-away" style="width:${(p.away_win||0)*100}%"></div></div></section>
-          <section class="dialog-section"><h2 class="dialog-section-title">最可能比分 <span>Top Scorelines</span></h2><div class="scoreline-grid">${(match.top_scorelines || []).slice(0,6).map(s => `<div class="scoreline-item"><strong>${esc(s.score)}</strong><span>${pct(s.probability)}</span></div>`).join('')}</div></section>
-          <section class="dialog-section"><h2 class="dialog-section-title">进球市场 <span>Goals & BTTS</span></h2><div class="market-grid">
+          <section><h2 class="dialog-section-title">预期进球</h2><div class="xg-grid"><div class="xg-card"><div class="xg-label">${esc(cn(home))}</div><div class="xg-value">${Number(xg.home || 0).toFixed(2)}</div></div><div class="xg-card"><div class="xg-label">${esc(cn(away))}</div><div class="xg-value">${Number(xg.away || 0).toFixed(2)}</div></div></div></section>
+          <section class="dialog-section"><h2 class="dialog-section-title">赛果概率</h2><div class="outcome-values"><div><span>主胜</span><strong style="color:var(--accent)">${pct(p.home_win)}</strong></div><div><span>平局</span><strong>${pct(p.draw)}</strong></div><div><span>客胜</span><strong style="color:var(--blue)">${pct(p.away_win)}</strong></div></div><div class="outcome-bar"><div class="outcome-home" style="width:${(p.home_win||0)*100}%"></div><div class="outcome-draw" style="width:${(p.draw||0)*100}%"></div><div class="outcome-away" style="width:${(p.away_win||0)*100}%"></div></div></section>
+          <section class="dialog-section"><h2 class="dialog-section-title">最可能比分</h2><div class="scoreline-grid">${(match.top_scorelines || []).slice(0,6).map(s => `<div class="scoreline-item"><strong>${esc(s.score)}</strong><span>${pct(s.probability)}</span></div>`).join('')}</div></section>
+          <section class="dialog-section"><h2 class="dialog-section-title">进球市场</h2><div class="market-grid">
             <div class="market-item"><div class="market-top"><span>总进球大于 2.5</span><strong>${pct(ou.over_2_5)}</strong></div><div class="mini-track"><div style="width:${(ou.over_2_5||0)*100}%"></div></div></div>
             <div class="market-item"><div class="market-top"><span>双方均有进球</span><strong>${pct(btts.yes)}</strong></div><div class="mini-track"><div style="width:${(btts.yes||0)*100}%"></div></div></div>
           </div></section>
-          <section class="dialog-section"><h2 class="dialog-section-title">比分概率矩阵 <span>Score Matrix</span></h2>${matrixMarkup(match)}</section>`;
+          <section class="dialog-section"><h2 class="dialog-section-title">比分概率矩阵</h2>${matrixMarkup(match)}</section>`;
         const dialog = $('#matchDialog');
         lastFocused = document.activeElement;
         dialog.hidden = false;
@@ -742,29 +655,24 @@
         document.body.style.overflow = '';
         if (lastFocused && document.contains(lastFocused)) lastFocused.focus();
       }
-      function setLoading(loading) { state.loading = loading; $('#refreshBtn').classList.toggle('loading', loading); $('#refreshBtn').disabled = loading; }
+      function setLoading(loading) { state.loading = loading; }
       function setService(online, text) { $('#servicePill').classList.toggle('offline', !online); $('#serviceText').textContent = text; }
       async function loadData(showMessage = false) {
         if (state.loading) return;
         setLoading(true);
-        setService(false, '正在同步');
+        setService(false, '同步中');
         try {
-          const [hourly, teamsResult, modelResult] = await Promise.allSettled([fetchJSON('/hourly'), fetchJSON('/teams'), fetchJSON('/model-info')]);
-          if (hourly.status === 'rejected') throw hourly.reason;
-          state.hourly = hourly.value;
-          state.matches = Array.isArray(hourly.value.matches) ? hourly.value.matches : [];
-          state.teams = teamsResult.status === 'fulfilled' && Array.isArray(teamsResult.value.teams) ? teamsResult.value.teams : state.teams;
-          state.model = modelResult.status === 'fulfilled' ? modelResult.value : state.model;
-          $('#leagueSub').textContent = `${state.matches.length} 场精选对阵 · ${state.hourly.timezone || 'Asia/Shanghai'} · 每小时更新`;
-          renderFixtures(); renderFeature(); renderModel(); renderRankings();
-          setService(true, '预测服务在线');
-          if (showMessage) toast('赛程与预测已更新');
+          const hourly = await fetchJSON('/hourly');
+          state.hourly = hourly;
+          state.matches = Array.isArray(hourly.matches) ? hourly.matches : [];
+          renderFixtures();
+          setService(true, '在线');
+          if (showMessage) toast('赛程已更新');
         } catch (error) {
           console.error(error);
-          setService(false, '服务连接失败');
+          setService(false, '离线');
           $('#matchCount').textContent = '暂时离线';
-          $('#fixturesContent').innerHTML = `<div class="state-box"><div class="state-icon">${icon('refresh')}</div><h2 class="state-title">赛程暂时无法加载</h2><p class="state-text">请检查网络连接后重试。${esc(error.name === 'AbortError' ? '本次请求已超时。' : '')}</p><button class="ghost-btn" id="retryLoad">重新加载</button></div>`;
-          renderFeature(); renderModel();
+          $('#fixturesContent').innerHTML = `<div class="state-box"><div class="state-icon">${icon('refresh')}</div><h2 class="state-title">赛程暂时无法加载</h2><button class="ghost-btn" id="retryLoad">重新加载</button></div>`;
         } finally { setLoading(false); }
       }
 
@@ -787,8 +695,6 @@
         const row = event.target.closest('[data-match]'); if (row) openMatch(row.dataset.match);
       });
       $('#fixturesContent').addEventListener('keydown', event => { if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('[data-match]')) { event.preventDefault(); openMatch(event.target.dataset.match); } });
-      $('#featureCard').addEventListener('click', event => { const btn = event.target.closest('[data-open-match]'); if (btn) openMatch(btn.dataset.openMatch); });
-      $('#refreshBtn').addEventListener('click', () => loadData(true));
       $('#closeDialog').addEventListener('click', closeMatch);
       $('#matchDialog').addEventListener('click', event => { if (event.target === $('#matchDialog')) closeMatch(); });
       $('#searchInput').addEventListener('input', event => { state.query = event.target.value; renderFixtures(); });
@@ -799,10 +705,6 @@
         if (event.key === 'Escape' && !$('#matchDialog').hidden) { closeMatch(); return; }
         if (event.key === 'Escape' && document.activeElement === $('#searchInput')) { $('#searchInput').blur(); if (!state.query) $('#searchBox').classList.remove('expanded'); }
       });
-      $('#rankList').addEventListener('click', event => { const btn = event.target.closest('[data-team-search]'); if (!btn) return; state.query = btn.dataset.teamSearch; $('#searchInput').value = state.query; state.date = 'all'; state.filter = 'all'; renderDates(); renderFixtures(); $('#fixturesSection').scrollIntoView({behavior:'smooth',block:'start'}); });
-      $('#navFixtures').addEventListener('click', () => $('#fixturesSection').scrollIntoView({behavior:'smooth'}));
-      $('#navTeams').addEventListener('click', () => $('#rankingCard').scrollIntoView({behavior:'smooth',block:'center'}));
-      $('#navModel').addEventListener('click', () => $('#modelCard').scrollIntoView({behavior:'smooth',block:'center'}));
     })();
   </script>
 </body>
