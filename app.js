@@ -17,27 +17,33 @@
 
   var STR = {
     zh: {
-      title: '连珠对局库', sr: '连珠对局库', all: '全部',
+      title: 'saiyuan', sr: 'saiyuan', all: '全部',
+      renjuSport: '五子棋', footballSport: '足球',
+      leagueAll: '全部', eng1: '英超',
       schedule: '赛程', results: '赛果',
       round: function (n) { return '第' + n + '轮'; },
       board: function (n) { return '第' + n + '台'; },
+      live: '进行中',
       noSchedule: '暂无赛程',
       noResults: '暂无赛果',
       locale: 'zh-CN',
-      docTitle: '连珠对局库',
+      docTitle: 'saiyuan',
       search: '搜索棋手、赛事、开局…',
       searchLabel: '搜索',
       more: '加载更早的赛事'
     },
     en: {
-      title: 'Renju Games', sr: 'Renju games', all: 'All',
+      title: 'saiyuan', sr: 'saiyuan', all: 'All',
+      renjuSport: 'Renju', footballSport: 'Football',
+      leagueAll: 'All', eng1: 'Premier League',
       schedule: 'Schedule', results: 'Results',
       round: function (n) { return 'Round ' + n; },
       board: function (n) { return 'Board ' + n; },
+      live: 'Live',
       noSchedule: 'No scheduled games',
       noResults: 'No results',
       locale: 'en-US',
-      docTitle: 'Renju Games',
+      docTitle: 'saiyuan',
       search: 'Search players, tournaments, openings…',
       searchLabel: 'Search',
       more: 'Load earlier tournaments'
@@ -46,7 +52,9 @@
 
   var state = {
     lang: localStorage.getItem('renju.lang') === 'en' ? 'en' : 'zh',
-    scope: 'past'
+    scope: 'past',
+    sport: 'all',       // all | renju | football
+    league: 'all'       // all | eng.1
   };
 
   function T() { return STR[state.lang]; }
@@ -159,7 +167,44 @@
       '<div class="mc-meta"><span class="mc-lead">' + esc(msg) + '</span></div></div></div>';
   }
 
-  // 一组（一轮）的抬头：2026年11月14日 星期六 08:00
+  // 足球：主队 比分 客队；没开赛就显示「—」（ESPN 未开赛也会给 0，得靠状态区分）
+  function footballCard(g) {
+    var home = state.lang === 'zh' ? (g.home_zh || g.home) : g.home;
+    var away = state.lang === 'zh' ? (g.away_zh || g.away) : g.away;
+    var played = g.status === 'post' || (g.status === 'in' && g.home_score != null);
+    var score = played
+      ? esc(g.home_score) + '<span class="mc-dash">–</span>' + esc(g.away_score)
+      : '—';
+    var label = [g.league_name, g.status === 'in' ? T().live : ''].filter(Boolean).join(' ');
+
+    return '' +
+      '<div class="upcoming-match-row mc-row" id="match-' + g.id + '" data-match-id="' + g.id + '">' +
+        '<div class="mc-in">' +
+          '<div class="upcoming-match-summary">' +
+            '<div class="mc-meta">' +
+              '<span class="mc-lead"><b class="mc-lg">' +
+                '<span class="mc-lg-full">' + esc(label) + '</span>' +
+                '<span class="mc-lg-code">' + esc(label) + '</span>' +
+              '</b></span>' +
+              '<span class="mc-end"><span class="mc-chev" aria-hidden="true"></span></span>' +
+            '</div>' +
+            '<div class="mc-main">' +
+              '<div class="mc-side is-home">' +
+                '<span class="mc-nm"><span class="mc-name">' + esc(home) + '</span></span>' +
+              '</div>' +
+              '<div class="mc-c">' +
+                '<span class="mc-score">' + score + '</span>' +
+              '</div>' +
+              '<div class="mc-side is-away">' +
+                '<span class="mc-nm"><span class="mc-name">' + esc(away) + '</span></span>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  // 一组（一轮 / 一个开球时刻）的抬头：2026年11月14日 星期六 08:00
   function groupHead(grp) {
     var d = dayLabel(grp.start_date);
     if (!grp.start_time) return d || grp.tournament || '';
@@ -172,11 +217,13 @@
       if (state.scope === 'future') return '';
       return groupHTML(todayLabel(), emptyHTML(T().noResults));
     }
-    // 同一天同一时间的多个赛事并到同一张卡片里，避免连着出现两条一样的抬头
+    // 同一天的多个赛事并到同一张卡片里，避免连着出现两条一样的抬头
     var buckets = [];
     groups.forEach(function (grp) {
       var label = groupHead(grp);
-      var rows = grp.rows.map(function (g) { return cardHTML(g, grp.tournament); });
+      var rows = grp.rows.map(function (g) {
+        return grp.sport === 'football' ? footballCard(g) : cardHTML(g, grp.tournament);
+      });
       var last = buckets[buckets.length - 1];
       if (last && last.label === label) last.rows = last.rows.concat(rows);
       else buckets.push({ label: label, rows: rows });
@@ -187,6 +234,13 @@
   }
 
   // ── 渲染 ───────────────────────────────────────────────
+  function tabHTML(list, active, attr) {
+    return list.map(function (p) {
+      return '<a class="main-tab' + (p[0] === active ? ' active' : '') + '" href="#" ' +
+        attr + '="' + p[0] + '">' + esc(p[1]) + '</a>';
+    }).join('');
+  }
+
   function renderHead() {
     document.title = T().docTitle;
 
@@ -202,22 +256,51 @@
     if (pills[0]) pills[0].textContent = T().schedule;
     if (pills[1]) pills[1].textContent = T().results;
 
+    // 一级导航：全部 / 五子棋 / 足球
     var tabs = document.getElementById('filter-tabs');
-    if (tabs) tabs.innerHTML = '<a class="main-tab active" href="#" data-tab="all">' + esc(T().all) + '</a>';
+    if (tabs) {
+      tabs.innerHTML = tabHTML([
+        ['all', T().all],
+        ['renju', T().renjuSport],
+        ['football', T().footballSport]
+      ], state.sport, 'data-tab');
+    }
 
+    // 足球下面再来一排：全部 / 英超
     var extra = document.getElementById('results-tabs');
-    if (extra) extra.innerHTML = '';
+    if (extra) {
+      extra.innerHTML = state.sport === 'football'
+        ? tabHTML([['all', T().leagueAll], ['eng.1', T().eng1]], state.league, 'data-league')
+        : '';
+    }
   }
 
-  var feedCache = {};        // scope -> { groups }
+  // 读库结果：{ renju: [组], football: [组] }，按运动与联赛筛完再排序
+  var store = null;
+
+  function groupsForRender() {
+    if (!store) return [];
+    var future = state.scope === 'future';
+    var now = Date.now();
+    var out = [];
+
+    if (state.sport !== 'football') out = out.concat(store.renju);
+    if (state.sport !== 'renju') {
+      out = out.concat(store.football.filter(function (g) {
+        return state.league === 'all' || g.league === state.league;
+      }));
+    }
+
+    return out
+      .filter(function (g) { return future ? g.ts >= now : g.ts < now; })
+      .sort(function (a, b) { return b.ts - a.ts; });
+  }
 
   function renderList() {
     var list = document.getElementById('today-matches');
     if (!list) return;
-    var c = feedCache[state.scope];
-    if (!c) { list.innerHTML = ''; return; }
-    var out = feedHTML(c.groups);
-    list.innerHTML = out;
+    if (!store) { list.innerHTML = ''; return; }
+    list.innerHTML = feedHTML(groupsForRender());
   }
 
   // ── 读库（CloudBase PG REST）─────────────────────────────
@@ -232,62 +315,105 @@
     });
   }
 
-  // 赛事名、棋手一次取全；对局按「轮次倒序、台次正序」取回后在本地按轮分组
-  function feedFromDb(scope) {
-    if (scope === 'future') return Promise.resolve({ groups: [], hasMore: false });
+  // 按轮次分组：一组 = 一轮，抬头用这一轮的开赛时间
+  function renjuGroups(res) {
+    var tours = {};
+    (res[0] || []).forEach(function (t) { tours[t.id] = t.name; });
+    var names = {};
+    (res[1] || []).forEach(function (p) { names[p.id] = p.name; });
+
+    var groups = [];
+    var byRound = {};
+    (res[2] || []).forEach(function (m) {
+      var grp = byRound[m.round_no];
+      if (!grp) {
+        var t = shanghai(m.match_time) || {};
+        grp = byRound[m.round_no] = {
+          sport: 'renju',
+          round: m.round_no,
+          tournament: tours[m.tournament_id] || '',
+          start_date: t.date || '',
+          start_time: t.time || '',
+          ts: Date.parse(m.match_time) || 0,
+          total: 0,
+          rows: []
+        };
+        groups.push(grp);
+      }
+      var score = RESULT_SCORE[m.result];
+      grp.rows.push({
+        id: m.id,
+        board: m.board_no,
+        round: m.round_no,
+        black_result: score === undefined ? null : score,
+        black: names[m.black_id] || '',
+        black_zh: names[m.black_id] || '',
+        white: names[m.white_id] || '',
+        white_zh: names[m.white_id] || ''
+      });
+      grp.total = grp.rows.length;
+    });
+    return groups;
+  }
+
+  // 按「同一天同一开球时刻」分组：一组 = 一个时段
+  function footballGroups(res) {
+    var teams = {};
+    (res[0] || []).forEach(function (t) { teams[t.id] = t; });
+
+    var groups = [];
+    var bySlot = {};
+    (res[1] || []).forEach(function (m) {
+      var t = shanghai(m.match_time);
+      if (!t) return;
+      var key = t.date + ' ' + t.time + ' ' + m.league;
+      var grp = bySlot[key];
+      if (!grp) {
+        grp = bySlot[key] = {
+          sport: 'football',
+          league: m.league,
+          league_name: m.league_name,
+          start_date: t.date,
+          start_time: t.time,
+          ts: Date.parse(m.match_time) || 0,
+          rows: []
+        };
+        groups.push(grp);
+      }
+      var h = teams[m.home_team_id] || {};
+      var a = teams[m.away_team_id] || {};
+      grp.rows.push({
+        id: m.id,
+        status: m.status,
+        league_name: m.league_name,
+        home: h.name || '', home_zh: h.name_zh || '',
+        away: a.name || '', away_zh: a.name_zh || '',
+        home_score: m.home_score == null ? null : Number(m.home_score),
+        away_score: m.away_score == null ? null : Number(m.away_score)
+      });
+    });
+    // 同一时段内：已结束的在前，按 id 稳定排序
+    groups.forEach(function (g) { g.rows.sort(function (x, y) { return x.id - y.id; }); });
+    return groups;
+  }
+
+  function loadFeed() {
+    if (!DB) return Promise.resolve();
     return Promise.all([
       dbGet('/tournaments?select=id,name&limit=100'),
       dbGet('/players?select=id,name&limit=2000'),
       dbGet('/renju_matches?select=id,tournament_id,round_no,board_no,black_id,white_id,result,match_time' +
-        '&order=round_no.desc,board_no.asc&limit=5000')
-    ]).then(function (res) {
-      var tours = {};
-      (res[0] || []).forEach(function (t) { tours[t.id] = t.name; });
-      var names = {};
-      (res[1] || []).forEach(function (p) { names[p.id] = p.name; });
-
-      var groups = [];
-      var byRound = {};
-      (res[2] || []).forEach(function (m) {
-        var grp = byRound[m.round_no];
-        if (!grp) {
-          var t = shanghai(m.match_time) || {};
-          grp = byRound[m.round_no] = {
-            round: m.round_no,
-            tournament: tours[m.tournament_id] || '',
-            start_date: t.date || '',
-            start_time: t.time || '',
-            total: 0,
-            rows: []
-          };
-          groups.push(grp);
-        }
-        var score = RESULT_SCORE[m.result];
-        grp.rows.push({
-          id: m.id,
-          board: m.board_no,
-          round: m.round_no,
-          black_result: score === undefined ? null : score,
-          black: names[m.black_id] || '',
-          black_zh: names[m.black_id] || '',
-          white: names[m.white_id] || '',
-          white_zh: names[m.white_id] || ''
-        });
-        grp.total = grp.rows.length;
-      });
-
-      return { groups: groups, hasMore: false };
-    });
-  }
-
-  function loadFeed(append) {
-    var scope = state.scope;
-    // 一次全量，不分页
-    if (append || !DB) return Promise.resolve();
-    return feedFromDb(scope)
-      .then(function (d) {
-        feedCache[scope] = d;
-        if (state.scope === scope) renderList();
+        '&order=round_no.desc,board_no.asc&limit=5000'),
+      dbGet('/football_teams?select=id,name,name_zh&limit=200'),
+      dbGet('/football_matches?select=id,league,league_name,match_time,status,' +
+        'home_team_id,away_team_id,home_score,away_score&order=match_time.desc&limit=3000')
+    ])
+      .then(function (res) {
+        store = {
+          renju: renjuGroups(res),
+          football: footballGroups([res[3], res[4]])
+        };
+        renderList();
         html.classList.add('app-ready');
       })
       .catch(function (err) {
@@ -303,7 +429,7 @@
       el.classList.toggle('active', el.getAttribute('data-view') === (scope === 'future' ? 'schedule' : 'results'));
     });
     renderList();
-    if (!feedCache[scope]) loadFeed(false);
+    if (!store) loadFeed();
     history.replaceState(null, '', scope === 'future' ? '?view=schedule' : '?view=results');
   }
 
@@ -464,6 +590,30 @@
     });
   });
 
+  // 一级导航（全部 / 五子棋 / 足球）与足球下的联赛（全部 / 英超）
+  document.addEventListener('click', function (e) {
+    var tab = e.target.closest('#filter-tabs [data-tab]');
+    if (tab) {
+      e.preventDefault();
+      var next = tab.getAttribute('data-tab');
+      if (next === state.sport) return;
+      state.sport = next;
+      state.league = 'all';
+      renderHead();
+      renderList();
+      return;
+    }
+    var lg = e.target.closest('#results-tabs [data-league]');
+    if (lg) {
+      e.preventDefault();
+      var league = lg.getAttribute('data-league');
+      if (league === state.league) return;
+      state.league = league;
+      renderHead();
+      renderList();
+    }
+  });
+
   // 折叠块开关
   document.addEventListener('click', function (e) {
     var btn = e.target.closest('.mpg-acc-h');
@@ -482,7 +632,7 @@
   renderHead();
   renderDialogLabels();
 
-  // 顶部标签栏：只有一个「全部」
+  // 顶部标签栏：全部 / 五子棋 / 足球
   var bar = document.getElementById('main-tab-bar-container');
   if (bar) bar.style.display = 'block';
   document.body.classList.add('filter-bar-visible');
@@ -495,5 +645,5 @@
     });
   }
 
-  loadFeed(false);
+  loadFeed();
 })();
