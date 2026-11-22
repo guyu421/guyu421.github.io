@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="zh-CN" class="ssr" data-cc="CN" data-country="China">
+    <head>
+        <meta charset="utf-8" />
+        <!-- Asset URLs are absolute ("/assets/..."): some crawlers (OpenAI's
+             OAI-SearchBot) ignore <base> and fetched /mlb/assets/... as 404s.
+             The base stays for any relative URL left (fetches, links). There
+             are no #fragment links, which a base tag would break. -->
+        <base href="/" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="color-scheme" content="light dark" />
+        <script>
+            (function () {
+                var t = localStorage.getItem("theme") || "system";
+                var dark = t === "system"
+                    ? window.matchMedia("(prefers-color-scheme: dark)").matches
+                    : t.indexOf("dark") === 0;
+                if (dark) document.documentElement.classList.add("dark");
+                if (t.indexOf("-") > 0) document.documentElement.setAttribute("data-theme", t);
+                document.documentElement.classList.add("js");
+            })();
+        </script>
+        
+
+        <title>连珠对局库 — RenjuNet 实战棋谱</title>
+
+        <meta name="robots" content="index, follow" />
+
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="48x48"
+            href="/assets/favicon.png"
+        />
+        <link
+            rel="apple-touch-icon"
+            sizes="180x180"
+            href="/assets/apple-touch-icon.png"
+        />
+
+        <!-- Installable web app. Without this the homescreen shortcut just
+             reopens Safari/Chrome; with it the site launches standalone, which
+             is also where pull-to-refresh stops being a nicety and becomes the
+             only way to get fresh data (no URL bar, no reload button). -->
+        
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <!-- "default", not "black-translucent": the latter draws content under
+             the status bar, and nav.top-nav is pinned at top: 0 with no
+             safe-area-inset padding anywhere in the stylesheet. -->
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="连珠对局库" />
+        <!-- Browser chrome follows the active theme; the manifest's static
+             theme_color can only name one. Values match --bg-color in both
+             themes (mrgold.css :root and .dark). -->
+        <meta
+            name="theme-color"
+            media="(prefers-color-scheme: light)"
+            content="#ffffff"
+        />
+        <meta
+            name="theme-color"
+            media="(prefers-color-scheme: dark)"
+            content="#0f0f0f"
+        />
+
+        <link rel="preload" href="/assets/fonts/jersey10-sd.woff2" as="font" type="font/woff2" crossorigin />
+        <link rel="stylesheet" href="/assets/mrgold.css?v=0ef4afd5ff" />
+
+        <!-- The app. Deferred: both download while the page parses and run, in
+             order, once it is all there (#ssr-boot included), before
+             DOMContentLoaded. -->
+        
+        
+        <!-- 数据接口地址：本地同源留空；部署到 GitHub Pages 时由构建脚本注入
+             云函数的 HTTP 访问地址（window.RENJU_API）。 -->
+        <script>
+            window.RENJU_API = '';
+            window.RENJU_GAME_BASE = '';
+            window.RENJU_DATA = 'data';
+        </script>
+        <script src="/app.js?v=10" defer></script>
+
+        <!-- Umami Cloud analytics -->
+        
+        <!-- The page's JSON-LD (its list or match): the edge fills this
+             slot (functions/_lib/ssr.js); the static file leaves it empty. -->
+        <!-- /SEO-JSONLD -->
+    </head>
+    <body>
+        <!-- The betting notice over the nav: hidden unless the head script's
+             html.win-on (the visitor's country), closed for good by its ×
+             (mrgold.js). English for every reader, as /win is. -->
+        <div class="win-bar" id="win-bar" lang="en" dir="ltr" data-nosnippet>
+            <a href="/win" data-about-link="win">Betting on sport? Click this to win ›</a>
+            <button type="button" class="win-bar-x" aria-label="Close">×</button>
+        </div>
+        <nav class="top-nav">
+            <div class="nav-left">
+                <a href="/" class="logo-text"
+                    ><span class="logo-hash hash-combo">#</span>renju</a
+                >
+            </div>
+            <div class="nav-center" id="search-bar-container">
+                <div class="nav-search-wrapper">
+                    <input
+                        id="nav-search-input"
+                        type="search"
+                        class="input"
+                        placeholder="搜索棋手、赛事、开局…"
+                        i18n-placeholder="search_placeholder"
+                        autocomplete="off"
+                        role="combobox"
+                        aria-autocomplete="list"
+                        aria-expanded="false"
+                        aria-controls="nav-autocomplete-list"
+                        aria-keyshortcuts="/"
+                    />
+                    <kbd class="nav-search-kbd" aria-hidden="true">/</kbd>
+                    <div
+                        id="nav-autocomplete-list"
+                        class="nav-autocomplete-list"
+                        role="listbox"
+                    ></div>
+                </div>
+            </div>
+            <div class="nav-right">
+                <button id="mobile-search-btn" aria-label="Search">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </button>
+                <button id="language-button" aria-label="Language">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                        <path
+                            d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+                        ></path>
+                    </svg>
+                </button>
+                <!-- Signed out: LOGIN. Signed in: avatar + menu. Exactly one
+                     of the two is ever visible; applyAuthState() swaps them. -->
+                <button id="login-button" class="nav-login-btn" i18n="log_in" hidden>
+                    Login
+                </button>
+                <div id="account-wrap" class="nav-account" hidden>
+                    <button
+                        id="avatar-button"
+                        aria-haspopup="menu"
+                        aria-expanded="false"
+                        aria-label="Account"
+                    >
+                        <!-- referrerpolicy is required: lh3.googleusercontent.com
+                             intermittently 403s requests that carry a referrer.
+                             onerror swaps in initials so a blocked or expired
+                             photo never leaves an empty box in the nav. -->
+                        <img
+                            id="avatar-img"
+                            class="nav-avatar"
+                            alt=""
+                            referrerpolicy="no-referrer"
+                        />
+                        <span id="avatar-initials" class="nav-avatar-initials" hidden></span>
+                    </button>
+                    <div id="account-menu" class="nav-menu" role="menu">
+                        <!-- Signed in, the globe button is hidden and this is
+                             the only way to the display settings dialog. -->
+                        <button
+                            id="settings-button"
+                            class="nav-menu-item"
+                            role="menuitem"
+                            i18n="settings"
+                        >
+                            Settings
+                        </button>
+                        <a href="/pro" data-about-link="pro" class="nav-menu-item" role="menuitem" i18n="pro_nav">PRO</a>
+                        <button
+                            id="logout-button"
+                            class="nav-menu-item"
+                            role="menuitem"
+                            i18n="log_out"
+                        >
+                            Logout
+                        </button>
+                        <!-- Signed in, the tab bar's ABOUT tab is hidden and
+                             the About area is reached from here instead. -->
+                        <div class="nav-menu-divider" role="separator"></div>
+                        <a href="/about" data-about-link="" class="nav-menu-item" role="menuitem" i18n="about_menu_item">About</a>
+                        <a href="/about/stats" data-about-link="stats" class="nav-menu-item" role="menuitem" i18n="about_nav_stats">Stats</a>
+                        <a href="/about/research" data-about-link="research" class="nav-menu-item" role="menuitem" i18n="about_nav_research">Research</a>
+                        <a href="/about/changelog" data-about-link="changelog" class="nav-menu-item" role="menuitem" i18n="about_nav_changelog">Changelog</a>
+                        <div class="nav-menu-divider" role="separator"></div>
+                        <a href="https://forms.gle/Wk4ohWFkwNTBXW1cA" target="_blank" rel="noopener" class="nav-menu-item" role="menuitem" i18n="menu_feedback">Feedback</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Tab Bar: sport filters (left) + results tabs (right), with the
+             selected sport's leagues in the sub-nav below -->
+        <div id="main-tab-bar-container" style="display: none">
+            <div class="main-tab-bar">
+                <button id="tab-overflow-chevron-back" aria-label="Scroll tabs back" hidden>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+                <div class="main-tab-scroll" id="main-tab-scroll">
+                    <div class="main-tab-group main-tab-filters" id="filter-tabs">
+                        <!-- HOME + ALL + one tab per in-season sport, injected by JS -->
+                    </div>
+                    <div class="main-tab-group main-tab-results" id="results-tabs"></div>
+                </div>
+                <button id="tab-overflow-chevron" aria-label="Scroll tabs" hidden>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- League sub-nav: the leagues of the selected sport. Built by
+                 renderSubNav(), and only present for a sport with two or more
+                 leagues in season - a sport with one already names it above. -->
+            <div class="sub-tab-bar" id="sub-tab-bar" hidden>
+                <button id="sub-overflow-chevron-back" aria-label="Scroll leagues back" hidden>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+                <div class="sub-tab-scroll" id="sub-tab-scroll">
+                    <div class="sub-tab-group" id="sub-tabs"></div>
+                </div>
+                <button id="sub-overflow-chevron" aria-label="Scroll leagues" hidden>
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Pull-to-refresh spinner. Sits at z-index 98, below the two fixed
+             bars, so it stays hidden behind their opaque backgrounds until the
+             pull drags it clear — the bars themselves never move. -->
+        <div id="ptr-indicator" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none"
+                 stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <path d="M12 3a9 9 0 1 0 9 9" />
+            </svg>
+        </div>
+
+        <!-- Stands in for #main-tab-bar-container until the app's first
+             paint (see #app-skeleton). -->
+        <div id="app-skeleton-tabs" aria-hidden="true"><div class="main-tab-bar"><span class="main-tab"><span class="sk" style="width:1rem">&nbsp;</span></span><span class="main-tab"><span class="sk" style="width:1.6rem">&nbsp;</span></span><span class="main-tab"><span class="sk" style="width:1.6rem">&nbsp;</span></span><span class="main-tab"><span class="sk" style="width:2.6rem">&nbsp;</span></span><span class="main-tab"><span class="sk" style="width:2.2rem">&nbsp;</span></span><span class="main-tab"><span class="sk" style="width:3rem">&nbsp;</span></span><span class="main-tab"><span class="sk" style="width:2.4rem">&nbsp;</span></span></div></div>
+
+        <main class="container">
+            <div id="matches-section">
+                <!-- Crawler / no-JS content, written by deploy.py inject_seo()
+                     (and per league/sport page by _write_seo_pages()): the page's
+                     heading, the model's record and links to every page. html.js
+                     hides it before first paint. The edge (functions/_lib/ssr.js)
+                     keeps only the links, and draws the page's list below. -->
+                <div id="seo-content"><h2>连珠对局库</h2></div>
+                
+
+                <!-- A team's page (/football/arsenal, /nrl/melbourne-storm): one page,
+                     no MATCHES/RESULTS. The header (the way back, its crest and
+                     name, the table chips, follow and share), the snapshot tiles,
+                     then the main column (next match, fixtures, results) and the
+                     side column (injuries, squad, club), side by side from
+                     1024px. Every slot is filled by shared.js teamPageParts(),
+                     from mrgold.js renderTeamView() and from the edge renderer on
+                     a cold load; the two buttons are filled by the app alone.
+                     No <section> inside: the edge's edits end at </section>. -->
+                <section id="team-page" style="display: none">
+                    <div class="tpg">
+                        <header class="tpg-top">
+                            <nav id="tpg-crumbs" class="mv-crumbs" aria-label="Breadcrumb"></nav>
+                            <div class="tpg-id">
+                                <div id="tpg-crest" class="tpg-crest"></div>
+                                <div class="tpg-who">
+                                    <div id="tpg-name" class="tpg-name" role="heading" aria-level="1"></div>
+                                    <p id="tpg-ranks" class="tpg-ranks"></p>
+                                </div>
+                                <div class="tpg-actions">
+                                    <button type="button" class="tpg-follow"></button>
+                                    <button type="button" class="tpg-share" data-share="page"></button>
+                                </div>
+                            </div>
+                        </header>
+                        <div id="tpg-snap" class="tpg-snap"></div>
+                        <div id="tpg-intro" class="fv-slot"></div>
+                        <div class="tpg-main">
+                            <div id="tpg-next" class="tpg-block is-next"></div>
+                            <div id="tpg-fix" class="tpg-block is-fix"></div>
+                            <div id="tpg-res" class="tpg-block is-res"></div>
+                        </div>
+                        <div class="tpg-side">
+                            <div id="tpg-inj" class="tpg-block is-inj"></div>
+                            <div id="tpg-squad" class="tpg-block is-squad"></div>
+                            <div id="tpg-club" class="tpg-block is-club"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- A league's head (/epl, its round or day pages, /epl/results,
+                     /epl/ladder): the way back to its sport, its crest, name
+                     and season line, follow and share, then where the season
+                     stands (#lpg-prog). Every slot from shared.js
+                     leaguePageParts() over its /api/leagues/:league document,
+                     filled by mrgold.js renderLeagueHead() and by the edge
+                     renderer on a cold load; the two buttons by the app alone.
+                     No <section> inside: the edge's edits end at </section>. -->
+                <section id="league-head" class="lpg-head" style="display: none">
+                    <header class="tpg-top lpg-top">
+                        <nav id="lpg-crumbs" class="mv-crumbs" aria-label="Breadcrumb"></nav>
+                        <div class="tpg-id lpg-id">
+                            <div id="lpg-crest" class="lpg-crest"></div>
+                            <div class="tpg-who">
+                                <div id="lpg-name" class="tpg-name lpg-name" role="heading" aria-level="1"></div>
+                                <p id="lpg-sub" class="lpg-sub"></p>
+                            </div>
+                            <div class="tpg-actions">
+                                <button type="button" class="tpg-follow"></button>
+                                <button type="button" class="tpg-share" data-share="page"></button>
+                            </div>
+                        </div>
+                        <div id="lpg-prog"></div>
+                    </header>
+                </section>
+
+                <!-- The ALL, TOP, HOME and sport pages' head (/, /top, /football
+                     and their RESULTS): the page's name and a line (the date and
+                     what is coming, or what has finished), follow (a sport) and
+                     share (not HOME). Both slots from shared.js homePageParts(),
+                     filled by mrgold.js renderHomePage() and by the edge renderer
+                     on a cold load; the two buttons by the app alone. No
+                     <section> inside: the edge's edits end at </section>. -->
+                <section id="home-head" class="lpg-head hpg-head" style="display: block" data-ssr>
+                    <header class="tpg-top lpg-top hpg-top">
+                        <div class="tpg-id lpg-id">
+                            <div class="tpg-who">
+                                <h1 id="hpg-name" class="tpg-name lpg-name"><span class="sr-only">连珠对局库</span> 今天</h1>
+                                <p id="hpg-sub" class="lpg-sub"></p>
+                            </div>
+                            <div class="tpg-actions">
+                                <button type="button" class="tpg-edit"></button>
+                                <button type="button" class="tpg-follow"></button>
+                                <button type="button" class="tpg-share" data-share="page"></button>
+                            </div>
+                        </div>
+                    </header>
+                    <!-- TOP's record as tiles and its line (shared.js
+                         topPageParts snap), TOP and its RESULTS only. -->
+                    <div id="hpg-snap" class="lpg-slot"></div>
+                    <!-- HOME's follows as round crests, each a link to its page,
+                         then "+ Add" (the Edit sheet): HOME's head, at every
+                         width, under its "6 following". The app's alone. -->
+                    <nav id="hpg-strip" class="hpg-strip" hidden></nav>
+                </section>
+
+                <!-- Everything from here to the last list is the main column
+                     (.lpg-main); a league's MATCHES has its side blocks
+                     (#league-side) beside it from 1024px, under it on a phone,
+                     and so do ALL, TOP, HOME and the sport pages (#home-side,
+                     .is-hpg). Every other page is one column, as before. -->
+                <div id="lpg-cols" class="lpg-cols is-hpg">
+                <div class="lpg-main">
+
+                <!-- A page has one h1 (Bing's Site Scan flags more). The name
+                     slots above (#tpg-name, #lpg-name, #hpg-name) are headings
+                     for the app, and the edge makes the one its page shows an
+                     h1; a list page with none (/live, an empty HOME) gets this one, which
+                     reads its name to screen readers. The About
+                     titles are h2s; deploy.py makes an About file's own an h1.
+                     shared.js headingForFilter() words it; applyView() keeps
+                     it with the view. -->
+                <div id="page-h1" class="sr-only" role="heading" aria-level="1" hidden></div>
+
+                <!-- First visits: how the predictions are made, the 60%+
+                     record, and a free account (shared.js firstVisitHTML),
+                     over the pills on every list page: shown by applyView
+                     and by the edge on a list page, under html.fv-on (the
+                     head script). The team and match pages have their own
+                     slots, under their tiles. -->
+                <div id="fv-list" class="fv-slot" data-ssr></div>
+
+                <!-- MATCHES / RESULTS / LADDER for the active filter view (shown by
+                     applyView, which points the links at the view's own /{slug},
+                     /{slug}/results and /{slug}/ladder), one segmented control
+                     (.view-seg) on the line the logo and the follow star share.
+                     The group is a <span>: the edge renderer's edit of this row
+                     ends at its first </div>. -->
+                <div id="view-pills" class="view-pills" style="display: flex" data-ssr>
+                    <span class="view-seg">
+                        <a class="view-pill" data-view="schedule" href="?view=schedule">赛程</a>
+                        <a class="view-pill active" data-view="results" href="?view=results">赛果</a>
+                    </span>
+                </div>
+
+                <!-- A round league's pager (‹ Matchweek 8 ›) over its round page:
+                     /{league} is the current round, /{league}/{round key} any
+                     other. Filled by displayMatches() (shared.js roundPagerHTML)
+                     and by the edge renderer on a cold load. -->
+                <nav id="round-pager" class="round-pager" aria-label="Rounds" i18n-label="round_pager" style="display: none"></nav>
+
+                <!-- Placeholder cards until the app's first paint: displayMatches()
+                     adds html.app-ready and these go. Shown only when JS runs. -->
+                <div id="app-skeleton" aria-hidden="true">
+                    <div class="view-pills"><span class="view-seg sk-seg"><span class="view-pill sk-pill">&nbsp;</span><span class="view-pill sk-pill">&nbsp;</span></span></div>
+                    <div class="date-separator is-first"><span class="sk sk-sep">&nbsp;</span></div>
+                    <div class="upcoming-matches-card">
+                        <div class="upcoming-match-row mc-row"><div class="mc-in"><div class="mc-meta"><span class="sk" style="width:7rem">&nbsp;</span><span class="sk sk-end" style="width:4.5rem">&nbsp;</span></div><div class="mc-main"><div class="mc-side is-home"><span class="mc-crest sk"></span><span class="mc-nm"><span class="mc-name sk" style="width:6.5rem">&nbsp;</span></span><span class="mc-pct sk">&nbsp;</span></div><div class="mc-c"><span class="mc-time sk">&nbsp;</span></div><div class="mc-side is-away"><span class="mc-pct sk">&nbsp;</span><span class="mc-nm"><span class="mc-name sk" style="width:5.5rem">&nbsp;</span></span><span class="mc-crest sk"></span></div></div></div></div>
+                        <div class="upcoming-match-divider"></div>
+                        <div class="upcoming-match-row mc-row"><div class="mc-in"><div class="mc-meta"><span class="sk" style="width:6rem">&nbsp;</span><span class="sk sk-end" style="width:5.5rem">&nbsp;</span></div><div class="mc-main"><div class="mc-side is-home"><span class="mc-crest sk"></span><span class="mc-nm"><span class="mc-name sk" style="width:5rem">&nbsp;</span></span><span class="mc-pct sk">&nbsp;</span></div><div class="mc-c"><span class="mc-time sk">&nbsp;</span></div><div class="mc-side is-away"><span class="mc-pct sk">&nbsp;</span><span class="mc-nm"><span class="mc-name sk" style="width:7rem">&nbsp;</span></span><span class="mc-crest sk"></span></div></div></div></div>
+                        <div class="upcoming-match-divider"></div>
+                        <div class="upcoming-match-row mc-row"><div class="mc-in"><div class="mc-meta"><span class="sk" style="width:8rem">&nbsp;</span><span class="sk sk-end" style="width:4rem">&nbsp;</span></div><div class="mc-main"><div class="mc-side is-home"><span class="mc-crest sk"></span><span class="mc-nm"><span class="mc-name sk" style="width:7.5rem">&nbsp;</span></span><span class="mc-pct sk">&nbsp;</span></div><div class="mc-c"><span class="mc-time sk">&nbsp;</span></div><div class="mc-side is-away"><span class="mc-pct sk">&nbsp;</span><span class="mc-nm"><span class="mc-name sk" style="width:6rem">&nbsp;</span></span><span class="mc-crest sk"></span></div></div></div></div>
+                        <div class="upcoming-match-divider"></div>
+                        <div class="upcoming-match-row mc-row"><div class="mc-in"><div class="mc-meta"><span class="sk" style="width:6.5rem">&nbsp;</span><span class="sk sk-end" style="width:5rem">&nbsp;</span></div><div class="mc-main"><div class="mc-side is-home"><span class="mc-crest sk"></span><span class="mc-nm"><span class="mc-name sk" style="width:5.5rem">&nbsp;</span></span><span class="mc-pct sk">&nbsp;</span></div><div class="mc-c"><span class="mc-time sk">&nbsp;</span></div><div class="mc-side is-away"><span class="mc-pct sk">&nbsp;</span><span class="mc-nm"><span class="mc-name sk" style="width:6.5rem">&nbsp;</span></span><span class="mc-crest sk"></span></div></div></div></div>
+                        <div class="upcoming-match-divider"></div>
+                        <div class="upcoming-match-row mc-row"><div class="mc-in"><div class="mc-meta"><span class="sk" style="width:7.5rem">&nbsp;</span><span class="sk sk-end" style="width:4.5rem">&nbsp;</span></div><div class="mc-main"><div class="mc-side is-home"><span class="mc-crest sk"></span><span class="mc-nm"><span class="mc-name sk" style="width:6rem">&nbsp;</span></span><span class="mc-pct sk">&nbsp;</span></div><div class="mc-c"><span class="mc-time sk">&nbsp;</span></div><div class="mc-side is-away"><span class="mc-pct sk">&nbsp;</span><span class="mc-nm"><span class="mc-name sk" style="width:5rem">&nbsp;</span></span><span class="mc-crest sk"></span></div></div></div></div>
+                    </div>
+                </div>
+
+                <!-- A match's page (/{league}/{match slug}): the way back to
+                     its league and Share, the scoreboard head (its h1 the two
+                     names), the tiles, then the match's sections in two
+                     columns (one on a phone). Every slot from shared.js
+                     matchPageParts(), filled by renderMatchView() in
+                     mrgold.js and by the edge renderer (functions/_lib/ssr.js)
+                     on a cold load. The share button is left empty for the
+                     app to fill. No <section> inside: the edge's edits end at
+                     </section>. -->
+                <section id="match-view" style="display: none">
+                    <div class="tpg mpg">
+                        <header class="tpg-top">
+                            <div class="mpg-bar">
+                                <nav id="mpg-crumbs" class="mv-crumbs" aria-label="Breadcrumb"></nav>
+                                <button type="button" class="tpg-share mpg-share" data-share="page"></button>
+                            </div>
+                            <div id="mpg-head" class="mpg-head"></div>
+                        </header>
+                        <div id="mpg-snap" class="tpg-snap mpg-snap"></div>
+                        <div id="mpg-intro" class="fv-slot"></div>
+                        <div class="mpg-body">
+                            <div id="mpg-main" class="mpg-main"></div>
+                            <div id="mpg-side" class="mpg-side"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="results-section" style="display: none">
+                    <div id="last5-tab">
+                        <hr class="divider" />
+                        <div id="results-stats"></div>
+                        <div id="finished-matches"></div>
+                    </div>
+                </section>
+
+                <!-- League standings, filled by renderLadder() on demand (or at the
+                     edge on /{league}/ladder: shared.js ladderHTML()) -->
+                <section id="ladder-section" style="display: none"></section>
+
+                <!-- A round page's games, finished or not, by day (shared.js
+                     roundListHTML): a round league's MATCHES in place of the
+                     today and upcoming lists below. -->
+                <section id="round-matches-container" style="display: none">
+                    <div id="round-matches"></div></section>
+
+                <!-- LIVE (/live): every game on now (shared.js liveListHTML),
+                     drawn by renderLiveView() in mrgold.js and by the edge
+                     renderer on a cold load. -->
+                <section id="live-matches-container" style="display: none">
+                    <div id="live-matches"></div></section>
+
+                <!-- LIVE with nothing on: says so, when the next game starts
+                     (#live-next) and the way to every game. -->
+                
+
+                <!-- TOP (/top, /top/results), the PRO list: a PRO reader's picks,
+                     anyone else's teaser (what PRO is, today's picks locked),
+                     then the last graded day; RESULTS every graded day
+                     (shared.js topPageParts list). Drawn by renderTopView()
+                     in mrgold.js and, the public half only, by the edge. -->
+                <section id="top-page" style="display: none">
+                    <div id="top-list"></div>
+                </section>
+
+                <!-- The Today hub over ALL's list (shared.js hubParts/hubHTML):
+                     today in the visitor's country, big games, the most
+                     confident calls (a game on now is the list's alone).
+                     Drawn by displayMatches() and by the edge renderer on "/". -->
+                
+
+                <section id="today-matches-container" style="display: block" data-ssr><div id="today-matches"></div></section>
+
+                <section id="upcoming-matches-container" style="display: block" data-ssr>
+                    <div id="upcoming-matches"></div></section>
+
+                
+
+                <!-- An empty HOME is "Your Home": search, the table leaders of
+                     the visitor's leagues, the leagues for them, every sport a
+                     level at a time, and what is picked so far (a side card
+                     from 1024 px, a bar under it). Drawn by assets/follow.js?v=f6bc2091ac,
+                     which mrgold.js loads from data-src when it is first shown. -->
+                <section id="home-setup" class="fpk-host" style="display: none" data-src="/assets/follow.js?v=f6bc2091ac"></section>
+
+                
+
+                </div>
+                <!-- A league's side blocks (shared.js leaguePageParts() side),
+                     MATCHES only: about it, the table, our model's ranking,
+                     our record, where to watch, the clubs. -->
+                <aside id="league-side" class="lpg-side">
+                    <div id="lpg-s-info" class="lpg-slot"></div>
+                    <div id="lpg-s-table" class="lpg-slot"></div>
+                    <div id="lpg-s-model" class="lpg-slot"></div>
+                    <div id="lpg-s-record" class="lpg-slot"></div>
+                    <div id="lpg-s-watch" class="lpg-slot"></div>
+                    <div id="lpg-s-clubs" class="lpg-slot"></div>
+                </aside>
+                <!-- The ALL, TOP, HOME and sport pages' side blocks (shared.js
+                     homePageParts() side), MATCHES only: Pick your teams (signed
+                     out, an open card), Your teams (HOME), our week, our best
+                     leagues, accuracy by sport, the leagues in season; TOP its
+                     record by kind of pick first, how we pick and fair odds last
+                     (shared.js HPG_SLOTS). One side shows at a time
+                     (#lpg-cols.is-hpg: this one). -->
+                <aside id="home-side" class="lpg-side hpg-side" data-ssr>
+                    <div id="hpg-s-pick" class="lpg-slot"></div>
+                    <div id="hpg-s-week" class="lpg-slot"></div>
+                    <div id="hpg-s-best" class="lpg-slot"></div>
+                </aside>
+                </div>
+
+            </div>
+
+            <!-- The About area: /about and its sub-pages, one <section> each,
+                 shown by showAbout(page) in mrgold.js. Links carrying
+                 data-about-link route in-app; the hrefs are real so a new tab,
+                 a crawler or a no-JS reader still lands on the right URL. -->
+            
+
+            <!-- Display settings dialog (opened by the globe button in the top nav) -->
+            <!-- HOME's Edit: what it follows, then the ways to add more
+                     (assets/follow.js?v=f6bc2091ac). A bottom sheet on a phone, two columns
+                     from 1024 px. -->
+            <dialog id="follow-dialog" class="fpk-dialog" aria-labelledby="fpk-sh-tt"></dialog>
+
+            <dialog id="ui-options-dialog" class="app-dialog">
+                <div class="welcome-dialog-content" tabindex="-1" autofocus>
+                    <div class="welcome-field-row">
+                        <div class="field">
+                            <label for="language-select" i18n="language">Language</label>
+                            <select id="language-select" class="input">
+                                <option value="en">English</option>
+                                <option value="de">Deutsch</option>
+                                <option value="es">Español</option>
+                                <option value="it">Italiano</option>
+                                <option value="fr">Français</option>
+                                <option value="ja">日本語</option>
+                                <option value="ko">한국어</option>
+                                <option value="zh">简体中文</option>
+                                <option value="zh-Hant">繁體中文</option>
+                                <option value="pt">Português</option>
+                                <option value="hi">हिन्दी</option>
+                                <option value="ar">العربية</option>
+                                <option value="af">Afrikaans</option>
+                                <option value="cy">Cymraeg</option>
+                                <option value="ka">ქართული</option>
+                                <option value="ro">Română</option>
+                                <option value="th">ภาษาไทย</option>
+                                <option value="vi">Tiếng Việt</option>
+                                <option value="id">Bahasa Indonesia</option>
+                                <option value="nl">Nederlands</option>
+                                <option value="sw">Kiswahili</option>
+                                <option value="tr">Türkçe</option>
+                                <option value="ru">Русский</option>
+                                <option value="pl">Polski</option>
+                                <option value="el">Ελληνικά</option>
+                                <option value="ms">Bahasa Melayu</option>
+                                <option value="he">עברית</option>
+                                <option value="fil">Filipino</option>
+                                <option value="nb">Norsk</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="theme-select" i18n="theme">Theme</label>
+                            <!-- Options come from THEMES in mrgold.js. -->
+                            <select id="theme-select" class="input"></select>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="country-input" i18n="home_country">Home Country</label>
+                        <div class="combobox-wrapper">
+                            <input
+                                type="text"
+                                id="country-input"
+                                class="input"
+                                i18n-placeholder="select_country"
+                                placeholder="Select country..."
+                                autocomplete="off"
+                            />
+                            
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="timezone-input" i18n="timezone">Timezone</label>
+                        <div class="combobox-wrapper">
+                            <input
+                                type="text"
+                                id="timezone-input"
+                                class="input"
+                                i18n-placeholder="select_timezone"
+                                placeholder="Select timezone..."
+                                autocomplete="off"
+                            />
+                            
+                        </div>
+                    </div>
+                    <div class="welcome-cta-row">
+                        <button id="ui-save-button" class="welcome-cta" i18n="save">Save</button>
+                    </div>
+                </div>
+            </dialog>
+
+            <!-- Sign-in dialog (opened by the LOGIN button in the top nav).
+                 One provider today; Apple and Facebook become extra rows in
+                 .signin-providers with no other change. -->
+            <dialog id="signin-dialog" class="app-dialog">
+                <div class="welcome-dialog-content" tabindex="-1" autofocus>
+                    <h2 class="signin-title" i18n="sign_in_title">Log in to sport.dev</h2>
+                    <p class="signin-blurb" i18n="sign_in_blurb">
+                        Keeps your teams, leagues and settings on every device you use.
+                    </p>
+                    <p id="signin-error" class="signin-error" i18n="sign_in_failed" hidden>
+                        Something went wrong logging you in. Please try again.
+                    </p>
+                    <div class="signin-providers">
+                        <button id="signin-google" class="signin-provider">
+                            <svg viewBox="0 0 18 18" aria-hidden="true">
+                                <path
+                                    fill="#4285F4"
+                                    d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"
+                                />
+                                <path
+                                    fill="#34A853"
+                                    d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"
+                                />
+                                <path
+                                    fill="#FBBC05"
+                                    d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33z"
+                                />
+                                <path
+                                    fill="#EA4335"
+                                    d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"
+                                />
+                            </svg>
+                            <span i18n="continue_with_google">Continue with Google</span>
+                        </button>
+                    </div>
+                </div>
+            </dialog>
+
+        </main>
+
+        <!-- Filled per home country by renderGamblingHelp() in mrgold.js. -->
+        
+
+        <footer class="site-footer">
+            &copy; <span id="footer-year">2026</span> guyu421.github.io
+        </footer>
+
+        <!-- The edge renderer (functions/_lib/ssr.js bootEdit) puts #ssr-boot
+             here: the end of the page, after the list it describes. -->
+        
+        
+    
+    </body>
+</html>
