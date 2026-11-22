@@ -226,6 +226,15 @@
       ? '<span class="mpg-score">' + esc(g.home_score) + '<span class="mc-dash">–</span>' + esc(g.away_score) + '</span>'
       : '<span class="mpg-time">—</span>';
 
+    var p = pred.probabilities_1x2;
+    var xg = pred.expected_goals;
+    var top1 = (pred.top_scorelines || [])[0];
+    var mat = pred.score_matrix || [];
+
+    var hFav = p.home_win >= p.away_win && p.home_win >= p.draw;
+    var aFav = p.away_win > p.home_win && p.away_win >= p.draw;
+    var dFav = p.draw > p.home_win && p.draw > p.away_win;
+
     var head = document.getElementById('mpg-head');
     if (head) {
       head.innerHTML = '' +
@@ -240,26 +249,25 @@
           '<div class="mpg-crest is-away">' +
             (g.away_logo ? '<img class="mpg-crest-img" src="' + esc(g.away_logo) + '" alt="" onerror="this.remove()">' : '') +
           '</div>' +
-          '<div class="mpg-names">' +
+          '<h1 class="mpg-names">' +
             '<span class="mpg-nm is-home">' + esc(home) + '</span>' +
+            '<span class="mpg-vs">vs</span>' +
             '<span class="mpg-nm is-away">' + esc(away) + '</span>' +
+          '</h1>' +
+          '<div class="mpg-probs">' +
+            '<span class="tpg-p is-home' + (hFav ? ' is-fav' : '') + '">' + (p.home_win * 100).toFixed(1) + '%</span>' +
+            '<span class="tpg-p is-draw' + (dFav ? ' is-fav' : '') + '">' + (zh ? '平 ' : 'Draw ') + (p.draw * 100).toFixed(1) + '%</span>' +
+            '<span class="tpg-p is-away' + (aFav ? ' is-fav' : '') + '">' + (p.away_win * 100).toFixed(1) + '%</span>' +
           '</div>' +
+          (top1 ? '<div class="mpg-foot"><span class="mpg-ps">' + (zh ? '最可能比分 ' : 'Likeliest score ') + esc(top1.score) + '（' + (top1.probability * 100).toFixed(1) + '%）</span></div>' : '') +
         '</div>';
     }
-
-    var p = pred.probabilities_1x2;
-    var xg = pred.expected_goals;
-    var top1 = (pred.top_scorelines || [])[0];
-    var mat = pred.score_matrix || [];
 
     var snap = document.getElementById('mpg-snap');
     if (snap) {
       snap.innerHTML = '' +
         '<div class="tpg-tile"><div class="tpg-tl">' + esc(home) + ' xG</div><div class="tpg-big">' + xg.home.toFixed(2) + '</div></div>' +
         '<div class="tpg-tile"><div class="tpg-tl">' + esc(away) + ' xG</div><div class="tpg-big">' + xg.away.toFixed(2) + '</div></div>' +
-        '<div class="tpg-tile"><div class="tpg-tl">' + (zh ? '主胜概率' : 'Home Win') + '</div><div class="tpg-big">' + (p.home_win * 100).toFixed(1) + '%</div></div>' +
-        '<div class="tpg-tile"><div class="tpg-tl">' + (zh ? '平局概率' : 'Draw') + '</div><div class="tpg-big">' + (p.draw * 100).toFixed(1) + '%</div></div>' +
-        '<div class="tpg-tile"><div class="tpg-tl">' + (zh ? '客胜概率' : 'Away Win') + '</div><div class="tpg-big">' + (p.away_win * 100).toFixed(1) + '%</div></div>' +
         '<div class="tpg-tile"><div class="tpg-tl">' + (zh ? '最可能比分' : 'Likeliest Score') + '</div><div class="tpg-big">' +
           (top1 ? esc(top1.score) + '（' + (top1.probability * 100).toFixed(1) + '%）' : '—') + '</div></div>';
     }
@@ -286,9 +294,7 @@
       main.style.gridColumn = '1 / -1';
       main.innerHTML = '' +
         '<section class="mpg-blk">' +
-          '<h2 class="mpg-sec-h" style="margin:0 0 0.6rem;font-size:0.85rem;font-weight:700;color:var(--secondary-text-color);">' +
-            (zh ? '比分矩阵 (0–9)' : 'Score Matrix (0–9)') +
-          '</h2>' +
+          '<h2 class="tpg-h">' + (zh ? '比分矩阵 (0–9)' : 'Score Matrix (0–9)') + '</h2>' +
           '<div class="poisson-matrix-wrap"><table class="poisson-matrix">' + matRows + '</table></div>' +
         '</section>';
     }
