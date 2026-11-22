@@ -23,6 +23,8 @@
       schedule: '赛程', results: '赛果',
       round: function (n) { return '第' + n + '轮'; },
       board: function (n) { return '第' + n + '台'; },
+      forfeit: '弃权',
+      forfeitMark: '弃',
       live: '进行中',
       noSchedule: '暂无赛程',
       noResults: '暂无赛果',
@@ -39,6 +41,8 @@
       schedule: 'Schedule', results: 'Results',
       round: function (n) { return 'Round ' + n; },
       board: function (n) { return 'Board ' + n; },
+      forfeit: 'Forfeit',
+      forfeitMark: 'F',
       live: 'Live',
       noSchedule: 'No scheduled games',
       noResults: 'No results',
@@ -103,11 +107,23 @@
   }
 
   // ── 对局卡 ─────────────────────────────────────────────
-  function scoreHTML(v) {
-    if (v === 1) return '1<span class="mc-dash">–</span>0';
-    if (v === 0) return '0<span class="mc-dash">–</span>1';
-    if (v === 0.5) return '½<span class="mc-dash">–</span>½';
-    return '—';
+  // 成绩记法：+ 胜 / - 负 / = 和，左右分别是黑方、白方。
+  // 弃权在库里是独立标记（black_forfeit / white_forfeit），弃权的一方记负，
+  // 显示时在那个符号右上角挂一个「弃」，跟正常分出胜负的对局区分开。
+  var GLYPH = { B: ['+', '-'], W: ['-', '+'], D: ['=', '='] };
+
+  function symHTML(sym, forfeit) {
+    if (!forfeit) return '<i class="mc-sym">' + sym + '</i>';
+    return '<i class="mc-sym is-forfeit" title="' + esc(T().forfeit) + '">' + sym +
+      '<b class="mc-fo">' + esc(T().forfeitMark) + '</b></i>';
+  }
+
+  function resultHTML(g) {
+    var pair = GLYPH[g.result];
+    if (!pair) return '<span class="mc-score">—</span>';
+    return '<span class="mc-score mc-res">' +
+      symHTML(pair[0], g.black_forfeit) + symHTML(pair[1], g.white_forfeit) +
+      '</span>';
   }
 
   var DIVIDER = '<div class="upcoming-match-divider"></div>';
@@ -145,9 +161,7 @@
               '<div class="mc-side is-home">' +
                 '<span class="mc-nm"><span class="mc-name">' + esc(playerName(g, 'black')) + '</span></span>' +
               '</div>' +
-              '<div class="mc-c">' +
-                '<span class="mc-score">' + scoreHTML(Number(g.black_result)) + '</span>' +
-              '</div>' +
+              '<div class="mc-c">' + resultHTML(g) + '</div>' +
               '<div class="mc-side is-away">' +
                 '<span class="mc-nm"><span class="mc-name">' + esc(playerName(g, 'white')) + '</span></span>' +
               '</div>' +
@@ -167,6 +181,14 @@
       '<div class="mc-meta"><span class="mc-lead">' + esc(msg) + '</span></div></div></div>';
   }
 
+  // 联赛名：库里只存 ESPN 的代码（eng.1），中文名在页面上映射
+  var LEAGUES = { 'eng.1': { zh: '英超', en: 'Premier League' } };
+
+  function leagueLabel(code) {
+    var l = LEAGUES[code];
+    return l ? (l[state.lang] || l.zh) : String(code || '');
+  }
+
   // 足球：主队 比分 客队；没开赛就显示「—」（ESPN 未开赛也会给 0，得靠状态区分）
   function footballCard(g) {
     var home = state.lang === 'zh' ? (g.home_zh || g.home) : g.home;
@@ -175,7 +197,9 @@
     var score = played
       ? esc(g.home_score) + '<span class="mc-dash">–</span>' + esc(g.away_score)
       : '—';
-    var label = [g.league_name, g.status === 'in' ? T().live : ''].filter(Boolean).join(' ');
+    // 抬头：英超 第11轮（进行中再加一句）
+    var label = [leagueLabel(g.league), g.round ? T().round(g.round) : '',
+      g.status === 'in' ? T().live : ''].filter(Boolean).join(' ');
 
     return '' +
       '<div class="upcoming-match-row mc-row" id="match-' + g.id + '" data-match-id="' + g.id + '">' +
@@ -234,9 +258,9 @@
   }
 
   // ── 渲染 ───────────────────────────────────────────────
-  function tabHTML(list, active, attr) {
+  function tabHTML(list, active, attr, cls) {
     return list.map(function (p) {
-      return '<a class="main-tab' + (p[0] === active ? ' active' : '') + '" href="#" ' +
+      return '<a class="' + (cls || 'main-tab') + (p[0] === active ? ' active' : '') + '" href="#" ' +
         attr + '="' + p[0] + '">' + esc(p[1]) + '</a>';
     }).join('');
   }
@@ -266,13 +290,17 @@
       ], state.sport, 'data-tab');
     }
 
-    // 足球下面再来一排：全部 / 英超
-    var extra = document.getElementById('results-tabs');
-    if (extra) {
-      extra.innerHTML = state.sport === 'football'
-        ? tabHTML([['all', T().leagueAll], ['eng.1', T().eng1]], state.league, 'data-league')
+    // 足球：下面单独一排 全部 / 英超（#sub-tab-bar，二级导航）
+    var sub = document.getElementById('sub-tabs');
+    var subBar = document.getElementById('sub-tab-bar');
+    var showSub = state.sport === 'football';
+    if (sub) {
+      sub.innerHTML = showSub
+        ? tabHTML([['all', T().leagueAll], ['eng.1', T().eng1]], state.league, 'data-league', 'sub-tab')
         : '';
     }
+    if (subBar) subBar.hidden = !showSub;
+    document.body.classList.toggle('sub-nav-visible', showSub);
   }
 
   // 读库结果：{ renju: [组], football: [组] }，按运动与联赛筛完再排序
@@ -293,7 +321,8 @@
 
     return out
       .filter(function (g) { return future ? g.ts >= now : g.ts < now; })
-      .sort(function (a, b) { return b.ts - a.ts; });
+      // 赛果：新的在前；赛程：最近的一场在前
+      .sort(function (a, b) { return future ? a.ts - b.ts : b.ts - a.ts; });
   }
 
   function renderList() {
@@ -304,8 +333,6 @@
   }
 
   // ── 读库（CloudBase PG REST）─────────────────────────────
-  var RESULT_SCORE = { B: 1, W: 0, D: 0.5, '+': 1, '-': 0 };
-
   function dbGet(path) {
     return fetch(DB + path, {
       headers: { apikey: DB_KEY, Authorization: 'Bearer ' + DB_KEY }
@@ -340,12 +367,13 @@
         };
         groups.push(grp);
       }
-      var score = RESULT_SCORE[m.result];
       grp.rows.push({
         id: m.id,
         board: m.board_no,
         round: m.round_no,
-        black_result: score === undefined ? null : score,
+        result: m.result || null,
+        black_forfeit: !!m.black_forfeit,
+        white_forfeit: !!m.white_forfeit,
         black: names[m.black_id] || '',
         black_zh: names[m.black_id] || '',
         white: names[m.white_id] || '',
@@ -372,7 +400,6 @@
         grp = bySlot[key] = {
           sport: 'football',
           league: m.league,
-          league_name: m.league_name,
           start_date: t.date,
           start_time: t.time,
           ts: Date.parse(m.match_time) || 0,
@@ -385,7 +412,8 @@
       grp.rows.push({
         id: m.id,
         status: m.status,
-        league_name: m.league_name,
+        league: m.league,
+        round: m.round_no,
         home: h.name || '', home_zh: h.name_zh || '',
         away: a.name || '', away_zh: a.name_zh || '',
         home_score: m.home_score == null ? null : Number(m.home_score),
@@ -402,10 +430,11 @@
     return Promise.all([
       dbGet('/tournaments?select=id,name&limit=100'),
       dbGet('/players?select=id,name&limit=2000'),
-      dbGet('/renju_matches?select=id,tournament_id,round_no,board_no,black_id,white_id,result,match_time' +
+      dbGet('/renju_matches?select=id,tournament_id,round_no,board_no,black_id,white_id,' +
+        'result,black_forfeit,white_forfeit,match_time' +
         '&order=round_no.desc,board_no.asc&limit=5000'),
       dbGet('/football_teams?select=id,name,name_zh&limit=200'),
-      dbGet('/football_matches?select=id,league,league_name,match_time,status,' +
+      dbGet('/football_matches?select=id,league,round_no,match_time,status,' +
         'home_team_id,away_team_id,home_score,away_score&order=match_time.desc&limit=3000')
     ])
       .then(function (res) {
@@ -603,7 +632,7 @@
       renderList();
       return;
     }
-    var lg = e.target.closest('#results-tabs [data-league]');
+    var lg = e.target.closest('#sub-tabs [data-league]');
     if (lg) {
       e.preventDefault();
       var league = lg.getAttribute('data-league');

@@ -80,7 +80,7 @@
             window.RENJU_KEY = 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjcwMjI0MzdmLWY2MWQtNGI3Yy1iNjNmLWJkZWY5ODcwMTBmOSJ9.eyJpc3MiOiJodHRwczovL3NhaXNoaS1kNmd6MTEzOWczM2MwNzZiMC5hcC1zaGFuZ2hhaS50Y2ItYXBpLnRlbmNlbnRjbG91ZGFwaS5jb20iLCJzdWIiOiJhbm9uIiwiYXVkIjoic2Fpc2hpLWQ2Z3oxMTM5ZzMzYzA3NmIwIiwiZXhwIjo0MDk5MDA3MzMwLCJpYXQiOjE3OTUzMjQxMzAsIm5vbmNlIjoiWEtScE1jLTBUaXl6M1J3OEtXSDFhUSIsImF0X2hhc2giOiJYS1JwTWMtMFRpeXozUnc4S1dIMWFRIiwibmFtZSI6IkFub255bW91cyIsInNjb3BlIjoiYW5vbnltb3VzIiwicHJvamVjdF9pZCI6InNhaXNoaS1kNmd6MTEzOWczM2MwNzZiMCIsIm1ldGEiOnsicGxhdGZvcm0iOiJQdWJsaXNoYWJsZUtleSJ9LCJyb2xlIjoiYW5vbiIsImlzX2Fub255bW91cyI6dHJ1ZSwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiYW5vbnltb3VzIiwicHJvdmlkZXJzIjpbImFub255bW91cyJdfSwidXNlcl9tZXRhZGF0YSI6eyJuYW1lIjoiQW5vbnltb3VzIn0sInVzZXJfdHlwZSI6IiIsImNsaWVudF90eXBlIjoiY2xpZW50X3VzZXIiLCJpc19zeXN0ZW1fYWRtaW4iOmZhbHNlfQ.cgRMfLDqP_3Nwo9VzNKxGVzMDFKN7rbSJ_7wEFtbVgsaw2qtPpeBNExNKaMb7_YRzf1S6XTXomiOP1dGQ55_x3wwDQzTXVe_dDBwgLKYw_1UTOoKjTyGYYLgdKpzq0bA8DewSmn0K9b2pAAkU9oNoN3WH7s4q6aziN_PoqxfpozxKqSVtUjwSAXjp9KWpddwSq7VZdmg8cXG-PXw_wNCOaP34kCGhnJFJeGVl7aUqE2mdSRXVdcP7g5BSpcYNC6YP2fqYK1uCAuqttPs3vc9MC_zJI-hKvZVdMezffnfq1AlirR1d268hB4OXjFy5Y2AsS20WiYuInHzAAfaK1rjCQ';
             window.RENJU_GAME_BASE = '';
         </script>
-        <script src="/app.js?v=14" defer></script>
+        <script src="/app.js?v=15" defer></script>
 
         <!-- Umami Cloud analytics -->
         
@@ -234,9 +234,8 @@
                 </button>
                 <div class="main-tab-scroll" id="main-tab-scroll">
                     <div class="main-tab-group main-tab-filters" id="filter-tabs">
-                        <!-- HOME + ALL + one tab per in-season sport, injected by JS -->
+                        <!-- 全部 / 五子棋 / 足球，由 JS 注入 -->
                     </div>
-                    <div class="main-tab-group main-tab-results" id="results-tabs"></div>
                 </div>
                 <button id="tab-overflow-chevron" aria-label="Scroll tabs" hidden>
                     <svg
