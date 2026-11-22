@@ -1,439 +1,809 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>赛源网 — 五子棋 · 足球赛果与预测</title>
-  <link href="https://cdn.jsdelivr.net/npm/@quasar/extras@1.16.14/material-icons/material-icons.css" rel="stylesheet" />
-  <link href="https://cdn.jsdelivr.net/npm/quasar@2.16.9/dist/quasar.prod.css" rel="stylesheet" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0f0c">
+  <meta name="description" content="MATCHDAY 英超赛程中心，浏览精选对阵、赛果概率、预期进球与比分预测。">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23c8f45a'/%3E%3Ctext x='32' y='44' text-anchor='middle' font-family='Arial' font-weight='700' font-size='38' fill='%23152005'%3EM%3C/text%3E%3C/svg%3E">
+  <title>MATCHDAY — 英超赛程与预测</title>
+  <link rel="preconnect" href="https://miaoda.feishu.cn">
+  <link href="https://miaoda.feishu.cn/fonts/css2?family=Barlow+Condensed:wght@600;700;800&family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    [v-cloak] { display: none; }
+    :root {
+      --bg: #0b0f0c;
+      --panel: #121713;
+      --panel-2: #181e19;
+      --panel-3: #202720;
+      --line: rgba(255,255,255,.085);
+      --line-strong: rgba(255,255,255,.15);
+      --text: #f2f5ef;
+      --muted: #929d94;
+      --muted-2: #68736b;
+      --accent: #c8f45a;
+      --accent-ink: #152005;
+      --blue: #82aaff;
+      --danger: #ff8b82;
+      --radius: 18px;
+      --font: "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      --display: "Barlow Condensed", "Noto Sans SC", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
-    }
-    .num { font-variant-numeric: tabular-nums; }
-    .app-container {
-      width: 100%;
-      max-width: 820px;
-      margin: 0 auto;
-    }
-    .clean-card {
-      border-radius: 12px;
-      overflow: hidden;
-    }
-
-    /* 足球卡片三栏对齐：队标在上、队名在下、胜率在内侧 */
-    .fb-row {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 88px minmax(0, 1fr);
-      align-items: center;
-      gap: 10px;
-      width: 100%;
-    }
-    .fb-side {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      min-width: 0;
-    }
-    .fb-team {
-      flex: 1 1 0;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      gap: 6px;
-    }
-    .fb-logo {
-      width: 32px;
-      height: 32px;
-      object-fit: contain;
-    }
-    .fb-name {
-      font-size: 13.5px;
-      font-weight: 600;
-      line-height: 1.3;
-      word-break: break-word;
-    }
-    .pct-pill {
-      flex: 0 0 54px;
-      width: 54px;
-      text-align: center;
-      padding: 3px 0;
-      border-radius: 6px;
-      font-size: 12px;
-      font-weight: 700;
-      line-height: 1.35;
-    }
-    .pct-pill.is-win { background: #16a34a; color: #fff; }
-    .pct-pill.is-lean { background: #52525b; color: #fff; }
-    .pct-pill.is-muted { color: #71717a; font-weight: 600; }
-
-    .fb-center {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      text-align: center;
-    }
-    .fb-score {
-      font-size: 20px;
-      font-weight: 800;
-      line-height: 1.1;
-    }
-    .draw-pill {
-      font-size: 11px;
-      font-weight: 600;
-      color: #71717a;
-      padding: 1px 6px;
-      border-radius: 4px;
-    }
-    .draw-pill.is-fav {
-      background: #e4e4e7;
-      color: #18181b;
-    }
-
-    /* 五子棋三栏 */
-    .rj-row {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 72px minmax(0, 1fr);
-      align-items: center;
-      gap: 12px;
-      width: 100%;
-    }
-    .rj-side {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      min-width: 0;
+      margin: 0;
+      min-width: 320px;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 82% 4%, rgba(115,155,53,.10), transparent 26rem),
+        var(--bg);
+      font-family: var(--font);
       font-size: 14px;
-      font-weight: 600;
+      -webkit-font-smoothing: antialiased;
     }
-    .rj-side.is-black { justify-content: flex-end; text-align: right; }
-    .rj-side.is-white { justify-content: flex-start; text-align: left; }
-    .rj-stone { width: 16px; height: 16px; flex: 0 0 auto; }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button { cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+    svg { display: block; }
+    .icon { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .container { width: min(1240px, calc(100% - 48px)); margin: 0 auto; }
+    .num { font-variant-numeric: tabular-nums; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
-    /* 比分矩阵 (0-9 等格) */
-    .poisson-matrix-wrap {
-      overflow-x: auto;
-      border-radius: 8px;
+    /* ===== 顶部导航 ===== */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      border-bottom: 1px solid var(--line);
+      background: rgba(11,15,12,.88);
+      backdrop-filter: blur(18px);
     }
-    .poisson-matrix {
-      width: 100%;
-      min-width: 480px;
-      table-layout: fixed;
-      border-collapse: collapse;
-      font-variant-numeric: tabular-nums;
-      font-size: 11px;
+    .topbar-inner { height: 76px; display: flex; align-items: center; gap: 36px; }
+    .brand { display: inline-flex; align-items: center; gap: 11px; flex: 0 0 auto; }
+    .brand-mark {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border-radius: 11px;
+      color: var(--accent-ink);
+      background: var(--accent);
+      transform: rotate(-5deg);
+      box-shadow: 0 0 30px rgba(200,244,90,.12);
     }
-    .poisson-matrix th,
-    .poisson-matrix td {
-      width: 9.0909%;
-      height: 38px;
-      padding: 0;
-      text-align: center;
-      vertical-align: middle;
-      border: 1px solid rgba(128, 128, 128, 0.2);
-    }
-    .poisson-matrix th {
-      background: rgba(128, 128, 128, 0.08);
-      font-weight: 700;
-    }
-    .prob-bar {
+    .brand-mark .icon { width: 22px; height: 22px; stroke-width: 2; }
+    .brand-name { font-family: var(--display); font-size: 25px; font-weight: 800; letter-spacing: .6px; line-height: 1; }
+    .brand-name span { color: var(--accent); }
+    .main-nav { display: flex; height: 100%; gap: 28px; }
+    .nav-link {
+      position: relative;
       display: flex;
-      height: 8px;
-      border-radius: 999px;
+      align-items: center;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 600;
+      padding: 0 2px;
+    }
+    .nav-link:hover, .nav-link.active { color: var(--text); }
+    .nav-link.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--accent); }
+    .top-actions { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+    .search-box {
+      width: 224px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 0 11px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      color: var(--muted);
+      background: rgba(255,255,255,.025);
+      transition: border-color .2s, background .2s;
+    }
+    .search-box:focus-within { border-color: rgba(200,244,90,.45); background: rgba(255,255,255,.04); }
+    .search-box input { width: 100%; min-width: 0; border: 0; outline: 0; color: var(--text); background: transparent; font-size: 13px; }
+    .search-box input::placeholder { color: var(--muted-2); }
+    .search-key { border: 1px solid var(--line-strong); border-radius: 5px; padding: 0 5px; color: var(--muted-2); font-size: 11px; line-height: 18px; }
+    .service-pill { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; white-space: nowrap; }
+    .service-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px rgba(200,244,90,.08); }
+    .service-pill.offline .service-dot { background: var(--danger); box-shadow: none; }
+
+    /* ===== 联赛标题与日期 ===== */
+    .league-head { padding: 42px 0 26px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+    .eyebrow { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+    .eyebrow::before { content: ""; width: 22px; height: 2px; background: var(--accent); }
+    h1 { margin: 0; font-size: clamp(32px, 4vw, 48px); line-height: 1.15; letter-spacing: -1.6px; }
+    .league-sub { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
+    .refresh-btn, .primary-btn, .ghost-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 11px;
+      font-weight: 600;
+      transition: transform .18s, background .18s, border-color .18s;
+    }
+    .refresh-btn { height: 42px; padding: 0 15px; border: 1px solid var(--line-strong); background: var(--panel); color: var(--text); }
+    .refresh-btn:hover, .ghost-btn:hover { border-color: rgba(200,244,90,.4); background: var(--panel-2); }
+    .refresh-btn.loading .icon { animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .date-wrap { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .date-strip { display: grid; grid-template-columns: 1.12fr repeat(7, 1fr); gap: 8px; padding: 14px 0; }
+    .date-btn {
+      min-width: 0;
+      height: 66px;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      background: transparent;
+      color: var(--muted);
+      transition: background .18s, color .18s, border-color .18s;
+    }
+    .date-btn:hover { background: rgba(255,255,255,.035); color: var(--text); }
+    .date-btn.active { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+    .date-day { display: block; font-size: 12px; font-weight: 600; }
+    .date-num { display: block; margin-top: 3px; font-family: var(--display); font-size: 22px; font-weight: 700; line-height: 1; letter-spacing: .4px; }
+    .date-btn.active .date-num { color: var(--accent-ink); }
+
+    /* ===== 赛程布局 ===== */
+    .schedule-layout { display: grid; grid-template-columns: minmax(0, 1fr) 322px; gap: 24px; padding: 30px 0 44px; align-items: start; }
+    .panel { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+    .fixture-panel { min-width: 0; overflow: hidden; }
+    .fixture-toolbar { display: flex; align-items: center; gap: 20px; min-height: 66px; padding: 0 20px; border-bottom: 1px solid var(--line); }
+    .filter-tabs { display: flex; align-items: center; gap: 22px; align-self: stretch; }
+    .filter-tab { position: relative; border: 0; background: transparent; color: var(--muted); padding: 0; font-size: 13px; font-weight: 600; }
+    .filter-tab:hover, .filter-tab.active { color: var(--text); }
+    .filter-tab.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -23px; height: 2px; background: var(--accent); }
+    .match-count { margin-left: auto; color: var(--muted-2); font-size: 12px; white-space: nowrap; }
+    .group-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 20px 10px; }
+    .group-title { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; font-weight: 700; }
+    .group-title .icon { width: 15px; height: 15px; color: var(--muted); }
+    .group-tag { color: var(--muted-2); font-size: 11px; }
+    .fixture-list { padding: 0 10px 10px; }
+    .fixture-row {
+      position: relative;
+      display: grid;
+      grid-template-columns: 82px minmax(230px, 1fr) minmax(210px, .78fr) 34px;
+      align-items: center;
+      gap: 16px;
+      min-height: 112px;
+      padding: 16px 10px;
+      border-top: 1px solid var(--line);
+      border-radius: 12px;
+      transition: background .18s;
+      cursor: pointer;
+    }
+    .fixture-row:hover { background: rgba(255,255,255,.025); }
+    .kickoff { padding-left: 8px; }
+    .kickoff-time { font-family: var(--display); font-size: 23px; font-weight: 700; letter-spacing: .3px; }
+    .kickoff-meta { margin-top: 5px; color: var(--muted-2); font-size: 10px; letter-spacing: .4px; }
+    .live-tag { display: inline-flex; align-items: center; gap: 5px; color: var(--danger); font-size: 11px; font-weight: 700; }
+    .live-tag::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+    .teams-stack { display: grid; gap: 12px; min-width: 0; }
+    .team-line { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    .team-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 600; }
+    .team-en { margin-left: auto; color: var(--muted-2); font-family: var(--display); font-size: 12px; letter-spacing: .7px; }
+    .club-badge {
+      --club: #82918a;
+      position: relative;
+      flex: 0 0 auto;
+      width: 34px;
+      height: 38px;
+      display: grid;
+      place-items: center;
       overflow: hidden;
-      background: rgba(128, 128, 128, 0.15);
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 9px 9px 12px 12px;
+      background: linear-gradient(145deg, color-mix(in srgb, var(--club) 76%, white), var(--club));
+      box-shadow: inset 0 0 0 3px rgba(0,0,0,.14), 0 4px 12px rgba(0,0,0,.16);
+      color: white;
+      font-family: var(--display);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .5px;
+      text-shadow: 0 1px 3px rgba(0,0,0,.65);
+    }
+    .club-badge::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(0,0,0,.28); }
+    .club-badge.large { width: 64px; height: 72px; border-radius: 16px 16px 21px 21px; font-size: 23px; box-shadow: inset 0 0 0 4px rgba(0,0,0,.14), 0 10px 28px rgba(0,0,0,.2); }
+    .probabilities { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .prob-item { padding: 8px 4px; border: 1px solid var(--line); border-radius: 9px; text-align: center; background: rgba(255,255,255,.018); }
+    .prob-item.fav { border-color: rgba(200,244,90,.25); background: rgba(200,244,90,.055); }
+    .prob-label { display: block; color: var(--muted-2); font-size: 9px; }
+    .prob-value { display: block; margin-top: 2px; font-family: var(--display); font-size: 18px; font-weight: 700; }
+    .prob-item.fav .prob-value { color: var(--accent); }
+    .fav-btn { width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 9px; background: transparent; color: var(--muted-2); }
+    .fav-btn:hover { color: var(--text); background: var(--panel-3); }
+    .fav-btn.active { color: var(--accent); }
+    .fav-btn.active .icon { fill: currentColor; }
+
+    /* ===== 右侧内容 ===== */
+    .side-stack { display: grid; gap: 18px; }
+    .feature-card { position: relative; overflow: hidden; padding: 22px; background: linear-gradient(155deg, #1b2518 0%, #121713 64%); }
+    .feature-card::before { content: ""; position: absolute; width: 220px; height: 220px; top: -140px; right: -80px; border-radius: 50%; background: var(--accent); filter: blur(80px); opacity: .11; pointer-events: none; }
+    .feature-label { display: flex; align-items: center; justify-content: space-between; color: var(--accent); font-family: var(--display); font-size: 13px; font-weight: 700; letter-spacing: 1.5px; }
+    .feature-label .icon { width: 16px; height: 16px; }
+    .feature-teams { display: grid; grid-template-columns: 1fr 54px 1fr; align-items: center; gap: 6px; margin: 26px 0 22px; text-align: center; }
+    .feature-team { min-width: 0; display: grid; justify-items: center; gap: 11px; }
+    .feature-team-name { min-height: 42px; display: grid; place-items: center; font-size: 13px; font-weight: 700; line-height: 1.5; }
+    .versus { color: var(--muted-2); font-family: var(--display); font-size: 22px; font-weight: 700; font-style: italic; }
+    .feature-kickoff { margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .feature-score { margin-bottom: 18px; padding: 13px; border: 1px solid var(--line); border-radius: 11px; background: rgba(0,0,0,.13); text-align: center; }
+    .feature-score-label { color: var(--muted); font-size: 10px; }
+    .feature-score-value { margin-top: 2px; font-family: var(--display); font-size: 30px; font-weight: 700; letter-spacing: 2px; }
+    .feature-score-value span { margin-left: 8px; color: var(--accent); font-size: 16px; letter-spacing: 0; }
+    .primary-btn { width: 100%; min-height: 42px; padding: 0 16px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); font-size: 13px; }
+    .primary-btn:hover { transform: translateY(-1px); background: #d4fa77; }
+    .side-card { padding: 20px; }
+    .side-title { display: flex; align-items: center; justify-content: space-between; margin: 0 0 17px; font-size: 13px; }
+    .side-title span { color: var(--muted-2); font-size: 10px; font-weight: 400; }
+    .model-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+    .model-stat { min-width: 0; }
+    .model-stat strong { display: block; font-family: var(--display); font-size: 27px; line-height: 1; }
+    .model-stat span { display: block; margin-top: 6px; color: var(--muted-2); font-size: 10px; white-space: nowrap; }
+    .update-line { display: flex; align-items: center; gap: 7px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; }
+    .update-line .icon { width: 13px; height: 13px; }
+    .rank-list { display: grid; gap: 13px; }
+    .rank-row { display: grid; grid-template-columns: 18px 28px minmax(0,1fr) auto; align-items: center; gap: 9px; border: 0; padding: 0; background: transparent; text-align: left; }
+    .rank-row:hover .rank-name { color: var(--accent); }
+    .rank-pos { color: var(--muted-2); font-family: var(--display); font-size: 15px; }
+    .rank-row .club-badge { width: 26px; height: 29px; border-radius: 7px 7px 9px 9px; font-size: 10px; }
+    .rank-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; transition: color .18s; }
+    .rank-value { color: var(--accent); font-family: var(--display); font-size: 16px; }
+    .disclaimer { display: flex; gap: 10px; padding: 4px 6px; color: var(--muted-2); font-size: 10px; line-height: 1.8; }
+    .disclaimer .icon { flex: 0 0 auto; width: 15px; height: 15px; margin-top: 2px; }
+
+    /* ===== 状态、空态与页脚 ===== */
+    .state-box { display: grid; justify-items: center; padding: 70px 24px; text-align: center; }
+    .state-icon { width: 48px; height: 48px; display: grid; place-items: center; margin-bottom: 17px; border: 1px solid var(--line); border-radius: 15px; color: var(--muted); background: var(--panel-2); }
+    .state-icon .icon { width: 23px; height: 23px; }
+    .state-title { margin: 0; font-size: 15px; }
+    .state-text { max-width: 340px; margin: 8px 0 18px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+    .ghost-btn { min-height: 38px; padding: 0 14px; border: 1px solid var(--line-strong); background: transparent; font-size: 12px; }
+    .skeleton { position: relative; overflow: hidden; background: var(--panel-2); border-radius: 7px; }
+    .skeleton::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,.045), transparent); animation: shimmer 1.4s infinite; }
+    @keyframes shimmer { to { transform: translateX(100%); } }
+    .footer { border-top: 1px solid var(--line); }
+    .footer-inner { min-height: 92px; display: flex; align-items: center; justify-content: space-between; gap: 20px; color: var(--muted-2); font-size: 11px; }
+    .footer-brand { color: var(--muted); font-family: var(--display); font-size: 17px; font-weight: 700; letter-spacing: .6px; }
+    .footer-note { text-align: right; line-height: 1.8; }
+
+    /* ===== 单场预测详情 ===== */
+    .modal-shell {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: rgba(2,5,3,.78);
+      backdrop-filter: blur(6px);
+    }
+    .modal-shell[hidden] { display: none; }
+    .match-dialog {
+      width: min(780px, 100%);
+      max-height: calc(100dvh - 36px);
+      margin: 0;
+      padding: 0;
+      overflow: auto;
+      border: 1px solid var(--line-strong);
+      border-radius: 22px;
+      color: var(--text);
+      background: #101511;
+      box-shadow: 0 30px 100px rgba(0,0,0,.55);
+    }
+    .dialog-head { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; justify-content: space-between; padding: 17px 22px; border-bottom: 1px solid var(--line); background: rgba(16,21,17,.94); backdrop-filter: blur(15px); }
+    .dialog-competition { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+    .dialog-competition .icon { width: 16px; height: 16px; color: var(--accent); }
+    .close-btn { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2); color: var(--muted); }
+    .close-btn:hover { color: var(--text); border-color: var(--line-strong); }
+    .dialog-body { padding: 26px; }
+    .dialog-teams { display: grid; grid-template-columns: 1fr 110px 1fr; align-items: center; gap: 18px; padding: 10px 0 28px; text-align: center; }
+    .dialog-team { display: grid; justify-items: center; gap: 13px; }
+    .dialog-team-name { font-size: 17px; font-weight: 700; }
+    .dialog-team-en { color: var(--muted-2); font-family: var(--display); font-size: 12px; letter-spacing: 1px; }
+    .dialog-vs { font-family: var(--display); font-size: 34px; font-weight: 700; }
+    .dialog-time { margin-top: 6px; color: var(--muted); font-size: 11px; }
+    .dialog-section { margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--line); }
+    .dialog-section-title { display: flex; align-items: center; justify-content: space-between; margin: 0 0 16px; font-size: 13px; }
+    .dialog-section-title span { color: var(--muted-2); font-size: 10px; font-weight: 400; }
+    .xg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .xg-card { padding: 17px; border: 1px solid var(--line); border-radius: 13px; background: var(--panel); }
+    .xg-label { color: var(--muted); font-size: 11px; }
+    .xg-value { margin-top: 5px; font-family: var(--display); font-size: 34px; font-weight: 700; }
+    .outcome-values { display: grid; grid-template-columns: repeat(3,1fr); margin-bottom: 12px; text-align: center; }
+    .outcome-values span { display: block; color: var(--muted); font-size: 10px; }
+    .outcome-values strong { display: block; margin-top: 4px; font-family: var(--display); font-size: 26px; }
+    .outcome-bar { display: flex; height: 8px; gap: 3px; overflow: hidden; border-radius: 99px; }
+    .outcome-bar div { min-width: 2px; }
+    .outcome-home { background: var(--accent); }
+    .outcome-draw { background: #59645c; }
+    .outcome-away { background: var(--blue); }
+    .scoreline-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+    .scoreline-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border: 1px solid var(--line); border-radius: 11px; background: var(--panel); }
+    .scoreline-item strong { font-family: var(--display); font-size: 23px; }
+    .scoreline-item span { color: var(--accent); font-family: var(--display); font-size: 17px; }
+    .market-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .market-item { padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+    .market-top { display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 11px; }
+    .market-top strong { color: var(--text); font-family: var(--display); font-size: 19px; }
+    .mini-track { height: 4px; margin-top: 11px; overflow: hidden; border-radius: 99px; background: var(--panel-3); }
+    .mini-track div { height: 100%; border-radius: inherit; background: var(--accent); }
+    .matrix-wrap { overflow-x: auto; padding-bottom: 4px; }
+    .matrix { width: 100%; min-width: 440px; table-layout: fixed; border-collapse: separate; border-spacing: 4px; font-family: var(--display); font-size: 13px; text-align: center; }
+    .matrix th { height: 26px; color: var(--muted-2); font-weight: 600; }
+    .matrix td { height: 38px; border: 1px solid rgba(255,255,255,.04); border-radius: 6px; color: #eaf2e7; background: rgba(200,244,90,var(--heat)); }
+    .matrix-note { margin: 9px 0 0; color: var(--muted-2); font-family: var(--font); font-size: 10px; text-align: right; }
+    .toast { position: fixed; left: 50%; bottom: 28px; z-index: 60; transform: translate(-50%, 16px); padding: 11px 17px; border: 1px solid var(--line-strong); border-radius: 11px; background: #222a23; box-shadow: 0 12px 40px rgba(0,0,0,.35); color: var(--text); font-size: 12px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
+    .toast.show { opacity: 1; transform: translate(-50%,0); }
+
+    @media (max-width: 1080px) {
+      .schedule-layout { grid-template-columns: minmax(0,1fr) 280px; gap: 18px; }
+      .fixture-row { grid-template-columns: 66px minmax(190px,1fr) 178px 30px; gap: 10px; }
+      .main-nav { display: none; }
+      .team-en { display: none; }
+    }
+    @media (max-width: 860px) {
+      .container { width: min(100% - 32px, 760px); }
+      .schedule-layout { grid-template-columns: 1fr; }
+      .side-stack { grid-template-columns: 1fr 1fr; }
+      .feature-card { grid-row: span 2; }
+      .disclaimer { align-self: start; }
+      .service-pill { display: none; }
+      .date-strip { overflow-x: auto; grid-template-columns: repeat(8, 86px); scrollbar-width: none; }
+      .date-strip::-webkit-scrollbar { display: none; }
+    }
+    @media (max-width: 620px) {
+      .container { width: calc(100% - 24px); }
+      .topbar-inner { height: 64px; gap: 12px; }
+      .brand-name { font-size: 22px; }
+      .brand-mark { width: 32px; height: 32px; border-radius: 9px; }
+      .search-box { width: 40px; padding: 0; justify-content: center; border: 0; background: transparent; cursor: pointer; }
+      .search-box input, .search-key { display: none; }
+      .search-box.expanded { position: absolute; left: 12px; right: 12px; top: 11px; z-index: 2; width: auto; height: 42px; padding: 0 12px; justify-content: flex-start; border: 1px solid rgba(200,244,90,.4); background: #151b16; }
+      .search-box.expanded input { display: block; }
+      .league-head { padding: 28px 0 20px; align-items: flex-start; }
+      h1 { font-size: 34px; }
+      .league-sub { max-width: 220px; line-height: 1.6; }
+      .refresh-btn { width: 40px; height: 40px; padding: 0; }
+      .refresh-btn span { display: none; }
+      .date-strip { grid-template-columns: repeat(8, 75px); gap: 5px; padding: 10px 0; }
+      .date-btn { height: 59px; }
+      .date-num { font-size: 20px; }
+      .schedule-layout { padding: 20px 0 30px; }
+      .fixture-toolbar { min-height: 58px; padding: 0 14px; gap: 10px; }
+      .filter-tabs { gap: 17px; }
+      .filter-tab { font-size: 12px; }
+      .filter-tab.active::after { bottom: -19px; }
+      .match-count { font-size: 10px; }
+      .group-head { padding: 17px 14px 8px; }
+      .fixture-list { padding: 0 6px 8px; }
+      .fixture-row { grid-template-columns: 48px minmax(0,1fr) 28px; gap: 8px; min-height: 104px; padding: 13px 5px; }
+      .kickoff { padding-left: 4px; }
+      .kickoff-time { font-family: var(--font); font-size: 11px; font-weight: 600; line-height: 1.4; }
+      .kickoff-meta { font-size: 9px; }
+      .teams-stack { gap: 10px; }
+      .team-line { gap: 9px; }
+      .team-name { font-size: 13px; }
+      .club-badge { width: 30px; height: 34px; font-size: 11px; }
+      .probabilities { display: none; }
+      .fav-btn { grid-column: 3; }
+      .side-stack { grid-template-columns: 1fr; }
+      .feature-card { grid-row: auto; }
+      .feature-teams { max-width: 340px; margin-left: auto; margin-right: auto; }
+      .footer-inner { padding: 20px 0; align-items: flex-start; flex-direction: column; }
+      .footer-note { text-align: left; }
+      .modal-shell { padding: 8px; }
+      .match-dialog { width: 100%; max-height: calc(100dvh - 16px); border-radius: 18px; }
+      .dialog-head { padding: 14px 16px; }
+      .dialog-body { padding: 18px 15px 22px; }
+      .dialog-teams { grid-template-columns: 1fr 58px 1fr; gap: 6px; }
+      .dialog-team-name { font-size: 14px; }
+      .club-badge.large { width: 54px; height: 62px; font-size: 20px; }
+      .scoreline-grid { grid-template-columns: repeat(2,1fr); }
+      .market-grid { grid-template-columns: 1fr; }
+      .toast { bottom: 18px; white-space: nowrap; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
     }
   </style>
-
-  <!-- 数据来源（部署时由构建脚本注入） -->
-  <script>
-    window.RENJU_DB = 'https://saishi-d6gz1139g33c076b0.api.tcloudbasegateway.com/v1/rdb/rest';
-    window.RENJU_KEY = 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjcwMjI0MzdmLWY2MWQtNGI3Yy1iNjNmLWJkZWY5ODcwMTBmOSJ9.eyJpc3MiOiJodHRwczovL3NhaXNoaS1kNmd6MTEzOWczM2MwNzZiMC5hcC1zaGFuZ2hhaS50Y2ItYXBpLnRlbmNlbnRjbG91ZGFwaS5jb20iLCJzdWIiOiJhbm9uIiwiYXVkIjoic2Fpc2hpLWQ2Z3oxMTM5ZzMzYzA3NmIwIiwiZXhwIjo0MDk5MDA3MzMwLCJpYXQiOjE3OTUzMjQxMzAsIm5vbmNlIjoiWEtScE1jLTBUaXl6M1J3OEtXSDFhUSIsImF0X2hhc2giOiJYS1JwTWMtMFRpeXozUnc4S1dIMWFRIiwibmFtZSI6IkFub255bW91cyIsInNjb3BlIjoiYW5vbnltb3VzIiwicHJvamVjdF9pZCI6InNhaXNoaS1kNmd6MTEzOWczM2MwNzZiMCIsIm1ldGEiOnsicGxhdGZvcm0iOiJQdWJsaXNoYWJsZUtleSJ9LCJyb2xlIjoiYW5vbiIsImlzX2Fub255bW91cyI6dHJ1ZSwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiYW5vbnltb3VzIiwicHJvdmlkZXJzIjpbImFub255bW91cyJdfSwidXNlcl9tZXRhZGF0YSI6eyJuYW1lIjoiQW5vbnltb3VzIn0sInVzZXJfdHlwZSI6IiIsImNsaWVudF90eXBlIjoiY2xpZW50X3VzZXIiLCJpc19zeXN0ZW1fYWRtaW4iOmZhbHNlfQ.cgRMfLDqP_3Nwo9VzNKxGVzMDFKN7rbSJ_7wEFtbVgsaw2qtPpeBNExNKaMb7_YRzf1S6XTXomiOP1dGQ55_x3wwDQzTXVe_dDBwgLKYw_1UTOoKjTyGYYLgdKpzq0bA8DewSmn0K9b2pAAkU9oNoN3WH7s4q6aziN_PoqxfpozxKqSVtUjwSAXjp9KWpddwSq7VZdmg8cXG-PXw_wNCOaP34kCGhnJFJeGVl7aUqE2mdSRXVdcP7g5BSpcYNC6YP2fqYK1uCAuqttPs3vc9MC_zJI-hKvZVdMezffnfq1AlirR1d268hB4OXjFy5Y2AsS20WiYuInHzAAfaK1rjCQ';
-    window.RENJU_GAME_BASE = '';
-  </script>
 </head>
 <body>
-  <div id="q-app" v-cloak>
-    <q-layout view="hHh lpR fFf" :class="$q.dark.isActive ? 'bg-grey-10 text-white' : 'bg-grey-2 text-grey-9'">
-      <q-header bordered :class="$q.dark.isActive ? 'bg-grey-10 text-white' : 'bg-white text-grey-9'">
-        <div class="app-container">
-          <q-toolbar class="q-px-md">
-            <q-toolbar-title class="text-weight-bold row items-center no-wrap q-gutter-x-xs" style="cursor:pointer; flex: 0 0 auto;" @click="closeDetail(true)">
-              <q-icon name="sports_soccer" color="primary" size="22px" />
-              <span>赛源网</span>
-            </q-toolbar-title>
+  <svg width="0" height="0" aria-hidden="true" style="position:absolute">
+    <symbol id="i-ball" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m12 7 4 3-1.5 5h-5L8 10l4-3Z"/><path d="m12 3 .01 4M4 9l4 1m8 0 4-1M6 19l3.5-4m5 0L18 19"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5"/><path d="M18.2 16a8 8 0 1 1 .8-9l1 5"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4m8-4v4M3 10h18"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10h.01"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0V4Z"/><path d="M8 6H4v2a4 4 0 0 0 4 4m8-6h4v2a4 4 0 0 1-4 4m-4 1v4m-4 4h8m-6-4h4"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></symbol>
+  </svg>
 
-            <q-space />
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="#" aria-label="MATCHDAY 首页">
+        <span class="brand-mark"><svg class="icon"><use href="#i-ball"/></svg></span>
+        <span class="brand-name">MATCHDAY<span>+</span></span>
+      </a>
+      <nav class="main-nav" aria-label="主导航">
+        <button class="nav-link active" id="navFixtures">赛程</button>
+        <button class="nav-link" id="navTeams">球队实力</button>
+        <button class="nav-link" id="navModel">模型说明</button>
+      </nav>
+      <div class="top-actions">
+        <label class="search-box" id="searchBox">
+          <svg class="icon"><use href="#i-search"/></svg>
+          <input id="searchInput" type="search" autocomplete="off" placeholder="搜索球队或对阵" aria-label="搜索球队或对阵">
+          <span class="search-key">/</span>
+        </label>
+        <div class="service-pill" id="servicePill"><span class="service-dot"></span><span id="serviceText">连接服务中</span></div>
+      </div>
+    </div>
+  </header>
 
-            <q-input
-              v-model="search"
-              dense
-              outlined
-              clearable
-              :placeholder="T.search"
-              class="q-mr-sm"
-              style="width: 180px;"
-            >
-              <template v-slot:prepend>
-                <q-icon name="search" size="xs" />
-              </template>
-            </q-input>
+  <main>
+    <section class="container league-head" aria-labelledby="pageTitle">
+      <div>
+        <div class="eyebrow">England · Premier League</div>
+        <h1 id="pageTitle">英超赛程</h1>
+        <p class="league-sub" id="leagueSub">精选对阵、赛果概率与赛前数据分析</p>
+      </div>
+      <button class="refresh-btn" id="refreshBtn" aria-label="刷新赛程">
+        <svg class="icon"><use href="#i-refresh"/></svg><span>刷新赛程</span>
+      </button>
+    </section>
 
-            <q-btn flat dense no-caps :label="lang === 'zh' ? 'EN' : '中'" @click="toggleLang" class="q-mr-xs" />
-            <q-btn flat round dense :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'" @click="toggleDark" />
-          </q-toolbar>
+    <div class="date-wrap">
+      <div class="container date-strip" id="dateStrip" aria-label="按日期筛选赛程"></div>
+    </div>
 
-          <q-tabs v-if="!activeDetail" v-model="sport" dense align="left" active-color="primary" indicator-color="primary" no-caps class="q-px-sm">
-            <q-tab name="all" :label="T.all" />
-            <q-tab name="renju" :label="T.renjuSport" />
-            <q-tab name="football" :label="T.footballSport" />
-          </q-tabs>
+    <div class="container schedule-layout">
+      <section class="panel fixture-panel" id="fixturesSection" aria-label="比赛列表">
+        <div class="fixture-toolbar">
+          <div class="filter-tabs" role="tablist" aria-label="比赛类型">
+            <button class="filter-tab active" data-filter="all" role="tab" aria-selected="true">全部比赛</button>
+            <button class="filter-tab" data-filter="featured" role="tab" aria-selected="false">焦点战</button>
+            <button class="filter-tab" data-filter="favorites" role="tab" aria-selected="false">我的收藏</button>
+          </div>
+          <span class="match-count num" id="matchCount">加载中</span>
         </div>
-      </q-header>
-
-      <q-page-container>
-        <q-page class="app-container q-pa-md">
-          <!-- 加载中 -->
-          <div v-if="loading" class="row justify-center q-my-xl">
-            <q-spinner-dots color="primary" size="40px" />
+        <div id="fixturesContent">
+          <div class="state-box" aria-live="polite">
+            <div class="state-icon"><svg class="icon"><use href="#i-calendar"/></svg></div>
+            <h2 class="state-title">正在获取最新赛程</h2>
+            <p class="state-text">正在连接 CloudBase 预测服务，请稍候。</p>
           </div>
-
-          <!-- 错误 -->
-          <q-banner v-else-if="loadError" rounded class="bg-negative text-white q-mb-md">
-            {{ T.loadFail }}
-          </q-banner>
-
-          <!-- 详情页 -->
-          <div v-else-if="activeDetail">
-            <div class="row items-center justify-between q-mb-md">
-              <q-btn flat dense icon="arrow_back" :label="T.back" no-caps @click="closeDetail(true)" />
-              <span class="text-caption text-grey">{{ activeDetail.metaLabel }}</span>
-            </div>
-
-            <!-- 记分板头 -->
-            <q-card flat bordered class="clean-card q-pa-lg q-mb-md">
-              <div class="fb-row">
-                <div class="fb-team">
-                  <img v-if="activeDetail.match.home_logo" :src="activeDetail.match.home_logo" style="width:56px;height:56px;object-fit:contain;" @error="$event.target.style.display='none'" />
-                  <div class="text-subtitle1 text-weight-bold">{{ activeDetail.homeName }}</div>
-                </div>
-                <div class="fb-center">
-                  <div class="text-caption text-grey">{{ activeDetail.metaLabel }}</div>
-                  <div class="text-h4 text-weight-bolder num">{{ activeDetail.scoreText }}</div>
-                </div>
-                <div class="fb-team">
-                  <img v-if="activeDetail.match.away_logo" :src="activeDetail.match.away_logo" style="width:56px;height:56px;object-fit:contain;" @error="$event.target.style.display='none'" />
-                  <div class="text-subtitle1 text-weight-bold">{{ activeDetail.awayName }}</div>
-                </div>
-              </div>
-            </q-card>
-
-            <!-- xG 与 最可能比分 -->
-            <div class="row q-col-gutter-md q-mb-md num">
-              <div class="col-6 col-sm-4">
-                <q-card flat bordered class="clean-card q-pa-md text-center">
-                  <div class="text-caption text-grey q-mb-xs">{{ activeDetail.homeName }} xG</div>
-                  <div class="text-h5 text-weight-bold">{{ activeDetail.pred.expected_goals.home.toFixed(2) }}</div>
-                </q-card>
-              </div>
-              <div class="col-6 col-sm-4">
-                <q-card flat bordered class="clean-card q-pa-md text-center">
-                  <div class="text-caption text-grey q-mb-xs">{{ activeDetail.awayName }} xG</div>
-                  <div class="text-h5 text-weight-bold">{{ activeDetail.pred.expected_goals.away.toFixed(2) }}</div>
-                </q-card>
-              </div>
-              <div class="col-12 col-sm-4">
-                <q-card flat bordered class="clean-card q-pa-md text-center">
-                  <div class="text-caption text-grey q-mb-xs">{{ T.topScore }}</div>
-                  <div class="text-h5 text-weight-bold">
-                    {{ activeDetail.top1 ? `${activeDetail.top1.score}（${(activeDetail.top1.probability * 100).toFixed(1)}%）` : '—' }}
-                  </div>
-                </q-card>
-              </div>
-            </div>
-
-            <!-- 主胜 / 平局 / 客胜概率 -->
-            <q-card flat bordered class="clean-card q-pa-md q-mb-md num">
-              <div class="text-subtitle2 text-weight-bold q-mb-md">{{ T.outcomeTitle }}</div>
-              <div class="row q-col-gutter-sm q-mb-md text-center">
-                <div class="col-4">
-                  <div class="text-caption text-grey">{{ T.homeWin }}</div>
-                  <div class="text-h6 text-weight-bold text-positive">{{ (activeDetail.pred.probabilities_1x2.home_win * 100).toFixed(1) }}%</div>
-                </div>
-                <div class="col-4">
-                  <div class="text-caption text-grey">{{ T.draw }}</div>
-                  <div class="text-h6 text-weight-bold text-grey-7">{{ (activeDetail.pred.probabilities_1x2.draw * 100).toFixed(1) }}%</div>
-                </div>
-                <div class="col-4">
-                  <div class="text-caption text-grey">{{ T.awayWin }}</div>
-                  <div class="text-h6 text-weight-bold text-primary">{{ (activeDetail.pred.probabilities_1x2.away_win * 100).toFixed(1) }}%</div>
-                </div>
-              </div>
-              <div class="prob-bar">
-                <div class="bg-positive" :style="{ width: (activeDetail.pred.probabilities_1x2.home_win * 100).toFixed(2) + '%' }"></div>
-                <div class="bg-grey-5" :style="{ width: (activeDetail.pred.probabilities_1x2.draw * 100).toFixed(2) + '%' }"></div>
-                <div class="bg-primary" :style="{ width: (activeDetail.pred.probabilities_1x2.away_win * 100).toFixed(2) + '%' }"></div>
-              </div>
-            </q-card>
-
-            <!-- 比分矩阵 0-9 -->
-            <q-card flat bordered class="clean-card q-pa-md">
-              <div class="text-subtitle2 text-weight-bold q-mb-md">{{ T.matrixTitle }}</div>
-              <div class="poisson-matrix-wrap">
-                <table class="poisson-matrix">
-                  <thead>
-                    <tr>
-                      <th>{{ lang === 'zh' ? '主\\客' : 'H\\A' }}</th>
-                      <th v-for="c in activeDetail.matrixCols" :key="'h'+c">{{ c }}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="(row, rIdx) in activeDetail.pred.score_matrix" :key="'r'+rIdx">
-                      <th>{{ rIdx }}</th>
-                      <td
-                        v-for="(val, cIdx) in row"
-                        :key="'c'+rIdx+'-'+cIdx"
-                        :style="{ background: `hsla(142, 76%, 36%, ${Math.min(0.42, Number(val) * 3.4).toFixed(2)})` }"
-                      >
-                        {{ (Number(val) * 100).toFixed(1) }}%
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </q-card>
-          </div>
-
-          <!-- 列表视图 -->
-          <div v-else>
-            <div class="row items-center justify-between q-mb-md q-gutter-sm">
-              <q-btn-toggle
-                v-model="scope"
-                no-caps
-                unelevated
-                rounded
-                toggle-color="primary"
-                :color="$q.dark.isActive ? 'grey-9' : 'white'"
-                :text-color="$q.dark.isActive ? 'white' : 'grey-8'"
-                :options="[
-                  { label: T.schedule, value: 'future' },
-                  { label: T.results, value: 'past' }
-                ]"
-              />
-              <q-chip v-if="sport === 'football'" dense outline color="primary" :label="T.eng1" />
-            </div>
-
-            <div v-if="!visibleGroups.length && scope === 'past'" class="text-center text-grey q-my-xl">
-              {{ T.noResults }}
-            </div>
-
-            <div v-for="bucket in visibleGroups" :key="bucket.label" class="q-mb-lg">
-              <div class="text-caption text-weight-bold text-grey-7 q-mb-sm q-pl-xs">{{ bucket.label }}</div>
-              <q-card flat bordered class="clean-card">
-                <q-list separator>
-                  <template v-for="item in bucket.items" :key="item.key">
-                    <!-- 足球卡片 -->
-                    <q-item
-                      v-if="item.sport === 'football'"
-                      :clickable="!!item.pred"
-                      @click="item.pred && openDetail(item.row.id, true)"
-                      class="q-py-md q-px-md"
-                    >
-                      <q-item-section>
-                        <div class="row items-center justify-between text-caption text-grey q-mb-sm">
-                          <span>{{ item.metaLabel }}</span>
-                          <q-icon v-if="item.pred" name="chevron_right" size="xs" />
-                        </div>
-                        <div class="fb-row num">
-                          <div class="fb-side">
-                            <div class="fb-team">
-                              <img v-if="item.row.home_logo" :src="item.row.home_logo" class="fb-logo" loading="lazy" @error="$event.target.style.display='none'" />
-                              <span class="fb-name">{{ item.homeName }}</span>
-                            </div>
-                            <span
-                              v-if="item.pred"
-                              class="pct-pill"
-                              :class="item.hFav ? (item.pred.probabilities_1x2.home_win >= 0.5 ? 'is-win' : 'is-lean') : 'is-muted'"
-                            >
-                              {{ (item.pred.probabilities_1x2.home_win * 100).toFixed(1) }}%
-                            </span>
-                            <span v-else class="pct-pill"></span>
-                          </div>
-
-                          <div class="fb-center">
-                            <div class="fb-score">{{ item.scoreText }}</div>
-                            <span
-                              v-if="item.pred"
-                              class="draw-pill"
-                              :class="{ 'is-fav': item.dFav }"
-                            >
-                              {{ lang === 'zh' ? '平 ' : 'Draw ' }}{{ (item.pred.probabilities_1x2.draw * 100).toFixed(1) }}%
-                            </span>
-                          </div>
-
-                          <div class="fb-side">
-                            <span
-                              v-if="item.pred"
-                              class="pct-pill"
-                              :class="item.aFav ? (item.pred.probabilities_1x2.away_win >= 0.5 ? 'is-win' : 'is-lean') : 'is-muted'"
-                            >
-                              {{ (item.pred.probabilities_1x2.away_win * 100).toFixed(1) }}%
-                            </span>
-                            <span v-else class="pct-pill"></span>
-                            <div class="fb-team">
-                              <img v-if="item.row.away_logo" :src="item.row.away_logo" class="fb-logo" loading="lazy" @error="$event.target.style.display='none'" />
-                              <span class="fb-name">{{ item.awayName }}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </q-item-section>
-                    </q-item>
-
-                    <!-- 五子棋卡片 -->
-                    <q-item v-else class="q-py-md q-px-md">
-                      <q-item-section>
-                        <div class="text-caption text-grey q-mb-sm">{{ item.metaLabel }}</div>
-                        <div class="rj-row num">
-                          <div class="rj-side is-black">
-                            <span>{{ item.row.black }}</span>
-                            <img src="/assets/stone-black.svg" class="rj-stone" alt="B" />
-                          </div>
-                          <div class="text-center text-subtitle1 text-weight-bold">
-                            {{ item.scoreText }}
-                          </div>
-                          <div class="rj-side is-white">
-                            <img src="/assets/stone-white.svg" class="rj-stone" alt="W" />
-                            <span>{{ item.row.white }}</span>
-                          </div>
-                        </div>
-                      </q-item-section>
-                    </q-item>
-                  </template>
-                </q-list>
-              </q-card>
-            </div>
-
-            <div v-if="hasMore" class="row justify-center q-mt-md q-mb-lg">
-              <q-btn outline color="primary" :label="T.more" no-caps @click="limit += 8" />
-            </div>
-          </div>
-        </q-page>
-      </q-page-container>
-
-      <q-footer bordered :class="$q.dark.isActive ? 'bg-grey-10 text-grey-5' : 'bg-white text-grey-7'">
-        <div class="app-container q-px-md q-py-sm text-center text-caption num">
-          &copy; 2026 赛源网 · {{ T.lastUpdated }}{{ updatedAt }}
         </div>
-      </q-footer>
-    </q-layout>
+      </section>
+
+      <aside class="side-stack" aria-label="赛程辅助信息">
+        <section class="panel feature-card" id="featureCard">
+          <div class="feature-label">MATCH OF THE DAY <svg class="icon"><use href="#i-star"/></svg></div>
+          <div class="state-box" style="padding:40px 0"><div class="skeleton" style="width:80%;height:18px"></div></div>
+        </section>
+
+        <section class="panel side-card" id="modelCard">
+          <h2 class="side-title">模型状态 <span>5 年数据</span></h2>
+          <div class="model-stats">
+            <div class="model-stat"><strong>—</strong><span>训练比赛</span></div>
+            <div class="model-stat"><strong>—</strong><span>覆盖球队</span></div>
+            <div class="model-stat"><strong>—</strong><span>回测准确率</span></div>
+          </div>
+          <div class="update-line"><svg class="icon"><use href="#i-clock"/></svg><span id="updateText">等待数据同步</span></div>
+        </section>
+
+        <section class="panel side-card" id="rankingCard">
+          <h2 class="side-title">球队实力榜 <span>点击筛选对阵</span></h2>
+          <div class="rank-list" id="rankList">
+            <div class="skeleton" style="height:28px"></div>
+            <div class="skeleton" style="height:28px"></div>
+            <div class="skeleton" style="height:28px"></div>
+          </div>
+        </section>
+
+        <div class="disclaimer">
+          <svg class="icon"><use href="#i-info"/></svg>
+          <span>预测由 Poisson 历史数据模型生成，仅供参考，不代表实际赛果。赛程时间以官方发布为准。</span>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div><div class="footer-brand">MATCHDAY+</div><div>让每一场比赛，都有据可循。</div></div>
+      <div class="footer-note">数据来源：CloudBase · EPL-Poisson-Baseline-5Y<br>整点自动更新 · 仅提供赛前分析与赛程展示</div>
+    </div>
+  </footer>
+
+  <div class="modal-shell" id="matchDialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle" hidden>
+    <section class="match-dialog">
+    <div class="dialog-head">
+      <div class="dialog-competition"><svg class="icon"><use href="#i-trophy"/></svg><span id="dialogTitle">英超联赛 · 单场预测</span></div>
+      <button class="close-btn" id="closeDialog" aria-label="关闭预测详情"><svg class="icon"><use href="#i-close"/></svg></button>
+    </div>
+    <div class="dialog-body" id="dialogBody"></div>
+    </section>
   </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/quasar@2.16.9/dist/quasar.umd.prod.js"></script>
-  <script src="/app.js?v=28"></script>
+  <script>
+    (() => {
+      'use strict';
+      const API = 'https://saishi-d6gz1139g33c076b0-1304984528.ap-shanghai.app.tcloudbase.com/predict';
+      const STORAGE_KEY = 'matchday-favorites-v1';
+      const teamMeta = {
+        'Arsenal': ['阿森纳','ARS','#d71920'], 'Chelsea': ['切尔西','CHE','#034694'],
+        'Man City': ['曼城','MCI','#6cabdd'], 'Liverpool': ['利物浦','LIV','#c8102e'],
+        'Tottenham': ['热刺','TOT','#26366f'], 'Man United': ['曼联','MUN','#da291c'],
+        'Newcastle': ['纽卡斯尔','NEW','#4b5560'], 'Aston Villa': ['阿斯顿维拉','AVL','#7b2747'],
+        'Brighton': ['布莱顿','BHA','#0057b8'], 'West Ham': ['西汉姆联','WHU','#7a263a'],
+        'Bournemouth': ['伯恩茅斯','BOU','#b51f2c'], 'Fulham': ['富勒姆','FUL','#555b60'],
+        'Brentford': ['布伦特福德','BRE','#cf2634'], 'Crystal Palace': ['水晶宫','CRY','#1b458f'],
+        'Everton': ['埃弗顿','EVE','#003399'], 'Wolves': ['狼队','WOL','#b78116'],
+        "Nott'm Forest": ['诺丁汉森林','NFO','#c92332'], 'Leicester': ['莱斯特城','LEI','#003090'],
+        'Ipswich': ['伊普斯维奇','IPS','#3a64a3'], 'Southampton': ['南安普顿','SOU','#c82c35'],
+        'Sunderland': ['桑德兰','SUN','#c7353c'], 'Leeds': ['利兹联','LEE','#c5b85c'],
+        'Burnley': ['伯恩利','BUR','#6c1d45'], 'Luton': ['卢顿','LUT','#d66b23'],
+        'Watford': ['沃特福德','WAT','#b59b22'], 'Sheffield United': ['谢菲尔德联','SHU','#c82b35'],
+        'Norwich': ['诺维奇','NOR','#7c9a35']
+      };
+      const state = { matches: [], teams: [], model: null, hourly: null, filter: 'all', date: 'all', query: '', favorites: new Set(), loading: false };
+      const $ = (selector, root = document) => root.querySelector(selector);
+      const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+      const icon = name => `<svg class="icon" aria-hidden="true"><use href="#i-${name}"/></svg>`;
+      const esc = value => String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+      const pct = value => `${((Number(value) || 0) * 100).toFixed(1)}%`;
+      const meta = team => teamMeta[team] || [team, team.split(/\s+/).map(x => x[0]).join('').slice(0,3).toUpperCase(), '#627268'];
+      const cn = team => meta(team)[0];
+      const badge = (team, large = false) => { const m = meta(team); return `<span class="club-badge${large ? ' large' : ''}" style="--club:${m[2]}" aria-hidden="true">${esc(m[1])}</span>`; };
+      const loadFavorites = () => { try { state.favorites = new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')); } catch (_) { state.favorites = new Set(); } };
+      const saveFavorites = () => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify([...state.favorites])); } catch (_) {} };
+      let toastTimer, lastFocused = null;
+      function toast(message) { const el = $('#toast'); el.textContent = message; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2200); }
+      async function fetchJSON(path) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 22000);
+        try {
+          const response = await fetch(API + path, { signal: controller.signal, headers: { 'Accept': 'application/json' } });
+          if (!response.ok) throw new Error(`服务返回 ${response.status}`);
+          return await response.json();
+        } finally { clearTimeout(timer); }
+      }
+      function shanghaiDateKey(value) {
+        if (!value) return 'unscheduled';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return 'unscheduled';
+        const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(date);
+        const p = Object.fromEntries(parts.map(x => [x.type, x.value]));
+        return `${p.year}-${p.month}-${p.day}`;
+      }
+      function localDateKey(date) {
+        const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(date);
+        const p = Object.fromEntries(parts.map(x => [x.type, x.value]));
+        return `${p.year}-${p.month}-${p.day}`;
+      }
+      function kickoffText(match, long = false) {
+        if (!match.kickoff) return long ? '开球时间待定' : '待定';
+        const date = new Date(match.kickoff);
+        if (Number.isNaN(date.getTime())) return long ? '开球时间待定' : '待定';
+        return new Intl.DateTimeFormat('zh-CN', long ? { timeZone: 'Asia/Shanghai', month: 'long', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false } : { timeZone: 'Asia/Shanghai', hour: '2-digit', minute: '2-digit', hour12: false }).format(date);
+      }
+      function dateLabel(key) {
+        if (key === 'unscheduled') return '精选对阵';
+        const date = new Date(`${key}T12:00:00+08:00`);
+        return new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', month: 'long', day: 'numeric', weekday: 'long' }).format(date);
+      }
+      function isLive(match) { return String(match.status_state || '').toLowerCase() === 'in'; }
+      function matchMeta(match) {
+        if (match.status_detail === 'Featured Matchup') return '焦点战';
+        if (match.round === 'Matchday Featured') return '英超精选';
+        return match.status_detail || match.round || '英超';
+      }
+      function matchName(match) { return `${cn(match.match.home_team)} vs ${cn(match.match.away_team)}`; }
+      function renderDates() {
+        const days = [{ key: 'all', day: '全部赛程', num: 'ALL' }];
+        const now = new Date();
+        const weekdays = ['周日','周一','周二','周三','周四','周五','周六'];
+        for (let i = 0; i < 7; i++) {
+          const date = new Date(now.getTime() + i * 86400000);
+          days.push({ key: localDateKey(date), day: i === 0 ? '今天' : i === 1 ? '明天' : weekdays[date.getDay()], num: `${String(date.getMonth()+1).padStart(2,'0')}/${String(date.getDate()).padStart(2,'0')}` });
+        }
+        $('#dateStrip').innerHTML = days.map(d => `<button class="date-btn${state.date === d.key ? ' active' : ''}" data-date="${d.key}" aria-pressed="${state.date === d.key}"><span class="date-day">${d.day}</span><span class="date-num num">${d.num}</span></button>`).join('');
+      }
+      function filteredMatches() {
+        const q = state.query.trim().toLowerCase();
+        return state.matches.filter(match => {
+          if (state.date !== 'all' && shanghaiDateKey(match.kickoff) !== state.date) return false;
+          if (state.filter === 'featured' && !match.is_big_game) return false;
+          if (state.filter === 'favorites' && !state.favorites.has(match.id)) return false;
+          if (q) {
+            const home = match.match.home_team, away = match.match.away_team;
+            const haystack = [home, away, cn(home), cn(away), meta(home)[1], meta(away)[1]].join(' ').toLowerCase();
+            if (!haystack.includes(q)) return false;
+          }
+          return true;
+        });
+      }
+      function probMarkup(match) {
+        const p = match.probabilities_1x2 || {};
+        const items = [['主胜',p.home_win],['平局',p.draw],['客胜',p.away_win]];
+        const max = Math.max(...items.map(x => Number(x[1]) || 0));
+        return `<div class="probabilities" aria-label="赛果概率">${items.map(([label,value]) => `<div class="prob-item${Number(value) === max ? ' fav' : ''}"><span class="prob-label">${label}</span><strong class="prob-value">${pct(value)}</strong></div>`).join('')}</div>`;
+      }
+      function fixtureRow(match) {
+        const home = match.match.home_team, away = match.match.away_team;
+        const live = isLive(match);
+        const score = match.actual_score && typeof match.actual_score === 'object' ? `${match.actual_score.home ?? 0} - ${match.actual_score.away ?? 0}` : '';
+        return `<article class="fixture-row" data-match="${esc(match.id)}" tabindex="0" role="button" aria-label="查看 ${esc(matchName(match))} 预测详情">
+          <div class="kickoff">${live ? '<span class="live-tag">进行中</span>' : `<div class="kickoff-time">${esc(kickoffText(match))}</div>`}<div class="kickoff-meta">${score ? esc(score) : esc(matchMeta(match))}</div></div>
+          <div class="teams-stack">
+            <div class="team-line">${badge(home)}<span class="team-name">${esc(cn(home))}</span><span class="team-en">${esc(meta(home)[1])}</span></div>
+            <div class="team-line">${badge(away)}<span class="team-name">${esc(cn(away))}</span><span class="team-en">${esc(meta(away)[1])}</span></div>
+          </div>
+          ${probMarkup(match)}
+          <button class="fav-btn${state.favorites.has(match.id) ? ' active' : ''}" data-favorite="${esc(match.id)}" aria-label="${state.favorites.has(match.id) ? '取消收藏' : '收藏'} ${esc(matchName(match))}" aria-pressed="${state.favorites.has(match.id)}">${icon('star')}</button>
+        </article>`;
+      }
+      function renderFixtures() {
+        const matches = filteredMatches();
+        $('#matchCount').textContent = `${matches.length} 场比赛`;
+        if (!matches.length) {
+          const isSearch = !!state.query.trim();
+          $('#fixturesContent').innerHTML = `<div class="state-box"><div class="state-icon">${icon(isSearch ? 'search' : 'calendar')}</div><h2 class="state-title">${isSearch ? '没有找到相关对阵' : state.filter === 'favorites' ? '还没有收藏比赛' : '该日期暂无赛程'}</h2><p class="state-text">${isSearch ? '试试球队中文名、英文名或缩写。' : state.filter === 'favorites' ? '点击比赛右侧的星标，即可把焦点对阵加入收藏。' : '可以切换到“全部赛程”查看当前精选对阵。'}</p><button class="ghost-btn" id="resetFilters">查看全部比赛</button></div>`;
+          return;
+        }
+        const groups = new Map();
+        matches.forEach(match => { const key = shanghaiDateKey(match.kickoff); if (!groups.has(key)) groups.set(key, []); groups.get(key).push(match); });
+        const ordered = [...groups.entries()].sort(([a],[b]) => a === 'unscheduled' ? 1 : b === 'unscheduled' ? -1 : a.localeCompare(b));
+        $('#fixturesContent').innerHTML = ordered.map(([key, items]) => `<section><div class="group-head"><h2 class="group-title">${icon('calendar')}${dateLabel(key)}</h2><span class="group-tag">${key === 'unscheduled' ? '开球时间待定' : `${items.length} 场`}</span></div><div class="fixture-list">${items.map(fixtureRow).join('')}</div></section>`).join('');
+      }
+      function renderFeature() {
+        const match = state.matches.find(m => m.is_big_game) || state.matches[0];
+        if (!match) { $('#featureCard').innerHTML = '<div class="feature-label">MATCH OF THE DAY</div><p class="state-text">暂无焦点对阵</p>'; return; }
+        const home = match.match.home_team, away = match.match.away_team;
+        const top = (match.top_scorelines || [])[0];
+        $('#featureCard').innerHTML = `<div class="feature-label">MATCH OF THE DAY ${icon('star')}</div>
+          <div class="feature-teams">
+            <div class="feature-team">${badge(home,true)}<div class="feature-team-name">${esc(cn(home))}</div></div>
+            <div><div class="versus">VS</div><div class="feature-kickoff">${esc(kickoffText(match))}</div></div>
+            <div class="feature-team">${badge(away,true)}<div class="feature-team-name">${esc(cn(away))}</div></div>
+          </div>
+          <div class="feature-score"><div class="feature-score-label">模型最可能比分</div><div class="feature-score-value">${esc(top?.score || '—')}<span>${top ? pct(top.probability) : ''}</span></div></div>
+          <button class="primary-btn" data-open-match="${esc(match.id)}">查看完整预测 ${icon('arrow')}</button>`;
+      }
+      function renderModel() {
+        const model = state.model || state.hourly?.model_summary;
+        const accuracy = model?.backtest_2526?.accuracy;
+        $('#modelCard').innerHTML = `<h2 class="side-title">模型状态 <span>5 年数据</span></h2>
+          <div class="model-stats">
+            <div class="model-stat"><strong class="num">${model?.total_matches ?? '—'}</strong><span>训练比赛</span></div>
+            <div class="model-stat"><strong class="num">${model?.total_teams ?? '—'}</strong><span>覆盖球队</span></div>
+            <div class="model-stat"><strong class="num">${accuracy == null ? '—' : pct(accuracy)}</strong><span>回测准确率</span></div>
+          </div>
+          <div class="update-line">${icon('clock')}<span id="updateText">${state.hourly?.generated_at ? `更新于 ${new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(state.hourly.generated_at))}` : '整点自动同步未来赛事'}</span></div>`;
+      }
+      function renderRankings() {
+        const teams = [...state.teams].sort((a,b) => b.net_rating - a.net_rating).slice(0,5);
+        $('#rankList').innerHTML = teams.length ? teams.map((team,index) => `<button class="rank-row" data-team-search="${esc(team.team)}"><span class="rank-pos">${String(index+1).padStart(2,'0')}</span>${badge(team.team)}<span class="rank-name">${esc(cn(team.team))}</span><strong class="rank-value">${Number(team.net_rating).toFixed(2)}</strong></button>`).join('') : '<span class="state-text">球队数据暂不可用</span>';
+      }
+      function matrixMarkup(match) {
+        const matrix = match.score_matrix || [];
+        const size = Math.min(6, matrix.length);
+        if (!size) return '';
+        let html = '<div class="matrix-wrap"><table class="matrix"><thead><tr><th>主\\客</th>';
+        for (let col=0; col<size; col++) html += `<th>${col}</th>`;
+        html += '</tr></thead><tbody>';
+        for (let row=0; row<size; row++) {
+          html += `<tr><th>${row}</th>`;
+          for (let col=0; col<size; col++) {
+            const value = Number(matrix[row]?.[col]) || 0;
+            const heat = Math.min(.72, value * 5.5).toFixed(2);
+            html += `<td style="--heat:${heat}" title="${row}-${col}：${pct(value)}">${(value*100).toFixed(1)}</td>`;
+          }
+          html += '</tr>';
+        }
+        return html + '</tbody></table></div><p class="matrix-note">单位：概率 % · 展示 0–5 球区间</p>';
+      }
+      function openMatch(id) {
+        const match = state.matches.find(m => String(m.id) === String(id));
+        if (!match) return;
+        const home = match.match.home_team, away = match.match.away_team;
+        const p = match.probabilities_1x2 || {}, xg = match.expected_goals || {}, ou = match.over_under || {}, btts = match.btts || {};
+        $('#dialogBody').innerHTML = `<div class="dialog-teams">
+            <div class="dialog-team">${badge(home,true)}<div><div class="dialog-team-name">${esc(cn(home))}</div><div class="dialog-team-en">${esc(home.toUpperCase())}</div></div></div>
+            <div><div class="dialog-vs">VS</div><div class="dialog-time">${esc(kickoffText(match,true))}</div></div>
+            <div class="dialog-team">${badge(away,true)}<div><div class="dialog-team-name">${esc(cn(away))}</div><div class="dialog-team-en">${esc(away.toUpperCase())}</div></div></div>
+          </div>
+          <section><h2 class="dialog-section-title">预期进球 <span>Expected Goals</span></h2><div class="xg-grid"><div class="xg-card"><div class="xg-label">${esc(cn(home))}</div><div class="xg-value">${Number(xg.home || 0).toFixed(2)}</div></div><div class="xg-card"><div class="xg-label">${esc(cn(away))}</div><div class="xg-value">${Number(xg.away || 0).toFixed(2)}</div></div></div></section>
+          <section class="dialog-section"><h2 class="dialog-section-title">赛果概率 <span>1X2 Probability</span></h2><div class="outcome-values"><div><span>主胜</span><strong style="color:var(--accent)">${pct(p.home_win)}</strong></div><div><span>平局</span><strong>${pct(p.draw)}</strong></div><div><span>客胜</span><strong style="color:var(--blue)">${pct(p.away_win)}</strong></div></div><div class="outcome-bar"><div class="outcome-home" style="width:${(p.home_win||0)*100}%"></div><div class="outcome-draw" style="width:${(p.draw||0)*100}%"></div><div class="outcome-away" style="width:${(p.away_win||0)*100}%"></div></div></section>
+          <section class="dialog-section"><h2 class="dialog-section-title">最可能比分 <span>Top Scorelines</span></h2><div class="scoreline-grid">${(match.top_scorelines || []).slice(0,6).map(s => `<div class="scoreline-item"><strong>${esc(s.score)}</strong><span>${pct(s.probability)}</span></div>`).join('')}</div></section>
+          <section class="dialog-section"><h2 class="dialog-section-title">进球市场 <span>Goals & BTTS</span></h2><div class="market-grid">
+            <div class="market-item"><div class="market-top"><span>总进球大于 2.5</span><strong>${pct(ou.over_2_5)}</strong></div><div class="mini-track"><div style="width:${(ou.over_2_5||0)*100}%"></div></div></div>
+            <div class="market-item"><div class="market-top"><span>双方均有进球</span><strong>${pct(btts.yes)}</strong></div><div class="mini-track"><div style="width:${(btts.yes||0)*100}%"></div></div></div>
+          </div></section>
+          <section class="dialog-section"><h2 class="dialog-section-title">比分概率矩阵 <span>Score Matrix</span></h2>${matrixMarkup(match)}</section>`;
+        const dialog = $('#matchDialog');
+        lastFocused = document.activeElement;
+        dialog.hidden = false;
+        document.body.style.overflow = 'hidden';
+        $('#closeDialog').focus();
+      }
+      function closeMatch() {
+        const dialog = $('#matchDialog');
+        dialog.hidden = true;
+        document.body.style.overflow = '';
+        if (lastFocused && document.contains(lastFocused)) lastFocused.focus();
+      }
+      function setLoading(loading) { state.loading = loading; $('#refreshBtn').classList.toggle('loading', loading); $('#refreshBtn').disabled = loading; }
+      function setService(online, text) { $('#servicePill').classList.toggle('offline', !online); $('#serviceText').textContent = text; }
+      async function loadData(showMessage = false) {
+        if (state.loading) return;
+        setLoading(true);
+        setService(false, '正在同步');
+        try {
+          const [hourly, teamsResult, modelResult] = await Promise.allSettled([fetchJSON('/hourly'), fetchJSON('/teams'), fetchJSON('/model-info')]);
+          if (hourly.status === 'rejected') throw hourly.reason;
+          state.hourly = hourly.value;
+          state.matches = Array.isArray(hourly.value.matches) ? hourly.value.matches : [];
+          state.teams = teamsResult.status === 'fulfilled' && Array.isArray(teamsResult.value.teams) ? teamsResult.value.teams : state.teams;
+          state.model = modelResult.status === 'fulfilled' ? modelResult.value : state.model;
+          $('#leagueSub').textContent = `${state.matches.length} 场精选对阵 · ${state.hourly.timezone || 'Asia/Shanghai'} · 每小时更新`;
+          renderFixtures(); renderFeature(); renderModel(); renderRankings();
+          setService(true, '预测服务在线');
+          if (showMessage) toast('赛程与预测已更新');
+        } catch (error) {
+          console.error(error);
+          setService(false, '服务连接失败');
+          $('#matchCount').textContent = '暂时离线';
+          $('#fixturesContent').innerHTML = `<div class="state-box"><div class="state-icon">${icon('refresh')}</div><h2 class="state-title">赛程暂时无法加载</h2><p class="state-text">请检查网络连接后重试。${esc(error.name === 'AbortError' ? '本次请求已超时。' : '')}</p><button class="ghost-btn" id="retryLoad">重新加载</button></div>`;
+          renderFeature(); renderModel();
+        } finally { setLoading(false); }
+      }
+
+      loadFavorites();
+      renderDates();
+      loadData();
+
+      $('#dateStrip').addEventListener('click', event => { const btn = event.target.closest('[data-date]'); if (!btn) return; state.date = btn.dataset.date; renderDates(); renderFixtures(); });
+      $$('.filter-tab').forEach(btn => btn.addEventListener('click', () => { state.filter = btn.dataset.filter; $$('.filter-tab').forEach(x => { x.classList.toggle('active', x === btn); x.setAttribute('aria-selected', x === btn); }); renderFixtures(); }));
+      $('#fixturesContent').addEventListener('click', event => {
+        const fav = event.target.closest('[data-favorite]');
+        if (fav) {
+          event.stopPropagation();
+          const id = fav.dataset.favorite;
+          if (state.favorites.has(id)) { state.favorites.delete(id); toast('已取消收藏'); } else { state.favorites.add(id); toast('已加入我的收藏'); }
+          saveFavorites(); renderFixtures(); return;
+        }
+        if (event.target.closest('#retryLoad')) { loadData(true); return; }
+        if (event.target.closest('#resetFilters')) { state.filter = 'all'; state.date = 'all'; state.query = ''; $('#searchInput').value = ''; $$('.filter-tab').forEach(x => { const active = x.dataset.filter === 'all'; x.classList.toggle('active',active); x.setAttribute('aria-selected',active); }); renderDates(); renderFixtures(); return; }
+        const row = event.target.closest('[data-match]'); if (row) openMatch(row.dataset.match);
+      });
+      $('#fixturesContent').addEventListener('keydown', event => { if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('[data-match]')) { event.preventDefault(); openMatch(event.target.dataset.match); } });
+      $('#featureCard').addEventListener('click', event => { const btn = event.target.closest('[data-open-match]'); if (btn) openMatch(btn.dataset.openMatch); });
+      $('#refreshBtn').addEventListener('click', () => loadData(true));
+      $('#closeDialog').addEventListener('click', closeMatch);
+      $('#matchDialog').addEventListener('click', event => { if (event.target === $('#matchDialog')) closeMatch(); });
+      $('#searchInput').addEventListener('input', event => { state.query = event.target.value; renderFixtures(); });
+      $('#searchBox').addEventListener('click', () => { if (window.innerWidth <= 620 && !$('#searchBox').classList.contains('expanded')) { $('#searchBox').classList.add('expanded'); $('#searchInput').focus(); } });
+      document.addEventListener('click', event => { if (window.innerWidth <= 620 && !event.target.closest('#searchBox') && !state.query) $('#searchBox').classList.remove('expanded'); });
+      document.addEventListener('keydown', event => {
+        if (event.key === '/' && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) { event.preventDefault(); $('#searchBox').classList.add('expanded'); $('#searchInput').focus(); }
+        if (event.key === 'Escape' && !$('#matchDialog').hidden) { closeMatch(); return; }
+        if (event.key === 'Escape' && document.activeElement === $('#searchInput')) { $('#searchInput').blur(); if (!state.query) $('#searchBox').classList.remove('expanded'); }
+      });
+      $('#rankList').addEventListener('click', event => { const btn = event.target.closest('[data-team-search]'); if (!btn) return; state.query = btn.dataset.teamSearch; $('#searchInput').value = state.query; state.date = 'all'; state.filter = 'all'; renderDates(); renderFixtures(); $('#fixturesSection').scrollIntoView({behavior:'smooth',block:'start'}); });
+      $('#navFixtures').addEventListener('click', () => $('#fixturesSection').scrollIntoView({behavior:'smooth'}));
+      $('#navTeams').addEventListener('click', () => $('#rankingCard').scrollIntoView({behavior:'smooth',block:'center'}));
+      $('#navModel').addEventListener('click', () => $('#modelCard').scrollIntoView({behavior:'smooth',block:'center'}));
+    })();
+  </script>
 </body>
 </html>
