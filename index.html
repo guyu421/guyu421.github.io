@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>saiyuan — 五子棋 · 足球赛果</title>
+  <title>赛源网 — 五子棋 · 足球赛果与预测</title>
   <link href="https://cdn.jsdelivr.net/npm/@quasar/extras@1.16.14/material-icons/material-icons.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/quasar@2.16.9/dist/quasar.prod.css" rel="stylesheet" />
   <style>
@@ -12,52 +12,69 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
     }
     .num { font-variant-numeric: tabular-nums; }
-    .app-wrap { max-width: 860px; margin: 0 auto; }
+    .app-container {
+      width: 100%;
+      max-width: 820px;
+      margin: 0 auto;
+    }
+    .clean-card {
+      border-radius: 12px;
+      overflow: hidden;
+    }
 
-    /* 足球卡片三栏对称对齐：队名在队标下方，胜率在内侧 */
-    .fb-grid {
+    /* 足球卡片三栏对齐：队标在上、队名在下、胜率在内侧 */
+    .fb-row {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 5.5rem minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1fr) 88px minmax(0, 1fr);
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       width: 100%;
     }
     .fb-side {
       display: flex;
       align-items: center;
-      justify-content: space-between;
       gap: 8px;
       min-width: 0;
     }
-    .fb-team-stack {
+    .fb-team {
       flex: 1 1 0;
       min-width: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
-      gap: 4px;
+      gap: 6px;
     }
     .fb-logo {
-      width: 28px;
-      height: 28px;
+      width: 32px;
+      height: 32px;
       object-fit: contain;
     }
     .fb-name {
-      font-size: 13px;
+      font-size: 13.5px;
       font-weight: 600;
-      line-height: 1.25;
+      line-height: 1.3;
       word-break: break-word;
     }
-    .fb-pct-slot {
+    .pct-pill {
       flex: 0 0 54px;
+      width: 54px;
       text-align: center;
+      padding: 3px 0;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.35;
     }
+    .pct-pill.is-win { background: #16a34a; color: #fff; }
+    .pct-pill.is-lean { background: #52525b; color: #fff; }
+    .pct-pill.is-muted { color: #71717a; font-weight: 600; }
+
     .fb-center {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 3px;
+      gap: 4px;
       text-align: center;
     }
     .fb-score {
@@ -65,33 +82,46 @@
       font-weight: 800;
       line-height: 1.1;
     }
+    .draw-pill {
+      font-size: 11px;
+      font-weight: 600;
+      color: #71717a;
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+    .draw-pill.is-fav {
+      background: #e4e4e7;
+      color: #18181b;
+    }
 
     /* 五子棋三栏 */
-    .rj-grid {
+    .rj-row {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 64px minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1fr) 72px minmax(0, 1fr);
       align-items: center;
-      gap: 8px;
+      gap: 12px;
       width: 100%;
     }
     .rj-side {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       min-width: 0;
+      font-size: 14px;
+      font-weight: 600;
     }
     .rj-side.is-black { justify-content: flex-end; text-align: right; }
     .rj-side.is-white { justify-content: flex-start; text-align: left; }
     .rj-stone { width: 16px; height: 16px; flex: 0 0 auto; }
 
-    /* 详情页比分矩阵 (0-9 等格) */
+    /* 比分矩阵 (0-9 等格) */
     .poisson-matrix-wrap {
       overflow-x: auto;
-      border-radius: 6px;
+      border-radius: 8px;
     }
     .poisson-matrix {
       width: 100%;
-      min-width: 460px;
+      min-width: 480px;
       table-layout: fixed;
       border-collapse: collapse;
       font-variant-numeric: tabular-nums;
@@ -104,15 +134,15 @@
       padding: 0;
       text-align: center;
       vertical-align: middle;
-      border: 1px solid rgba(128, 128, 128, 0.22);
+      border: 1px solid rgba(128, 128, 128, 0.2);
     }
     .poisson-matrix th {
-      background: rgba(128, 128, 128, 0.1);
+      background: rgba(128, 128, 128, 0.08);
       font-weight: 700;
     }
     .prob-bar {
       display: flex;
-      height: 10px;
+      height: 8px;
       border-radius: 999px;
       overflow: hidden;
       background: rgba(128, 128, 128, 0.15);
@@ -128,34 +158,36 @@
 </head>
 <body>
   <div id="q-app" v-cloak>
-    <q-layout view="hHh lpR fFf" :class="$q.dark.isActive ? 'bg-dark text-white' : 'bg-grey-1 text-dark'">
-      <q-header bordered :class="$q.dark.isActive ? 'bg-grey-10 text-white' : 'bg-white text-dark'">
-        <q-toolbar class="app-wrap q-px-md">
-          <q-toolbar-title class="text-weight-bold row items-center no-wrap q-gutter-x-sm" style="cursor:pointer" @click="closeDetail(true)">
-            <span class="text-primary">#</span>
-            <span>saiyuan</span>
-          </q-toolbar-title>
+    <q-layout view="hHh lpR fFf" :class="$q.dark.isActive ? 'bg-grey-10 text-white' : 'bg-grey-2 text-grey-9'">
+      <q-header bordered :class="$q.dark.isActive ? 'bg-grey-10 text-white' : 'bg-white text-grey-9'">
+        <div class="app-container">
+          <q-toolbar class="q-px-md">
+            <q-toolbar-title class="text-weight-bold row items-center no-wrap q-gutter-x-xs" style="cursor:pointer; flex: 0 0 auto;" @click="closeDetail(true)">
+              <q-icon name="sports_soccer" color="primary" size="22px" />
+              <span>赛源网</span>
+            </q-toolbar-title>
 
-          <q-input
-            v-model="search"
-            dense
-            outlined
-            clearable
-            :placeholder="T.search"
-            class="q-mr-sm"
-            style="max-width: 210px;"
-          >
-            <template v-slot:prepend>
-              <q-icon name="search" size="xs" />
-            </template>
-          </q-input>
+            <q-space />
 
-          <q-btn flat dense no-caps :label="lang === 'zh' ? 'EN' : '中'" @click="toggleLang" class="q-mr-xs" />
-          <q-btn flat round dense :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'" @click="toggleDark" />
-        </q-toolbar>
+            <q-input
+              v-model="search"
+              dense
+              outlined
+              clearable
+              :placeholder="T.search"
+              class="q-mr-sm"
+              style="width: 180px;"
+            >
+              <template v-slot:prepend>
+                <q-icon name="search" size="xs" />
+              </template>
+            </q-input>
 
-        <div v-if="!activeDetail" class="app-wrap q-px-md">
-          <q-tabs v-model="sport" dense align="left" active-color="primary" indicator-color="primary" no-caps>
+            <q-btn flat dense no-caps :label="lang === 'zh' ? 'EN' : '中'" @click="toggleLang" class="q-mr-xs" />
+            <q-btn flat round dense :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'" @click="toggleDark" />
+          </q-toolbar>
+
+          <q-tabs v-if="!activeDetail" v-model="sport" dense align="left" active-color="primary" indicator-color="primary" no-caps class="q-px-sm">
             <q-tab name="all" :label="T.all" />
             <q-tab name="renju" :label="T.renjuSport" />
             <q-tab name="football" :label="T.footballSport" />
@@ -164,60 +196,60 @@
       </q-header>
 
       <q-page-container>
-        <q-page class="app-wrap q-pa-md">
-          <!-- 加载状态 -->
+        <q-page class="app-container q-pa-md">
+          <!-- 加载中 -->
           <div v-if="loading" class="row justify-center q-my-xl">
             <q-spinner-dots color="primary" size="40px" />
           </div>
 
-          <!-- 错误状态 -->
+          <!-- 错误 -->
           <q-banner v-else-if="loadError" rounded class="bg-negative text-white q-mb-md">
             {{ T.loadFail }}
           </q-banner>
 
           <!-- 详情页 -->
           <div v-else-if="activeDetail">
-            <div class="row items-center q-mb-md q-gutter-x-sm">
+            <div class="row items-center justify-between q-mb-md">
               <q-btn flat dense icon="arrow_back" :label="T.back" no-caps @click="closeDetail(true)" />
               <span class="text-caption text-grey">{{ activeDetail.metaLabel }}</span>
             </div>
 
             <!-- 记分板头 -->
-            <q-card flat bordered class="q-pa-md q-mb-md">
-              <div class="fb-grid">
-                <div class="fb-team-stack">
-                  <img v-if="activeDetail.match.home_logo" :src="activeDetail.match.home_logo" class="fb-logo" style="width:52px;height:52px;" @error="$event.target.style.display='none'" />
+            <q-card flat bordered class="clean-card q-pa-lg q-mb-md">
+              <div class="fb-row">
+                <div class="fb-team">
+                  <img v-if="activeDetail.match.home_logo" :src="activeDetail.match.home_logo" style="width:56px;height:56px;object-fit:contain;" @error="$event.target.style.display='none'" />
                   <div class="text-subtitle1 text-weight-bold">{{ activeDetail.homeName }}</div>
                 </div>
                 <div class="fb-center">
                   <div class="text-caption text-grey">{{ activeDetail.metaLabel }}</div>
                   <div class="text-h4 text-weight-bolder num">{{ activeDetail.scoreText }}</div>
                 </div>
-                <div class="fb-team-stack">
-                  <img v-if="activeDetail.match.away_logo" :src="activeDetail.match.away_logo" class="fb-logo" style="width:52px;height:52px;" @error="$event.target.style.display='none'" />
+                <div class="fb-team">
+                  <img v-if="activeDetail.match.away_logo" :src="activeDetail.match.away_logo" style="width:56px;height:56px;object-fit:contain;" @error="$event.target.style.display='none'" />
                   <div class="text-subtitle1 text-weight-bold">{{ activeDetail.awayName }}</div>
                 </div>
               </div>
             </q-card>
 
             <!-- xG 与 最可能比分 -->
-            <div class="row q-col-gutter-sm q-mb-md num">
-              <div class="col-4">
-                <q-card flat bordered class="q-pa-sm text-center">
-                  <div class="text-caption text-grey">{{ activeDetail.homeName }} xG</div>
-                  <div class="text-h6 text-weight-bold">{{ activeDetail.pred.expected_goals.home.toFixed(2) }}</div>
+            <div class="row q-col-gutter-md q-mb-md num">
+              <div class="col-6 col-sm-4">
+                <q-card flat bordered class="clean-card q-pa-md text-center">
+                  <div class="text-caption text-grey q-mb-xs">{{ activeDetail.homeName }} xG</div>
+                  <div class="text-h5 text-weight-bold">{{ activeDetail.pred.expected_goals.home.toFixed(2) }}</div>
                 </q-card>
               </div>
-              <div class="col-4">
-                <q-card flat bordered class="q-pa-sm text-center">
-                  <div class="text-caption text-grey">{{ activeDetail.awayName }} xG</div>
-                  <div class="text-h6 text-weight-bold">{{ activeDetail.pred.expected_goals.away.toFixed(2) }}</div>
+              <div class="col-6 col-sm-4">
+                <q-card flat bordered class="clean-card q-pa-md text-center">
+                  <div class="text-caption text-grey q-mb-xs">{{ activeDetail.awayName }} xG</div>
+                  <div class="text-h5 text-weight-bold">{{ activeDetail.pred.expected_goals.away.toFixed(2) }}</div>
                 </q-card>
               </div>
-              <div class="col-4">
-                <q-card flat bordered class="q-pa-sm text-center">
-                  <div class="text-caption text-grey">{{ T.topScore }}</div>
-                  <div class="text-h6 text-weight-bold">
+              <div class="col-12 col-sm-4">
+                <q-card flat bordered class="clean-card q-pa-md text-center">
+                  <div class="text-caption text-grey q-mb-xs">{{ T.topScore }}</div>
+                  <div class="text-h5 text-weight-bold">
                     {{ activeDetail.top1 ? `${activeDetail.top1.score}（${(activeDetail.top1.probability * 100).toFixed(1)}%）` : '—' }}
                   </div>
                 </q-card>
@@ -225,9 +257,9 @@
             </div>
 
             <!-- 主胜 / 平局 / 客胜概率 -->
-            <q-card flat bordered class="q-pa-md q-mb-md num">
-              <div class="text-subtitle2 text-weight-bold q-mb-sm">{{ T.outcomeTitle }}</div>
-              <div class="row q-col-gutter-sm q-mb-sm text-center">
+            <q-card flat bordered class="clean-card q-pa-md q-mb-md num">
+              <div class="text-subtitle2 text-weight-bold q-mb-md">{{ T.outcomeTitle }}</div>
+              <div class="row q-col-gutter-sm q-mb-md text-center">
                 <div class="col-4">
                   <div class="text-caption text-grey">{{ T.homeWin }}</div>
                   <div class="text-h6 text-weight-bold text-positive">{{ (activeDetail.pred.probabilities_1x2.home_win * 100).toFixed(1) }}%</div>
@@ -249,8 +281,8 @@
             </q-card>
 
             <!-- 比分矩阵 0-9 -->
-            <q-card flat bordered class="q-pa-md">
-              <div class="text-subtitle2 text-weight-bold q-mb-sm">{{ T.matrixTitle }}</div>
+            <q-card flat bordered class="clean-card q-pa-md">
+              <div class="text-subtitle2 text-weight-bold q-mb-md">{{ T.matrixTitle }}</div>
               <div class="poisson-matrix-wrap">
                 <table class="poisson-matrix">
                   <thead>
@@ -285,23 +317,23 @@
                 unelevated
                 rounded
                 toggle-color="primary"
-                :color="$q.dark.isActive ? 'grey-9' : 'grey-3'"
-                :text-color="$q.dark.isActive ? 'white' : 'dark'"
+                :color="$q.dark.isActive ? 'grey-9' : 'white'"
+                :text-color="$q.dark.isActive ? 'white' : 'grey-8'"
                 :options="[
                   { label: T.schedule, value: 'future' },
                   { label: T.results, value: 'past' }
                 ]"
               />
-              <q-chip v-if="sport === 'football'" dense clickable outline color="primary" :label="T.eng1" />
+              <q-chip v-if="sport === 'football'" dense outline color="primary" :label="T.eng1" />
             </div>
 
             <div v-if="!visibleGroups.length && scope === 'past'" class="text-center text-grey q-my-xl">
               {{ T.noResults }}
             </div>
 
-            <div v-for="bucket in visibleGroups" :key="bucket.label" class="q-mb-md">
-              <div class="text-caption text-weight-bold text-grey q-mb-xs q-pl-xs">{{ bucket.label }}</div>
-              <q-card flat bordered>
+            <div v-for="bucket in visibleGroups" :key="bucket.label" class="q-mb-lg">
+              <div class="text-caption text-weight-bold text-grey-7 q-mb-sm q-pl-xs">{{ bucket.label }}</div>
+              <q-card flat bordered class="clean-card">
                 <q-list separator>
                   <template v-for="item in bucket.items" :key="item.key">
                     <!-- 足球卡片 -->
@@ -309,55 +341,50 @@
                       v-if="item.sport === 'football'"
                       :clickable="!!item.pred"
                       @click="item.pred && openDetail(item.row.id, true)"
-                      class="q-py-sm"
+                      class="q-py-md q-px-md"
                     >
                       <q-item-section>
-                        <div class="row items-center justify-between text-caption text-grey q-mb-xs">
+                        <div class="row items-center justify-between text-caption text-grey q-mb-sm">
                           <span>{{ item.metaLabel }}</span>
                           <q-icon v-if="item.pred" name="chevron_right" size="xs" />
                         </div>
-                        <div class="fb-grid num">
+                        <div class="fb-row num">
                           <div class="fb-side">
-                            <div class="fb-team-stack">
+                            <div class="fb-team">
                               <img v-if="item.row.home_logo" :src="item.row.home_logo" class="fb-logo" loading="lazy" @error="$event.target.style.display='none'" />
                               <span class="fb-name">{{ item.homeName }}</span>
                             </div>
-                            <div class="fb-pct-slot">
-                              <q-badge
-                                v-if="item.pred"
-                                :color="item.hFav ? (item.pred.probabilities_1x2.home_win >= 0.5 ? 'positive' : 'grey-7') : 'transparent'"
-                                :text-color="item.hFav ? 'white' : ($q.dark.isActive ? 'grey-4' : 'grey-7')"
-                                class="q-pa-xs text-weight-bold"
-                              >
-                                {{ (item.pred.probabilities_1x2.home_win * 100).toFixed(1) }}%
-                              </q-badge>
-                            </div>
+                            <span
+                              v-if="item.pred"
+                              class="pct-pill"
+                              :class="item.hFav ? (item.pred.probabilities_1x2.home_win >= 0.5 ? 'is-win' : 'is-lean') : 'is-muted'"
+                            >
+                              {{ (item.pred.probabilities_1x2.home_win * 100).toFixed(1) }}%
+                            </span>
+                            <span v-else class="pct-pill"></span>
                           </div>
 
                           <div class="fb-center">
                             <div class="fb-score">{{ item.scoreText }}</div>
-                            <q-badge
+                            <span
                               v-if="item.pred"
-                              :color="item.dFav ? 'grey-7' : 'transparent'"
-                              :text-color="item.dFav ? 'white' : 'grey-6'"
-                              style="font-size:11px;"
+                              class="draw-pill"
+                              :class="{ 'is-fav': item.dFav }"
                             >
                               {{ lang === 'zh' ? '平 ' : 'Draw ' }}{{ (item.pred.probabilities_1x2.draw * 100).toFixed(1) }}%
-                            </q-badge>
+                            </span>
                           </div>
 
                           <div class="fb-side">
-                            <div class="fb-pct-slot">
-                              <q-badge
-                                v-if="item.pred"
-                                :color="item.aFav ? (item.pred.probabilities_1x2.away_win >= 0.5 ? 'positive' : 'grey-7') : 'transparent'"
-                                :text-color="item.aFav ? 'white' : ($q.dark.isActive ? 'grey-4' : 'grey-7')"
-                                class="q-pa-xs text-weight-bold"
-                              >
-                                {{ (item.pred.probabilities_1x2.away_win * 100).toFixed(1) }}%
-                              </q-badge>
-                            </div>
-                            <div class="fb-team-stack">
+                            <span
+                              v-if="item.pred"
+                              class="pct-pill"
+                              :class="item.aFav ? (item.pred.probabilities_1x2.away_win >= 0.5 ? 'is-win' : 'is-lean') : 'is-muted'"
+                            >
+                              {{ (item.pred.probabilities_1x2.away_win * 100).toFixed(1) }}%
+                            </span>
+                            <span v-else class="pct-pill"></span>
+                            <div class="fb-team">
                               <img v-if="item.row.away_logo" :src="item.row.away_logo" class="fb-logo" loading="lazy" @error="$event.target.style.display='none'" />
                               <span class="fb-name">{{ item.awayName }}</span>
                             </div>
@@ -367,12 +394,12 @@
                     </q-item>
 
                     <!-- 五子棋卡片 -->
-                    <q-item v-else class="q-py-sm">
+                    <q-item v-else class="q-py-md q-px-md">
                       <q-item-section>
-                        <div class="text-caption text-grey q-mb-xs">{{ item.metaLabel }}</div>
-                        <div class="rj-grid num">
+                        <div class="text-caption text-grey q-mb-sm">{{ item.metaLabel }}</div>
+                        <div class="rj-row num">
                           <div class="rj-side is-black">
-                            <span class="text-weight-medium">{{ item.row.black }}</span>
+                            <span>{{ item.row.black }}</span>
                             <img src="/assets/stone-black.svg" class="rj-stone" alt="B" />
                           </div>
                           <div class="text-center text-subtitle1 text-weight-bold">
@@ -380,7 +407,7 @@
                           </div>
                           <div class="rj-side is-white">
                             <img src="/assets/stone-white.svg" class="rj-stone" alt="W" />
-                            <span class="text-weight-medium">{{ item.row.white }}</span>
+                            <span>{{ item.row.white }}</span>
                           </div>
                         </div>
                       </q-item-section>
@@ -390,7 +417,7 @@
               </q-card>
             </div>
 
-            <div v-if="hasMore" class="row justify-center q-mt-md">
+            <div v-if="hasMore" class="row justify-center q-mt-md q-mb-lg">
               <q-btn outline color="primary" :label="T.more" no-caps @click="limit += 8" />
             </div>
           </div>
@@ -398,8 +425,8 @@
       </q-page-container>
 
       <q-footer bordered :class="$q.dark.isActive ? 'bg-grey-10 text-grey-5' : 'bg-white text-grey-7'">
-        <div class="app-wrap q-px-md q-py-sm text-center text-caption num">
-          &copy; 2026 guyu421.github.io · {{ T.lastUpdated }}{{ updatedAt }}
+        <div class="app-container q-px-md q-py-sm text-center text-caption num">
+          &copy; 2026 赛源网 · {{ T.lastUpdated }}{{ updatedAt }}
         </div>
       </q-footer>
     </q-layout>
@@ -407,6 +434,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/quasar@2.16.9/dist/quasar.umd.prod.js"></script>
-  <script src="/app.js?v=27"></script>
+  <script src="/app.js?v=28"></script>
 </body>
 </html>
