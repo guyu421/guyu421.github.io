@@ -2096,6 +2096,22 @@ a.mc-in .mc-chev::after {
     object-fit: contain;
 }
 
+/* 足球卡片里的队标：跟队名并排（主队在图左、客队在图右），比上下叠放紧凑 */
+.mc-side.has-logo {
+    flex-direction: row;
+    justify-content: center;
+    gap: 0.4rem;
+}
+
+.mc-side.has-logo.is-away { flex-direction: row-reverse; }
+
+.mc-logo {
+    width: 26px;
+    height: 26px;
+    flex: 0 0 auto;
+    object-fit: contain;
+}
+
 .mc-crest.flag-emoji-logo { font-size: 30px; }
 
 .mc-nm {
@@ -2197,25 +2213,19 @@ a.mc-in .mc-chev::after {
     opacity: 0.5;
 }
 
-/* 五子棋成绩：+ 胜 / - 负 / = 和，左边黑方、右边白方。弃权的一方符号压暗，
-   右上角挂一个「弃」，跟正常分出胜负的对局区分开。 */
+/* 五子棋弃权局用成绩册的 + / - 记法（左黑右白），正常对局仍显示比分。
+   弃权是少数情况，字号压小一档、颜色压暗，不跟比分抢眼。 */
 .mc-res {
     display: inline-flex;
     align-items: baseline;
-    gap: 0.32em;
+    gap: 0.3em;
+    font-size: 1.15rem;
+    font-weight: 700;
     letter-spacing: 0.02em;
+    color: hsl(var(--muted-foreground));
 }
 
 .mc-sym { font-style: normal; }
-.mc-sym.is-forfeit { color: hsl(var(--muted-foreground)); }
-
-.mc-fo {
-    margin-inline-start: 0.08em;
-    font-size: 0.42em;
-    font-weight: 700;
-    vertical-align: super;
-    color: hsl(var(--destructive));
-}
 
 /* A finished score keeps the prediction tick/cross as its separator. */
 .mc-score :is(.finished-prediction-correct, .finished-prediction-wrong, .finished-prediction-unsure) {

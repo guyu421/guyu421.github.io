@@ -24,13 +24,12 @@
       round: function (n) { return '第' + n + '轮'; },
       board: function (n) { return '第' + n + '台'; },
       forfeit: '弃权',
-      forfeitMark: '弃',
       live: '进行中',
       noSchedule: '暂无赛程',
       noResults: '暂无赛果',
       locale: 'zh-CN',
       docTitle: 'saiyuan',
-      search: '搜索棋手、赛事、开局…',
+      search: '搜索赛事、球队…',
       searchLabel: '搜索',
       more: '加载更早的赛事'
     },
@@ -42,13 +41,12 @@
       round: function (n) { return 'Round ' + n; },
       board: function (n) { return 'Board ' + n; },
       forfeit: 'Forfeit',
-      forfeitMark: 'F',
       live: 'Live',
       noSchedule: 'No scheduled games',
       noResults: 'No results',
       locale: 'en-US',
       docTitle: 'saiyuan',
-      search: 'Search players, tournaments, openings…',
+      search: 'Search matches, teams…',
       searchLabel: 'Search',
       more: 'Load earlier tournaments'
     }
@@ -107,23 +105,22 @@
   }
 
   // ── 对局卡 ─────────────────────────────────────────────
-  // 成绩记法：+ 胜 / - 负 / = 和，左右分别是黑方、白方。
-  // 弃权在库里是独立标记（black_forfeit / white_forfeit），弃权的一方记负，
-  // 显示时在那个符号右上角挂一个「弃」，跟正常分出胜负的对局区分开。
-  var GLYPH = { B: ['+', '-'], W: ['-', '+'], D: ['=', '='] };
-
-  function symHTML(sym, forfeit) {
-    if (!forfeit) return '<i class="mc-sym">' + sym + '</i>';
-    return '<i class="mc-sym is-forfeit" title="' + esc(T().forfeit) + '">' + sym +
-      '<b class="mc-fo">' + esc(T().forfeitMark) + '</b></i>';
-  }
+  // 正常对局按比分显示：1–0 / 0–1 / ½–½。
+  // 弃权局才用成绩册的 + / - 记法（左黑右白）：白方弃权 + -、黑方弃权 - +、
+  // 双方都弃权 - -。哪一方弃权在库里是 black_forfeit / white_forfeit 两个标记。
+  var SIDE_SCORE = { B: ['1', '0'], W: ['0', '1'], D: ['½', '½'] };
 
   function resultHTML(g) {
-    var pair = GLYPH[g.result];
+    if (g.black_forfeit || g.white_forfeit) {
+      return '<span class="mc-score mc-res" title="' + esc(T().forfeit) + '">' +
+        '<i class="mc-sym">' + (g.black_forfeit ? '-' : '+') + '</i>' +
+        '<i class="mc-sym">' + (g.white_forfeit ? '-' : '+') + '</i>' +
+        '</span>';
+    }
+    var pair = SIDE_SCORE[g.result];
     if (!pair) return '<span class="mc-score">—</span>';
-    return '<span class="mc-score mc-res">' +
-      symHTML(pair[0], g.black_forfeit) + symHTML(pair[1], g.white_forfeit) +
-      '</span>';
+    return '<span class="mc-score">' + pair[0] +
+      '<span class="mc-dash">–</span>' + pair[1] + '</span>';
   }
 
   var DIVIDER = '<div class="upcoming-match-divider"></div>';
@@ -189,6 +186,13 @@
     return l ? (l[state.lang] || l.zh) : String(code || '');
   }
 
+  // 队标：库里存 ESPN 的 png 地址，加载失败就把 img 去掉，只留队名
+  function crestHTML(src) {
+    if (!src) return '';
+    return '<img class="mc-logo" src="' + esc(src) + '" alt="" width="26" height="26"' +
+      ' loading="lazy" onerror="this.remove()">';
+  }
+
   // 足球：主队 比分 客队；没开赛就显示「—」（ESPN 未开赛也会给 0，得靠状态区分）
   function footballCard(g) {
     var home = state.lang === 'zh' ? (g.home_zh || g.home) : g.home;
@@ -213,13 +217,15 @@
               '<span class="mc-end"><span class="mc-chev" aria-hidden="true"></span></span>' +
             '</div>' +
             '<div class="mc-main">' +
-              '<div class="mc-side is-home">' +
+              '<div class="mc-side is-home has-logo">' +
+                crestHTML(g.home_logo) +
                 '<span class="mc-nm"><span class="mc-name">' + esc(home) + '</span></span>' +
               '</div>' +
               '<div class="mc-c">' +
                 '<span class="mc-score">' + score + '</span>' +
               '</div>' +
-              '<div class="mc-side is-away">' +
+              '<div class="mc-side is-away has-logo">' +
+                crestHTML(g.away_logo) +
                 '<span class="mc-nm"><span class="mc-name">' + esc(away) + '</span></span>' +
               '</div>' +
             '</div>' +
@@ -414,8 +420,8 @@
         status: m.status,
         league: m.league,
         round: m.round_no,
-        home: h.name || '', home_zh: h.name_zh || '',
-        away: a.name || '', away_zh: a.name_zh || '',
+        home: h.name || '', home_zh: h.name_zh || '', home_logo: h.logo || '',
+        away: a.name || '', away_zh: a.name_zh || '', away_logo: a.logo || '',
         home_score: m.home_score == null ? null : Number(m.home_score),
         away_score: m.away_score == null ? null : Number(m.away_score)
       });
@@ -433,7 +439,7 @@
       dbGet('/renju_matches?select=id,tournament_id,round_no,board_no,black_id,white_id,' +
         'result,black_forfeit,white_forfeit,match_time' +
         '&order=round_no.desc,board_no.asc&limit=5000'),
-      dbGet('/football_teams?select=id,name,name_zh&limit=200'),
+      dbGet('/football_teams?select=id,name,name_zh,logo&limit=200'),
       dbGet('/football_matches?select=id,league,round_no,match_time,status,' +
         'home_team_id,away_team_id,home_score,away_score&order=match_time.desc&limit=3000')
     ])
