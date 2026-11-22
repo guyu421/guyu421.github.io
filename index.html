@@ -81,12 +81,38 @@
             window.RENJU_GAME_BASE = '';
             window.POISSON_API = 'https://saishi-d6gz1139g33c076b0-1304984528.ap-shanghai.app.tcloudbase.com/predict';
         </script>
-        <script src="/app.js?v=17" defer></script>
+        <script src="/app.js?v=18" defer></script>
 
         <!-- Umami Cloud analytics -->
         
         <!-- The page's JSON-LD (its list or match): the edge fills this
              slot (functions/_lib/ssr.js); the static file leaves it empty. -->
+        <style>
+            .mc-side.has-logo {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: flex-end;
+                gap: 0.45rem;
+            }
+            .mc-side.has-logo.is-away {
+                flex-direction: row;
+                justify-content: flex-start;
+                text-align: left;
+            }
+            .mc-side.has-logo .mc-nm {
+                flex: 0 1 auto;
+                min-width: auto;
+            }
+            .mc-side.has-logo .mc-name {
+                white-space: normal;
+                overflow: visible;
+                text-overflow: clip;
+            }
+            .mc-side.has-logo .mc-pct {
+                flex: 0 0 auto;
+            }
+        </style>
         <!-- /SEO-JSONLD -->
     </head>
     <body>

@@ -194,11 +194,12 @@
       ' loading="lazy" onerror="this.remove()">';
   }
 
-  // ── 泊松分布预测（整点快照 + 模型参数本地兜底）────────────────
+  // ── 泊松分布预测（仅预测未来赛事；开赛后固定读取云端锁定结果）────────────────
   var poissonHourly = null;   // GET /hourly
   var poissonHourlyMap = {};  // "home__away" -> prediction
   var poissonModel = null;    // GET /model-info
   var poissonTeams = {};      // lowercase team/alias -> { attack, defense }
+  var lockedPredictions = {}; // match_id -> stored prediction from CloudBase PG
 
   var POISSON_ALIASES = {
     'man city': 'man city', 'manchester city': 'man city',
@@ -291,8 +292,6 @@
     var top = (pred.top_scorelines || []).slice(0, 5);
     var mat = (pred.score_matrix || []).slice(0, 5);
     var zh = state.lang === 'zh';
-    var slot = poissonHourly && poissonHourly.hour_slot ? poissonHourly.hour_slot : '';
-    var nextRun = poissonHourly && poissonHourly.next_run_at ? poissonHourly.next_run_at : '';
 
     var matRows = '';
     if (mat.length) {
@@ -308,16 +307,9 @@
 
     return '' +
       '<div class="poisson-detail" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid hsl(var(--border));font-size:12px;">' +
-        '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px;color:hsl(var(--muted-foreground));">' +
-          '<span>' + (zh ? '泊松基准预测' : 'Poisson 5Y Baseline') +
-            (slot ? ' · ' + (zh ? '整点快照 ' : 'Hourly ') + esc(slot.slice(-5)) : '') +
-            (nextRun ? ' (' + (zh ? '下次 ' : 'Next ') + esc(nextRun.slice(-5)) + ')' : '') +
-          '</span>' +
-          '<span style="font-variant-numeric:tabular-nums;">xG ' + xg.home.toFixed(2) + ' – ' + xg.away.toFixed(2) + '</span>' +
-        '</div>' +
         '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px;font-variant-numeric:tabular-nums;">' +
           '<div style="padding:6px 8px;border-radius:6px;background:hsl(var(--muted));">' +
-            '<div style="font-size:11px;color:hsl(var(--muted-foreground));">' + (zh ? '主胜' : 'Home') + '</div>' +
+            '<div style="font-size:11px;color:hsl(var(--muted-foreground));">' + (zh ? '主胜' : 'Home') + ' · xG ' + xg.home.toFixed(2) + '</div>' +
             '<div style="font-weight:700;">' + Math.round(p.home_win * 100) + '% <span style="font-weight:400;color:hsl(var(--muted-foreground));">@' + (o.home_win || '--') + '</span></div>' +
           '</div>' +
           '<div style="padding:6px 8px;border-radius:6px;background:hsl(var(--muted));">' +
@@ -325,7 +317,7 @@
             '<div style="font-weight:700;">' + Math.round(p.draw * 100) + '% <span style="font-weight:400;color:hsl(var(--muted-foreground));">@' + (o.draw || '--') + '</span></div>' +
           '</div>' +
           '<div style="padding:6px 8px;border-radius:6px;background:hsl(var(--muted));">' +
-            '<div style="font-size:11px;color:hsl(var(--muted-foreground));">' + (zh ? '客胜' : 'Away') + '</div>' +
+            '<div style="font-size:11px;color:hsl(var(--muted-foreground));">' + (zh ? '客胜' : 'Away') + ' · xG ' + xg.away.toFixed(2) + '</div>' +
             '<div style="font-weight:700;">' + Math.round(p.away_win * 100) + '% <span style="font-weight:400;color:hsl(var(--muted-foreground));">@' + (o.away_win || '--') + '</span></div>' +
           '</div>' +
         '</div>' +
@@ -349,8 +341,11 @@
       ? esc(g.home_score) + '<span class="mc-dash">–</span>' + esc(g.away_score)
       : '—';
 
-    var pred = getPoissonPrediction(g.home, g.away);
-    var hPctHTML = '', aPctHTML = '', drawHTML = '', predTag = '';
+    // 只预测未来的赛事（pre）；已开赛或已完赛只展示云端锁定的预测结果
+    var pred = g.status === 'pre'
+      ? getPoissonPrediction(g.home, g.away)
+      : (lockedPredictions[g.id] || null);
+    var hPctHTML = '', aPctHTML = '', drawHTML = '';
     if (pred) {
       var p = pred.probabilities_1x2;
       var pH = Math.round(p.home_win * 100);
@@ -365,13 +360,10 @@
       aPctHTML = '<span class="' + aCls + '">' + pA + '%</span>';
       var drawLabel = state.lang === 'zh' ? '平 ' + pD + '%' : 'Draw ' + pD + '%';
       drawHTML = '<span class="mc-draw' + (dFav ? ' is-fav' : '') + '">' + drawLabel + '</span>';
-      var topS = pred.top_scorelines && pred.top_scorelines[0] ? pred.top_scorelines[0].score : '';
-      predTag = topS ? (' · ' + (state.lang === 'zh' ? '预测 ' : 'Call ') + topS) : '';
     }
 
-    var hourTag = poissonHourly && poissonHourly.hour_slot ? (' · ' + poissonHourly.hour_slot.slice(-5)) : '';
     var label = [leagueLabel(g.league), g.round ? T().round(g.round) : '',
-      g.status === 'in' ? T().live : ''].filter(Boolean).join(' ') + (pred ? hourTag : '');
+      g.status === 'in' ? T().live : ''].filter(Boolean).join(' ');
 
     return '' +
       '<div class="upcoming-match-row mc-row" id="match-' + g.id + '" data-match-id="' + g.id + '"' +
@@ -380,7 +372,7 @@
           '<div class="upcoming-match-summary">' +
             '<div class="mc-meta">' +
               '<span class="mc-lead"><b class="mc-lg">' +
-                '<span class="mc-lg-full">' + esc(label + predTag) + '</span>' +
+                '<span class="mc-lg-full">' + esc(label) + '</span>' +
                 '<span class="mc-lg-code">' + esc(label) + '</span>' +
               '</b></span>' +
               '<span class="mc-end"><span class="mc-chev" aria-hidden="true"></span></span>' +
@@ -397,8 +389,8 @@
               '</div>' +
               '<div class="mc-side is-away has-logo">' +
                 aPctHTML +
-                crestHTML(g.away_logo) +
                 '<span class="mc-nm"><span class="mc-name">' + esc(away) + '</span></span>' +
+                crestHTML(g.away_logo) +
               '</div>' +
             '</div>' +
           '</div>' +
@@ -645,9 +637,28 @@
       dbGet('/football_teams?select=id,name,name_zh,logo&limit=200'),
       dbGet('/football_matches?select=id,league,round_no,match_time,status,' +
         'home_team_id,away_team_id,home_score,away_score&order=match_time.desc&limit=3000'),
+      dbGet('/football_predictions?select=match_id,xg_home,xg_away,p_home,p_draw,p_away,' +
+        'over_2_5,btts_yes,top_scorelines,score_matrix&limit=3000').catch(function () { return []; }),
       fetchPoissonData()
     ])
       .then(function (res) {
+        lockedPredictions = {};
+        (res[5] || []).forEach(function (r) {
+          lockedPredictions[r.match_id] = {
+            expected_goals: { home: Number(r.xg_home), away: Number(r.xg_away) },
+            probabilities_1x2: { home_win: Number(r.p_home), draw: Number(r.p_draw), away_win: Number(r.p_away) },
+            fair_odds_1x2: {
+              home_win: Math.round(100 / Math.max(Number(r.p_home), 1e-4)) / 100,
+              draw: Math.round(100 / Math.max(Number(r.p_draw), 1e-4)) / 100,
+              away_win: Math.round(100 / Math.max(Number(r.p_away), 1e-4)) / 100
+            },
+            over_under: { over_2_5: Number(r.over_2_5 || 0), under_2_5: 1 - Number(r.over_2_5 || 0) },
+            btts: { yes: Number(r.btts_yes || 0), no: 1 - Number(r.btts_yes || 0) },
+            top_scorelines: r.top_scorelines || [],
+            score_matrix: r.score_matrix || [],
+            locked: true
+          };
+        });
         store = {
           renju: renjuGroups(res),
           football: footballGroups([res[3], res[4]])
