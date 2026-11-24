@@ -1,7 +1,206 @@
+/* 字体 */
+
 body,
 #content table,
 #content table th,
 #content table td,
 #content h1 {
-	font-family: "SimSun", "宋体", "Songti SC", "STSong", serif;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+		"Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+/* 表格横向滚动容器 */
+
+.table-wrap {
+	width: 100%;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	margin-bottom: 1.5em;
+}
+
+.table-wrap > table {
+	margin-bottom: 0em;
+}
+
+/* 窄屏（平板） */
+
+@media (max-width: 1023px) {
+	#primaryContent {
+		padding: 1.2em 1.6em 1.2em 1.6em;
+	}
+}
+
+/* 手机 */
+
+@media (max-width: 640px) {
+	body {
+		font-size: 15px;
+		-webkit-text-size-adjust: 100%;
+	}
+
+	#header {
+		height: 3em;
+		padding-left: 0em;
+	}
+
+	#menu {
+		position: absolute;
+		top: 0em;
+		left: 0em;
+		right: 0em;
+		height: 3em;
+		display: flex;
+		align-items: center;
+		padding: 0em 1em;
+		box-sizing: border-box;
+	}
+
+	#menu ul {
+		display: flex;
+		align-items: center;
+	}
+
+	#menu li {
+		margin-left: 0.9em;
+		padding-left: 0.9em;
+	}
+
+	#menu li a {
+		display: inline-block;
+		padding: 0.5em 0em;
+	}
+
+	#primaryContent {
+		margin-top: 0.8em;
+		padding: 0.4em 0.75em 1em 0.75em;
+	}
+
+	#content h1 {
+		font-size: 1.3em;
+		margin-bottom: 0.6em;
+	}
+
+	#content table {
+		width: 100%;
+		font-size: 14px;
+	}
+
+	#content table th,
+	#content table td {
+		padding: 0.5em 0.5em;
+	}
+
+	#content table[data-feed="tournaments"] td.num,
+	#content table[data-feed="players"] td.num {
+		text-align: center;
+	}
+
+	/* 赛事：日期与赛事名可换行，数字不换行 */
+
+	#content table[data-feed="tournaments"] th:nth-child(1),
+	#content table[data-feed="tournaments"] td:nth-child(1),
+	#content table[data-feed="tournaments"] th:nth-child(2),
+	#content table[data-feed="tournaments"] td:nth-child(2) {
+		white-space: normal;
+	}
+
+	/* 对局：每条记录改为三行排布 */
+
+	#content table[data-feed="games"],
+	#content table[data-feed="games"] tbody {
+		display: block;
+		width: 100%;
+	}
+
+	#content table[data-feed="games"] tr {
+		display: grid;
+		grid-template-columns: auto 1fr auto auto auto;
+		align-items: baseline;
+		column-gap: 0.7em;
+		padding: 0.7em 0.85em;
+		border-top: solid 1px #fff;
+	}
+
+	#content table[data-feed="games"] tr:first-child {
+		display: none;
+	}
+
+	#content table[data-feed="games"] td {
+		border: 0em;
+		padding: 0em;
+		white-space: normal;
+		text-align: left;
+		line-height: 1.7;
+	}
+
+	#content table[data-feed="games"] td:nth-child(1) {
+		grid-row: 1;
+		grid-column: 1;
+	}
+
+	#content table[data-feed="games"] td:nth-child(3),
+	#content table[data-feed="games"] td:nth-child(4),
+	#content table[data-feed="games"] td:nth-child(5) {
+		grid-row: 1;
+		color: #8a8a8a;
+		font-size: 0.82em;
+	}
+
+	#content table[data-feed="games"] td:nth-child(3) {
+		grid-column: 3;
+	}
+
+	#content table[data-feed="games"] td:nth-child(4) {
+		grid-column: 4;
+	}
+
+	#content table[data-feed="games"] td:nth-child(5) {
+		grid-column: 5;
+	}
+
+	#content table[data-feed="games"] td:nth-child(4)::before {
+		content: "第";
+	}
+
+	#content table[data-feed="games"] td:nth-child(4)::after {
+		content: "轮";
+	}
+
+	#content table[data-feed="games"] td:nth-child(5)::before {
+		content: "第";
+	}
+
+	#content table[data-feed="games"] td:nth-child(5)::after {
+		content: "台";
+	}
+
+	#content table[data-feed="games"] td:nth-child(2) {
+		grid-row: 2;
+		grid-column: 1 / -1;
+		color: #8a8a8a;
+		font-size: 0.82em;
+	}
+
+	#content table[data-feed="games"] td:nth-child(6) {
+		grid-row: 3;
+		grid-column: 1;
+	}
+
+	#content table[data-feed="games"] td:nth-child(7) {
+		grid-row: 3;
+		grid-column: 2;
+		text-align: center;
+	}
+
+	#content table[data-feed="games"] td:nth-child(8) {
+		grid-row: 3;
+		grid-column: 3 / 6;
+		text-align: right;
+	}
+}
+
+@media (max-width: 360px) {
+	#content table {
+		font-size: 13px;
+	}
 }
