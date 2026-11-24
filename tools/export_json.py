@@ -47,6 +47,14 @@ def normalize_result(value):
     return RESULT_ALIAS.get(text, text)
 
 
+def _display(value):
+    """等级分保留一位小数；正好是整数时按整数显示。"""
+    rounded = round(float(value), 1)
+    if abs(rounded - round(rounded)) < 1e-9:
+        return int(round(rounded))
+    return rounded
+
+
 def _g(phi):
     return 1.0 / math.sqrt(1.0 + 3.0 * phi * phi / (math.pi ** 2))
 
@@ -239,21 +247,18 @@ def build(games, players, tours, members):
             "player_id": p["player_id"],
             "rank": 0,
             "name": p["name"],
-            "rating": int(round(rating)),
-            "rd": int(round(rd)),
+            "rating": _display(rating),
+            "rd": _display(rd),
             "tournaments": len(tours_of_mine),
             "games": len(mine),
+            "_rating": rating,
         })
 
-    # 名次：等级分从高到低，同分并列
-    players_out.sort(key=lambda r: (-r["rating"], -r["games"], r["name"]))
-    prev_rating = None
-    rank = 0
+    # 名次：按未取整的等级分排序，逐名递增，不因取整而并列
+    players_out.sort(key=lambda r: (-r["_rating"], -r["games"], r["name"]))
     for index, row in enumerate(players_out, 1):
-        if row["rating"] != prev_rating:
-            rank = index
-            prev_rating = row["rating"]
-        row["rank"] = rank
+        row["rank"] = index
+        del row["_rating"]
 
     return games_out, tours_out, players_out
 
