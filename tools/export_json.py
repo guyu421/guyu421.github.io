@@ -289,13 +289,21 @@ PLAYER_RESULT = {
 }
 
 
+def own_result(is_first, result):
+    """库里 result 记的是假先方视角（1 假先胜、0 假先负），换成本人视角。"""
+    if is_first:
+        return result
+    return {"1": "0", "0": "1"}.get(result, result)
+
+
 def classify_result(is_first, result, opponent):
     """把一局归到 胜/负/和/轮空/本人弃权/对手弃权/双弃。
 
     "-+" 表示假先方弃权、假后方得 +，"+-" 反之，"--" 为双方弃权。
     """
-    if result in PLAYER_RESULT:
-        return ("played",) + PLAYER_RESULT[result]
+    own = own_result(is_first, result)
+    if own in PLAYER_RESULT:
+        return ("played",) + PLAYER_RESULT[own]
     if opponent == BYE_NAME:
         return ("bye", "轮空", "skip")
     if result == "--":
