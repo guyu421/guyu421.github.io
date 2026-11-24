@@ -380,6 +380,10 @@ def build_details(games_out, players_out, history):
         curve = [[d, _display(v), _display(rd)] for d, v, rd in history.get(name, [])]
         peak = max(history.get(name, [("", p["rating"], 0)]), key=lambda r: r[1])
 
+        # 得分率：和棋算半分，只看真正下过的对局（轮空与弃权不掺进来）
+        played = wins + draws + losses
+        score_rate = round((wins + 0.5 * draws) / played * 100, 1) if played else None
+
         details[pid] = {
             "player_id": pid,
             "name": name,
@@ -391,6 +395,7 @@ def build_details(games_out, players_out, history):
             "wins": wins,
             "draws": draws,
             "losses": losses,
+            "score_rate": score_rate,
             "byes": byes,
             "self_skips": self_skips,
             "opp_skips": opp_skips,

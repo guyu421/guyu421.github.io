@@ -55,7 +55,11 @@
     if (!start && !end) return String(row.period || row.date_range || "");
     start = String(start).slice(0, 10);
     end = String(end).slice(0, 10);
-    if (start && end && start !== end) return start + " 至 " + end;
+    if (start && end && start !== end) {
+      // 同一年只写一次年份：2026-05-16 至 05-20
+      var tail = start.slice(0, 4) === end.slice(0, 4) ? end.slice(5) : end;
+      return start + " 至 " + tail;
+    }
     return start || end;
   }
 
@@ -107,6 +111,7 @@
         var value = row[col];
         if (col === "period") {
           td.textContent = formatPeriod(row);
+          td.className = "period";
         } else if (col === "result" && value !== undefined && value !== null) {
           td.textContent = RESULT_SCORE[String(value)] || String(value);
         } else if (col === "rating" || col === "rd") {
@@ -171,11 +176,13 @@
     return node;
   }
 
-  function metaRow(parent, label, value) {
+  function metaRow(parent, label, value, tail) {
     var p = el("p");
     p.appendChild(el("b", "", label + "："));
     p.appendChild(document.createTextNode(value));
+    if (tail) p.appendChild(tail);
     parent.appendChild(p);
+    return p;
   }
 
   function renderPlayerMeta(data) {
@@ -184,15 +191,25 @@
     box.innerHTML = "";
     metaRow(box, "名次", data.rank ? "第 " + data.rank + " 名" : "-");
     metaRow(box, "等级分", one(data.rating) + "（偏差 " + one(data.rd) + "）");
-    var record = data.tournaments + " 个赛事，" + data.games + " 个对局，胜 " +
-      data.wins + "，和 " + data.draws + "，负 " + data.losses;
-    var extras = [];
-    if (data.byes) extras.push("轮空 " + data.byes);
-    if (data.self_skips) extras.push("弃权 " + data.self_skips);
-    if (data.opp_skips) extras.push("对手弃权 " + data.opp_skips);
-    if (data.double_skips) extras.push("双弃 " + data.double_skips);
-    if (extras.length) record += "，" + extras.join("，");
-    metaRow(box, "战绩", record);
+
+    // 战绩：每一项都锁成一段，换行只发生在逗号之后，不会把“胜 5”拆成两行
+    var record = el("p");
+    record.appendChild(el("b", "", "战绩："));
+    var parts = [data.tournaments + " 个赛事", data.games + " 个对局",
+      "胜 " + data.wins, "和 " + data.draws, "负 " + data.losses];
+    if (data.byes) parts.push("轮空 " + data.byes);
+    if (data.self_skips) parts.push("弃权 " + data.self_skips);
+    if (data.opp_skips) parts.push("对手弃权 " + data.opp_skips);
+    if (data.double_skips) parts.push("双弃 " + data.double_skips);
+    if (data.score_rate !== null && data.score_rate !== undefined) {
+      parts.push("得分率 " + Number(data.score_rate).toFixed(1) + "%");
+    }
+    parts.forEach(function (text, index) {
+      record.appendChild(el("span", "nowrap",
+        text + (index < parts.length - 1 ? "，" : "")));
+    });
+    box.appendChild(record);
+
     if (data.top_rating) {
       metaRow(box, "最高等级分", one(data.top_rating) + (data.top_date ? "（" + data.top_date + "）" : ""));
     }

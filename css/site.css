@@ -101,10 +101,13 @@ body,
 		text-align: center;
 	}
 
-	/* 赛事：日期与赛事名可换行，数字不换行 */
+	/* 赛事：日期单行不折，赛事名可换行 */
 
 	#content table[data-feed="tournaments"] th:nth-child(1),
-	#content table[data-feed="tournaments"] td:nth-child(1),
+	#content table[data-feed="tournaments"] td:nth-child(1) {
+		white-space: nowrap;
+	}
+
 	#content table[data-feed="tournaments"] th:nth-child(2),
 	#content table[data-feed="tournaments"] td:nth-child(2) {
 		white-space: normal;
@@ -328,4 +331,9 @@ body,
 #playerMeta p {
 	color: #444;
 	margin-bottom: 0.15em;
+}
+
+/* 战绩里的每一项整体换行，不会把“胜 5”拆到两行 */
+#playerMeta .nowrap {
+	white-space: nowrap;
 }
