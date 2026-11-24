@@ -7,7 +7,7 @@
 
   var COLUMNS = {
     games: ["date", "tournament", "rule", "round", "board", "first", "result", "second"],
-    tournaments: ["name", "period", "players", "games"],
+    tournaments: ["period", "name", "players", "games"],
     players: ["name", "tournaments", "games"]
   };
 
