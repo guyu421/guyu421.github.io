@@ -2,8 +2,8 @@
   "cutoff_key": "20261123",
   "cutoff_date_exclusive": "2026-11-24",
   "max_game_date": "2026-11-16",
-  "num_games": 1912,
-  "num_rated_players": 223,
+  "num_games": 2051,
+  "num_rated_players": 244,
   "features": [
     "rule",
     "first_rating",
@@ -22,14 +22,14 @@
     "假先胜"
   ],
   "class_counts": {
-    "假后胜": 778,
-    "和棋": 326,
-    "假先胜": 808
+    "假后胜": 845,
+    "和棋": 336,
+    "假先胜": 870
   },
   "rule_counts": {
-    "塔拉山口-10": 1403,
+    "塔拉山口-10": 1542,
     "山口": 509
   },
-  "cv_5fold_logloss": 0.9877,
-  "cv_5fold_accuracy": 0.54236
+  "cv_5fold_logloss": 0.96675,
+  "cv_5fold_accuracy": 0.53584
 }
