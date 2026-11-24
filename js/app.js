@@ -142,16 +142,28 @@
 
   function init() {
     var feed = getFeed();
-    if (!feed) return;
-    load(feed).then(function (rows) {
+    if (!feed) return Promise.resolve();
+    return load(feed).then(function (rows) {
       var prepared = feed === "tournaments" ? withPeriods(rows) : Promise.resolve(rows);
       return prepared.then(function (list) { render(feed, list); });
     });
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
+  // 接口已配置时定时刷新：数据库改完不用手动刷新页面
+  var REFRESH_MS = 60000;
+
+  function start() {
     init();
+    if (!endpointFor(getFeed())) return;
+    setInterval(init, REFRESH_MS);
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) init();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start);
+  } else {
+    start();
   }
 })();
