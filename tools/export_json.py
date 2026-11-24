@@ -26,8 +26,25 @@ G2_RD = 350.0
 G2_SIGMA = 0.06
 G2_TAU = 0.5
 
-# 只统计真正下过的对局：轮空（+-）与弃权（-+ / -:-）不计入等级分
+# 轮空 / 弃权在数据库里统一记 "+-"、"-+"、"--"，不写 "-:-" 这种带冒号的写法
+RESULT_ALIAS = {
+    "-:-": "--",
+    "---": "--",
+    "--:--": "--",
+    "-:+": "-+",
+    "+:-": "+-",
+}
+
+# 只统计真正下过的对局：轮空（+-）与弃权（-+、--）不计入等级分
 POINTS = {"1": 1.0, "0": 0.0, "0.5": 0.5}
+
+
+def normalize_result(value):
+    if value is None:
+        return value
+    text = str(value).strip()
+    text = text.replace("：", ":").replace("−", "-").replace("－", "-").replace("＋", "+")
+    return RESULT_ALIAS.get(text, text)
 
 
 def _g(phi):
@@ -161,7 +178,7 @@ def build(games, players, tours, members):
     games_out = []
     for g in games:
         second = "" if g["second_id"] is None else name.get(g["second_id"], "")
-        result = g["result"]
+        result = normalize_result(g["result"])
         if second in ("+", ""):
             second = BYE_NAME
         if second == BYE_NAME:
