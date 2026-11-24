@@ -278,55 +278,6 @@ body,
 	max-width: 100%;
 }
 
-/* 曲线点的悬浮详情 */
-#content .chart-tip {
-	position: absolute;
-	z-index: 5;
-	pointer-events: none;
-	max-width: 92%;
-	padding: 0.4em 0.6em;
-	background: #fff;
-	border: solid 1px #dfe6ea;
-	border-radius: 4px;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-	font-size: 12px;
-	line-height: 1.5;
-	text-align: left;
-	color: #333;
-}
-
-#content .chart-tip p {
-	margin: 0;
-	padding: 0;
-	white-space: nowrap;
-}
-
-#content .chart-tip .tip-date {
-	font-weight: bold;
-	color: #1c4a63;
-}
-
-#content .chart-tip .tip-value {
-	color: #b25c00;
-}
-
-/* 赛事名：允许换行，长赛事名不会把浮层撑出图表 */
-#content .chart-tip .tip-tour {
-	margin-top: 0.15em;
-	color: #1c4a63;
-	font-weight: bold;
-	white-space: normal;
-	line-height: 1.4;
-}
-
-#content .chart-tip .tip-game {
-	color: #555;
-}
-
-#content .chart-tip .tip-meta {
-	color: #1c4a63;
-}
-
 #content table.player-games th:nth-child(2),
 #content table.player-games td.rnd {
 	white-space: nowrap;

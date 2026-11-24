@@ -179,8 +179,7 @@
   }
 
   // 等级分走势：折线 + ± 偏差（RD）阴影带，配色与参考站点一致
-  // gamesByTour：该棋手每个赛事的全部对局，用于点的悬浮详情
-  function drawChart(history, gamesByTour) {
+  function drawChart(history) {
     var box = document.getElementById("chart");
     if (!box) return;
     box.innerHTML = "";
@@ -303,7 +302,7 @@
       "clip-path": "url(#" + clipId + ")"
     }));
 
-    // 悬浮/点按查看该期详情：日期、等级分与偏差、当日各局的轮次与台次
+    // 点/悬浮看这一点的日期、等级分与偏差（提示框用浏览器自带的，不自己画）
     var dotR = 2.4;
     var dots = [];
     points.forEach(function (p) {
@@ -323,68 +322,30 @@
     });
     svg.insertBefore(guide, dots[0]);
 
-    var tip = el("div", "chart-tip");
-    tip.style.display = "none";
     var current = -1;
 
-    function repaint(index, on) {
+    function highlight(index, on) {
       var dot = dots[index];
       if (!dot) return;
       dot.setAttribute("r", on ? dotR + 2 : dotR);
       dot.setAttribute("stroke-width", on ? 2 : 1);
     }
 
-    function hideTip() {
-      tip.style.display = "none";
-      guide.setAttribute("visibility", "hidden");
-      if (current >= 0) repaint(current, false);
-      current = -1;
+    function show(index) {
+      if (current === index) return;
+      if (current >= 0) highlight(current, false);
+      current = index;
+      highlight(index, true);
+      var cx = xOf(points[index].t).toFixed(1);
+      guide.setAttribute("x1", cx);
+      guide.setAttribute("x2", cx);
+      guide.setAttribute("visibility", "visible");
     }
 
-    function showTip(index) {
-      if (current === index) return;
-      if (current >= 0) repaint(current, false);
-      current = index;
-
-      var p = points[index];
-      var date = String(history[index][0]).slice(0, 10);
-      var tourId = history[index][3];
-      tip.innerHTML = "";
-      tip.appendChild(el("p", "tip-date", date));
-      tip.appendChild(el("p", "tip-value",
-        "等级分 " + p.v.toFixed(2) + "　偏差 " + p.rd.toFixed(2)));
-
-      // 一个节点代表整个赛事，悬浮框里列出他在这个赛事打过的全部轮次
-      var rows = (gamesByTour && gamesByTour[tourId]) || [];
-      if (!rows.length) {
-        tip.appendChild(el("p", "tip-game", "该赛事没有计入等级分的对局"));
-      } else if (rows[0].tournament) {
-        tip.appendChild(el("p", "tip-tour", rows[0].tournament));
-      }
-      rows.forEach(function (game) {
-        var line = el("p", "tip-game");
-        line.appendChild(el("span", "tip-meta",
-          short_date(game.date) + " 第" + game.round + "轮 第" + game.board + "台"
-          + (game.rule ? " " + game.rule : "")));
-        line.appendChild(document.createTextNode(
-          "　" + game.color + " " + (game.result || game.score || "") + " " + game.opponent));
-        tip.appendChild(line);
-      });
-
-      tip.style.display = "block";
-
-      var w = tip.offsetWidth;
-      var h = tip.offsetHeight;
-      var cx = xOf(p.t);
-      var cy = yOf(p.v);
-      tip.style.left = Math.min(Math.max(cx - w / 2, 2), Math.max(width - w - 2, 2)) + "px";
-      var top = cy - h - 12;
-      tip.style.top = (top < 2 ? cy + 14 : top) + "px";
-
-      repaint(index, true);
-      guide.setAttribute("x1", cx.toFixed(1));
-      guide.setAttribute("x2", cx.toFixed(1));
-      guide.setAttribute("visibility", "visible");
+    function clear() {
+      if (current >= 0) highlight(current, false);
+      current = -1;
+      guide.setAttribute("visibility", "hidden");
     }
 
     // 每个点给一块命中区域，按相邻点的中点为界，鼠标与手指都容易点中
@@ -399,13 +360,18 @@
         fill: "transparent"
       });
       hit.style.cursor = "pointer";
-      hit.addEventListener("mouseenter", function () { showTip(index); });
-      hit.addEventListener("click", function () { showTip(index); });
-      hit.addEventListener("touchstart", function () { showTip(index); }, { passive: true });
+      // 自带提示：日期 等级分 偏差
+      hit.appendChild(svgNode("title", {},
+        String(history[index][0]).slice(0, 10)
+        + " 等级分 " + p.v.toFixed(2)
+        + " 偏差 " + p.rd.toFixed(2)));
+      hit.addEventListener("mouseenter", function () { show(index); });
+      hit.addEventListener("click", function () { show(index); });
+      hit.addEventListener("touchstart", function () { show(index); }, { passive: true });
       svg.appendChild(hit);
     });
-    svg.addEventListener("mouseleave", hideTip);
-    box.addEventListener("mouseleave", hideTip);
+    svg.addEventListener("mouseleave", clear);
+    box.addEventListener("mouseleave", clear);
 
     // 图例
     var legendX = Math.max(width - 158, pad.left + 4);
@@ -425,7 +391,6 @@
     }, "等级分"));
 
     box.appendChild(svg);
-    box.appendChild(tip);
   }
 
   // 表格里的日期用月-日，年份在赛事名和赛事日期行里已经有了
@@ -524,33 +489,12 @@
         if (heading) heading.textContent = data.name;
         renderPlayerMeta(data);
 
-        // 按赛事归拢对局，曲线的每个节点对应一个赛事，悬浮框列出该赛事全部轮次
-        var byTour = {};
-        (data.results || []).forEach(function (group) {
-          var list = byTour[group.tournament_id] || (byTour[group.tournament_id] = []);
-          (group.games || []).forEach(function (game) {
-            var row = {};
-            for (var key in game) {
-              if (Object.prototype.hasOwnProperty.call(game, key)) row[key] = game[key];
-            }
-            row.tournament = group.tournament;
-            row.tournament_id = group.tournament_id;
-            list.push(row);
-          });
-        });
-        Object.keys(byTour).forEach(function (id) {
-          byTour[id].sort(function (a, b) {
-            if (a.date !== b.date) return a.date < b.date ? -1 : 1;
-            return a.round - b.round || a.board - b.board;
-          });
-        });
-
-        drawChart(data.history, byTour);
+        drawChart(data.history);
         renderPlayerGames(data);
         var timer = null;
         window.addEventListener("resize", function () {
           if (timer) clearTimeout(timer);
-          timer = setTimeout(function () { drawChart(data.history, byTour); }, 150);
+          timer = setTimeout(function () { drawChart(data.history); }, 150);
         });
         return data;
       })
