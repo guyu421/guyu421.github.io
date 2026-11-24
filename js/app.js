@@ -693,10 +693,10 @@
 
         var leftTd = playerCell(leftName, leftId);
         if (aIsFirst && b.first) {
-          var starL = el("span", "", " *");
+          var starL = el("span", "", "* ");
           starL.style.color = "#c0392b";
           starL.style.fontWeight = "700";
-          leftTd.appendChild(starL);
+          leftTd.insertBefore(starL, leftTd.firstChild);
         }
         bTr.appendChild(leftTd);
 
@@ -714,10 +714,10 @@
 
         var rightTd = playerCell(rightName, rightId);
         if (!aIsFirst && b.first) {
-          var starR = el("span", "", " *");
+          var starR = el("span", "", "* ");
           starR.style.color = "#c0392b";
           starR.style.fontWeight = "700";
-          rightTd.appendChild(starR);
+          rightTd.insertBefore(starR, rightTd.firstChild);
         }
         bTr.appendChild(rightTd);
 
