@@ -586,13 +586,38 @@
     metaRow(box, "规模", data.players + " 人，" + data.game_count + " 个对局");
   }
 
-  function renderTournamentGames(data) {
+  // 该赛事有哪些轮次（升序，去重）
+  function tournamentRounds(data) {
+    var seen = {};
+    var list = [];
+    (data.games || []).forEach(function (game) {
+      var round = Number(game.round);
+      if (!isNaN(round) && !seen[round]) {
+        seen[round] = true;
+        list.push(round);
+      }
+    });
+    return list.sort(function (a, b) { return a - b; });
+  }
+
+  function roundFromUrl() {
+    var match = /[?&]round=(\d+)/.exec(window.location.search);
+    return match ? Number(match[1]) : null;
+  }
+
+  function tournamentUrl(id, round) {
+    return "tournament.html?id=" + encodeURIComponent(id) + "&round=" + round;
+  }
+
+  function renderTournamentGames(data, round) {
     var table = document.querySelector("table.tour-games");
     if (!table || !table.tBodies[0]) return;
     var tbody = table.tBodies[0];
     // 表头是 tbody 的第一行，只清数据行
     while (tbody.rows.length > 1) tbody.deleteRow(tbody.rows.length - 1);
     (data.games || []).forEach(function (game) {
+      // 选了轮次就只画这一轮的台次
+      if (round !== null && Number(game.round) !== round) return;
       var tr = el("tr");
       var day = el("td", "date", short_date(game.date));
       day.title = game.date;
@@ -607,6 +632,49 @@
       tr.appendChild(el("td", "prob", game.p_draw != null ? Number(game.p_draw).toFixed(1) + "%" : ""));
       tr.appendChild(el("td", "prob", game.p_second != null ? Number(game.p_second).toFixed(1) + "%" : ""));
       tbody.appendChild(tr);
+    });
+  }
+
+  // 轮次下拉框：第1轮 … 最后一轮，没有「全部」
+  function setupRoundPicker(data, id) {
+    var select = document.getElementById("roundSelect");
+    var rounds = tournamentRounds(data);
+    if (!select || !rounds.length) {
+      renderTournamentGames(data, null);
+      return;
+    }
+
+    select.innerHTML = "";
+    rounds.forEach(function (round) {
+      var option = document.createElement("option");
+      option.value = String(round);
+      option.textContent = "第" + round + "轮";
+      select.appendChild(option);
+    });
+
+    var wanted = roundFromUrl();
+    var current = rounds.indexOf(wanted) >= 0 ? wanted : rounds[0];
+    select.value = String(current);
+    // 地址栏没带轮次（或带了不存在的轮次）时补成实际显示的那一轮
+    if (wanted !== current && window.history && window.history.replaceState) {
+      window.history.replaceState({ round: current }, "", tournamentUrl(id, current));
+    }
+    renderTournamentGames(data, current);
+
+    select.addEventListener("change", function () {
+      var picked = Number(select.value);
+      if (window.history && window.history.pushState) {
+        window.history.pushState({ round: picked }, "", tournamentUrl(id, picked));
+      }
+      renderTournamentGames(data, picked);
+    });
+
+    // 浏览器前进/后退时跟着地址栏上的轮次走
+    window.addEventListener("popstate", function () {
+      var back = roundFromUrl();
+      var target = rounds.indexOf(back) >= 0 ? back : rounds[0];
+      select.value = String(target);
+      renderTournamentGames(data, target);
     });
   }
 
@@ -628,7 +696,7 @@
         document.title = data.name;
         if (heading) heading.textContent = data.name;
         renderTournamentMeta(data);
-        renderTournamentGames(data);
+        setupRoundPicker(data, id);
         return data;
       })
       .catch(function () {

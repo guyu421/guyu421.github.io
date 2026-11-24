@@ -426,3 +426,30 @@ body,
 		text-align: left;
 	}
 }
+
+/* 赛事页的轮次下拉框 */
+
+.round-pick {
+	margin: 0 0 0.85em;
+	color: #444;
+}
+
+.round-pick label {
+	margin-right: 0.55em;
+}
+
+.round-pick select {
+	font: inherit;
+	font-size: 0.95em;
+	padding: 0.15em 0.35em;
+	border: solid 1px #c3ccd2;
+	border-radius: 3px;
+	background: #fff;
+	color: #333;
+}
+
+@media (max-width: 640px) {
+	.round-pick {
+		margin-bottom: 0.7em;
+	}
+}
