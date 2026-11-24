@@ -108,8 +108,8 @@
       ctx.arc(cx, cy, radius, 0, Math.PI * 2);
       ctx.fillStyle = isBlack ? "#181818" : "#fdfdfd";
       ctx.fill();
-      ctx.lineWidth = isLast ? 2 : 1;
-      ctx.strokeStyle = isLast ? "#dc2626" : (isBlack ? "#000000" : "#555555");
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = isBlack ? "#000000" : "#555555";
       ctx.stroke();
 
       // Move number (last move highlighted in red)
