@@ -19,9 +19,6 @@ DB = os.path.join(SITE, "db")
 
 BYE_NAME = "轮空"
 
-# 8-10 轮是加赛轮次（只打前几台决名次），不属于正赛，导出时跳过
-SKIP_ROUNDS = {8, 9, 10}
-
 # Glicko-2 参数：初始分 1500、初始 RD 350、初始波动率 0.06、系统常数 tau 0.5
 G2_SCALE = 400.0 / math.log(10)  # 精确值 ≈ 173.7178
 G2_RATING = 1500.0
@@ -182,8 +179,7 @@ def read_parquet(folder):
     games = []
     for r in g.itertuples(index=False):
         games.append({
-            "id": int(r.id),
-            "game_id": r.game_id,
+            "game_id": int(r.game_id),
             "date": str(r.date)[:10],
             "rule": r.rule,
             "first_id": None if pd.isna(r.first_id) else int(r.first_id),
@@ -192,7 +188,6 @@ def read_parquet(folder):
             "tournament_id": int(r.tournament_id),
             "round": int(r.round),
             "board": int(r.board),
-            "game_no": int(r.game_no),
         })
     players = [{"player_id": int(r.player_id), "name": r.name} for r in p.itertuples(index=False)]
     tours = [{"tournament_id": int(r.tournament_id), "name": r.name} for r in t.itertuples(index=False)]
@@ -206,12 +201,7 @@ def build(games, players, tours, members):
     tour_name = {t["tournament_id"]: t["name"] for t in tours}
 
     games_out = []
-    skipped = 0
     for g in games:
-        # 8-10 轮是加赛（只打前几台决名次），不属于正赛，直接跳过
-        if g["round"] in SKIP_ROUNDS:
-            skipped += 1
-            continue
         second = "" if g["second_id"] is None else name.get(g["second_id"], "")
         result = normalize_result(g["result"])
         if second in ("+", ""):
@@ -219,7 +209,7 @@ def build(games, players, tours, members):
         if second == BYE_NAME:
             result = "+-"
         games_out.append({
-            "game_id": 0,  # 导出时按最终顺序重排成从 1 开始的整数
+            "game_id": g["game_id"],
             "date": g["date"],
             "rule": g["rule"],
             "first": name.get(g["first_id"], ""),
@@ -230,22 +220,11 @@ def build(games, players, tours, members):
             "round": g["round"],
             "board": g["board"],
         })
-    # 同一赛事、同一天、同一轮同一台只应有一局，多出来的按重复数据丢掉
-    games_out.sort(key=lambda r: (r["date"], r["tournament_id"], r["round"], r["board"]))
-    unique = {}
-    for g in games_out:
-        unique.setdefault((g["date"], g["tournament_id"], g["round"], g["board"]), g)
-    games_out = list(unique.values())
 
     # 同一天先按赛事分块（同一赛事的对局连在一起，不与其他赛事穿插），
     # 赛事内轮次从新到旧、台次从小到大
     games_out.sort(key=lambda r: (-int(str(r["date"]).replace("-", "") or 0),
                                   r["tournament_id"], -r["round"], r["board"]))
-    for index, g in enumerate(sorted(games_out, key=lambda r: (
-            r["date"], r["tournament_id"], r["round"], r["board"])), 1):
-        g["game_id"] = index
-    if skipped:
-        print("跳过加赛轮次对局 %d 条" % skipped)
 
     by_tour = {}
     for g in games_out:
