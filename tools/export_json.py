@@ -268,7 +268,97 @@ def read_parquet(folder):
     return games, players, tours, members
 
 
-def build(games, players, tours, members):
+def load_team_db(folder):
+    import pandas as pd
+
+    team_path = os.path.join(folder, "team.parquet")
+    tm_path = os.path.join(folder, "team_match.parquet")
+    if not (os.path.exists(team_path) and os.path.exists(tm_path)):
+        return [], []
+    t_df = pd.read_parquet(team_path)
+    tm_df = pd.read_parquet(tm_path)
+    teams = []
+    for r in t_df.to_dict("records"):
+        teams.append({
+            "tournament_id": int(r["tournament_id"]),
+            "team_id": int(r["team_id"]),
+            "team_no": int(r["team_no"]),
+            "name": str(r["name"]),
+            "board1_id": int(r["board1_id"]),
+            "board2_id": int(r["board2_id"]),
+            "board3_id": int(r["board3_id"]),
+        })
+    team_matches = []
+    for r in tm_df.to_dict("records"):
+        def _opt_int(val):
+            return None if val is None or pd.isna(val) else int(val)
+        team_matches.append({
+            "team_match_id": int(r["team_match_id"]),
+            "tournament_id": int(r["tournament_id"]),
+            "date": str(r["date"])[:10],
+            "round": int(r["round"]),
+            "match_board": int(r["match_board"]),
+            "rule": str(r["rule"]),
+            "team_a_id": int(r["team_a_id"]),
+            "team_b_id": int(r["team_b_id"]),
+            "team_a_name": str(r["team_a_name"]),
+            "team_b_name": str(r["team_b_name"]),
+            "game_id_1": _opt_int(r.get("game_id_1")),
+            "game_id_2": _opt_int(r.get("game_id_2")),
+            "game_id_3": _opt_int(r.get("game_id_3")),
+            "score_a": float(r["score_a"]),
+            "score_b": float(r["score_b"]),
+            "result": str(r["result"]),
+        })
+    return teams, team_matches
+
+
+def _fmt_pts(x):
+    return str(int(x)) if abs(x - round(x)) < 1e-9 else f"{x:.1f}"
+
+
+def _convolve_team_probs(boards):
+    pred_boards = [b for b in boards if b.get("p_first") is not None]
+    if not pred_boards:
+        return None, None, None, []
+    dist = {0.0: 1.0}
+    for b in pred_boards:
+        pf = float(b["p_first"])
+        pd_val = float(b["p_draw"])
+        ps = float(b["p_second"])
+        total = pf + pd_val + ps
+        if total <= 0:
+            continue
+        pf, pd_val, ps = pf / total, pd_val / total, ps / total
+        if b["team_a_side"] == "first":
+            pw, pd_b, pl = pf, pd_val, ps
+        else:
+            pw, pd_b, pl = ps, pd_val, pf
+        nxt = {}
+        for pts, pr in dist.items():
+            nxt[pts + 1.0] = nxt.get(pts + 1.0, 0.0) + pr * pw
+            nxt[pts + 0.5] = nxt.get(pts + 0.5, 0.0) + pr * pd_b
+            nxt[pts] = nxt.get(pts, 0.0) + pr * pl
+        dist = nxt
+    max_pts = float(len(pred_boards))
+    half = max_pts / 2.0
+    p_win = round(sum(v for k, v in dist.items() if k > half + 1e-9) * 100.0, 1)
+    p_draw = round(sum(v for k, v in dist.items() if abs(k - half) <= 1e-9) * 100.0, 1)
+    p_loss = round(sum(v for k, v in dist.items() if k < half - 1e-9) * 100.0, 1)
+    score_probs = []
+    steps = int(round(max_pts * 2))
+    for s in range(steps, -1, -1):
+        sa = s / 2.0
+        sb = max_pts - sa
+        pr = sum(v for k, v in dist.items() if abs(k - sa) <= 1e-9)
+        score_probs.append({
+            "score": f"{_fmt_pts(sa)}-{_fmt_pts(sb)}",
+            "prob": round(pr * 100.0, 1),
+        })
+    return p_win, p_draw, p_loss, score_probs
+
+
+def build(games, players, tours, members, teams=None, team_matches=None):
     name = {p["player_id"]: p["name"] for p in players}
     tour_name = {t["tournament_id"]: t["name"] for t in tours}
 
@@ -353,6 +443,81 @@ def build(games, players, tours, members):
                 "p_second": match_preds.get(g["game_id"], (None, None, None))[2],
             } for g in sorted(rows, key=lambda r: (r["date"], r["round"], r["board"]))],
         }
+
+    if team_matches:
+        team_by_key = {(t["tournament_id"], t["team_id"]): t for t in (teams or [])}
+        player_team_of = {}
+        for t in (teams or []):
+            for bkey in ("board1_id", "board2_id", "board3_id"):
+                player_team_of[(t["tournament_id"], t[bkey])] = t["team_id"]
+        tm_by_tour = {}
+        for tm in team_matches:
+            tm_by_tour.setdefault(tm["tournament_id"], []).append(tm)
+        for tid, tm_list in tm_by_tour.items():
+            if tid not in tour_details:
+                continue
+            g_by_id = {g["game_id"]: g for g in tour_details[tid]["games"]}
+            out_tms = []
+            for tm in sorted(tm_list, key=lambda x: (x["round"], x["match_board"])):
+                ta = team_by_key.get((tid, tm["team_a_id"]))
+                tb = team_by_key.get((tid, tm["team_b_id"]))
+                boards = []
+                for b_no, gid_key in ((1, "game_id_1"), (2, "game_id_2"), (3, "game_id_3")):
+                    gid = tm.get(gid_key)
+                    if gid is not None and gid in g_by_id:
+                        g = g_by_id[gid]
+                        t_first = player_team_of.get((tid, g["first_id"]))
+                        side = "first" if t_first == tm["team_a_id"] else "second"
+                        boards.append({
+                            "board_no": b_no,
+                            "game_id": g["game_id"],
+                            "first": g["first"],
+                            "first_id": g["first_id"],
+                            "second": g["second"],
+                            "second_id": g["second_id"],
+                            "result": g["result"],
+                            "team_a_side": side,
+                            "p_first": g["p_first"],
+                            "p_draw": g["p_draw"],
+                            "p_second": g["p_second"],
+                        })
+                    else:
+                        pa_id = ta[f"board{b_no}_id"] if ta else None
+                        pb_id = tb[f"board{b_no}_id"] if tb else None
+                        boards.append({
+                            "board_no": b_no,
+                            "game_id": None,
+                            "first": name.get(pa_id, ""),
+                            "first_id": pa_id,
+                            "second": name.get(pb_id, ""),
+                            "second_id": pb_id,
+                            "result": "--",
+                            "team_a_side": "first",
+                            "p_first": None,
+                            "p_draw": None,
+                            "p_second": None,
+                        })
+                p_win, p_draw, p_loss, score_probs = _convolve_team_probs(boards)
+                out_tms.append({
+                    "team_match_id": tm["team_match_id"],
+                    "date": tm["date"],
+                    "round": tm["round"],
+                    "match_board": tm["match_board"],
+                    "rule": tm["rule"],
+                    "team_a_id": tm["team_a_id"],
+                    "team_b_id": tm["team_b_id"],
+                    "team_a_name": tm["team_a_name"],
+                    "team_b_name": tm["team_b_name"],
+                    "score_a": _fmt_pts(tm["score_a"]),
+                    "score_b": _fmt_pts(tm["score_b"]),
+                    "result": tm["result"],
+                    "p_win": p_win,
+                    "p_draw": p_draw,
+                    "p_loss": p_loss,
+                    "score_probs": score_probs,
+                    "boards": boards,
+                })
+            tour_details[tid]["team_matches"] = out_tms
 
     game_details = {}
     for g in games_out:
@@ -624,7 +789,10 @@ def main():
         print("updated tournament pages with predictions:", updated)
         return 0
 
-    games_out, tours_out, players_out, series, tour_details, game_details = build(games, players, tours, members)
+    teams, team_matches = load_team_db(DB)
+    games_out, tours_out, players_out, series, tour_details, game_details = build(
+        games, players, tours, members, teams=teams, team_matches=team_matches
+    )
     os.makedirs(DATA, exist_ok=True)
     dump(tours_out, "tournaments.json")
     dump(players_out, "players.json")
