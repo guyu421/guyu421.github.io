@@ -2,13 +2,11 @@
   "use strict";
 
   var COLUMNS = {
-    games: ["date", "tournament", "rule", "round", "board", "first", "result", "second"],
     tournaments: ["period", "name", "players", "games"],
     players: ["rank", "name", "rating", "rd", "tournaments", "games"]
   };
 
   var NUMERIC = {
-    games: ["round", "board"],
     tournaments: ["players", "games"],
     players: ["rank", "rating", "rd", "tournaments", "games"]
   };
@@ -63,38 +61,6 @@
     return start || end;
   }
 
-  // 赛事日期范围来自对局数据里 date 的最小/最大值。
-  function withPeriods(rows) {
-    var missing = rows.some(function (row) {
-      return row && !row.start_date && !row.startDate && !row.period && !row.date_range;
-    });
-    if (!missing) return Promise.resolve(rows);
-    return load("games").then(function (games) {
-      var ranges = {};
-      games.forEach(function (game) {
-        if (!game || !game.tournament) return;
-        var date = String(game.date || "").slice(0, 10);
-        if (!date) return;
-        var range = ranges[game.tournament];
-        if (!range) {
-          ranges[game.tournament] = { start: date, end: date };
-          return;
-        }
-        if (date < range.start) range.start = date;
-        if (date > range.end) range.end = date;
-      });
-      rows.forEach(function (row) {
-        if (!row || row.start_date || row.startDate || row.period || row.date_range) return;
-        var range = ranges[row.name];
-        if (range) {
-          row.start_date = range.start;
-          row.end_date = range.end;
-        }
-      });
-      return rows;
-    });
-  }
-
   function render(feed, rows) {
     var table = document.querySelector("table[data-feed='" + feed + "']");
     if (!table || !table.tBodies[0]) return;
@@ -121,6 +87,11 @@
           link.href = "player.html?id=" + encodeURIComponent(row.player_id);
           link.textContent = value === null || value === undefined ? "" : String(value);
           td.appendChild(link);
+        } else if (col === "name" && feed === "tournaments") {
+          var tourLink = document.createElement("a");
+          tourLink.href = "tournament.html?id=" + encodeURIComponent(row.tournament_id);
+          tourLink.textContent = value === null || value === undefined ? "" : String(value);
+          td.appendChild(tourLink);
         } else {
           td.textContent = value === null || value === undefined ? "" : String(value);
         }
@@ -136,23 +107,10 @@
     return isNaN(n) ? 0 : n;
   }
 
-  // 对局、赛事从新到旧；同一天内按赛事分块，同一赛事的对局连在一起，再按轮次、台次
+  // 赛事从新到旧
   function sortRows(feed, rows) {
     var list = rows.slice();
-    if (feed === "games") {
-      list.sort(function (a, b) {
-        var da = String((a && a.date) || "");
-        var db = String((b && b.date) || "");
-        if (da !== db) return da < db ? 1 : -1;
-        var ta = number(a && a.tournament_id);
-        var tb = number(b && b.tournament_id);
-        if (ta !== tb) return ta - tb;
-        var ra = number(a && a.round);
-        var rb = number(b && b.round);
-        if (ra !== rb) return rb - ra;
-        return number(a && a.board) - number(b && b.board);
-      });
-    } else if (feed === "tournaments") {
+    if (feed === "tournaments") {
       list.sort(function (a, b) {
         var pa = formatPeriod(a || {});
         var pb = formatPeriod(b || {});
@@ -520,7 +478,7 @@
     var oldGroup = table.querySelector("colgroup");
     if (oldGroup) table.removeChild(oldGroup);
     var colgroup = document.createElement("colgroup");
-    [15, 25, 11, 15, 17, 17].forEach(function (share) {
+    [15, 18, 11, 15, 22, 19].forEach(function (share) {
       var col = document.createElement("col");
       col.style.width = share + "%";
       colgroup.appendChild(col);
@@ -627,14 +585,85 @@
       });
   }
 
+  /* ---------- 赛事对局页 ---------- */
+
+  function playerCell(name, id) {
+    var td = el("td");
+    if (name === "轮空") {
+      td.className = "skip";
+      td.textContent = name;
+      return td;
+    }
+    if (id) {
+      var link = el("a", "", name);
+      link.href = "player.html?id=" + encodeURIComponent(id);
+      td.appendChild(link);
+    } else {
+      td.textContent = name || "";
+    }
+    return td;
+  }
+
+  function renderTournamentMeta(data) {
+    var box = document.getElementById("tourMeta");
+    if (!box) return;
+    box.innerHTML = "";
+    metaRow(box, "日期", formatPeriod(data));
+    metaRow(box, "规模", data.players + " 人，" + data.game_count + " 个对局");
+    if (data.rules && data.rules.length) metaRow(box, "规则", data.rules.join("、"));
+  }
+
+  function renderTournamentGames(data) {
+    var table = document.querySelector("table.tour-games");
+    if (!table || !table.tBodies[0]) return;
+    var tbody = table.tBodies[0];
+    // 表头是 tbody 的第一行，只清数据行
+    while (tbody.rows.length > 1) tbody.deleteRow(tbody.rows.length - 1);
+    (data.games || []).forEach(function (game) {
+      var tr = el("tr");
+      var day = el("td", "date", short_date(game.date));
+      day.title = game.date;
+      tr.appendChild(day);
+      tr.appendChild(el("td", "rnd", "第" + game.round + "轮 第" + game.board + "台"));
+      tr.appendChild(playerCell(game.first, game.first_id));
+      tr.appendChild(el("td", "score", RESULT_SCORE[String(game.result)] || String(game.result)));
+      tr.appendChild(playerCell(game.second, game.second_id));
+      tbody.appendChild(tr);
+    });
+  }
+
+  function initTournament() {
+    var match = /[?&]id=(\d+)/.exec(window.location.search);
+    var id = match ? match[1] : "";
+    var heading = document.getElementById("tourName");
+    if (!id) {
+      if (heading) heading.textContent = "未找到赛事";
+      return Promise.resolve();
+    }
+    return fetch("data/tournament/" + id + ".json")
+      .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        if (!data || !data.name) throw new Error("empty");
+        document.title = data.name;
+        if (heading) heading.textContent = data.name;
+        renderTournamentMeta(data);
+        renderTournamentGames(data);
+        return data;
+      })
+      .catch(function () {
+        if (heading) heading.textContent = "未找到该赛事";
+      });
+  }
+
   function init() {
     if (document.querySelector("[data-player-page]")) return initPlayer();
+    if (document.querySelector("[data-tournament-page]")) return initTournament();
     var feed = getFeed();
     if (!feed) return Promise.resolve();
-    return load(feed).then(function (rows) {
-      var prepared = feed === "tournaments" ? withPeriods(rows) : Promise.resolve(rows);
-      return prepared.then(function (list) { render(feed, sortRows(feed, list)); });
-    });
+    return load(feed).then(function (rows) { return render(feed, sortRows(feed, rows)); });
   }
 
   if (document.readyState === "loading") {

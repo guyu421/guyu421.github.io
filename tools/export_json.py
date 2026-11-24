@@ -197,6 +197,37 @@ def build(games, players, tours, members):
         })
     tours_out.sort(key=lambda r: r["start_date"], reverse=True)
 
+    # 每个赛事单独一份：赛事页点进去只读自己那一段，不用拉全量对局
+    pid_of = {p["name"]: p["player_id"] for p in players}
+    tour_details = {}
+    for row in tours_out:
+        tid = row["tournament_id"]
+        rows = by_tour[tid]
+        rules = []
+        for g in rows:
+            text = str(g.get("rule") or "").strip()
+            if text and text not in rules:
+                rules.append(text)
+        tour_details[tid] = {
+            "tournament_id": tid,
+            "name": row["name"],
+            "start_date": row["start_date"],
+            "end_date": row["end_date"],
+            "players": row["players"],
+            "game_count": row["games"],
+            "rules": rules,
+            "games": [{
+                "date": g["date"],
+                "round": g["round"],
+                "board": g["board"],
+                "first": g["first"],
+                "first_id": pid_of.get(g["first"]),
+                "second": g["second"],
+                "second_id": pid_of.get(g["second"]),
+                "result": g["result"],
+            } for g in sorted(rows, key=lambda r: (r["date"], r["round"], r["board"]))],
+        }
+
     ratings, series = compute_ratings(games_out)
 
     players_out = []
@@ -226,7 +257,7 @@ def build(games, players, tours, members):
         row["rank"] = index
         del row["_rating"]
 
-    return games_out, tours_out, players_out, series
+    return games_out, tours_out, players_out, series, tour_details
 
 
 # 对局结果在详情页上的中文写法与配色类名
@@ -382,11 +413,25 @@ def main():
         return 1
 
     games, players, tours, members = read_parquet(args.parquet)
-    games_out, tours_out, players_out, series = build(games, players, tours, members)
+    games_out, tours_out, players_out, series, tour_details = build(games, players, tours, members)
     os.makedirs(DATA, exist_ok=True)
-    dump(games_out, "games.json")
     dump(tours_out, "tournaments.json")
     dump(players_out, "players.json")
+
+    # 对局页已去掉：不再生成全量 data/games.json，改为每个赛事一份
+    stale_games = os.path.join(DATA, "games.json")
+    if os.path.exists(stale_games):
+        os.remove(stale_games)
+
+    tour_dir = os.path.join(DATA, "tournament")
+    os.makedirs(tour_dir, exist_ok=True)
+    keep_tours = set()
+    for tid, detail in tour_details.items():
+        dump(detail, os.path.join("tournament", "%d.json" % tid))
+        keep_tours.add("%d.json" % tid)
+    for old in os.listdir(tour_dir):
+        if old.endswith(".json") and old not in keep_tours:
+            os.remove(os.path.join(tour_dir, old))
 
     # 棋手详情：data/player/<player_id>.json，一人一份，详情页只读自己那份
     details = build_details(games_out, players_out, series)
@@ -401,7 +446,8 @@ def main():
             os.remove(os.path.join(player_dir, old))
 
     print("games", len(games_out), "tournaments", len(tours_out),
-          "players", len(players_out), "player pages", len(details))
+          "players", len(players_out), "player pages", len(details),
+          "tournament pages", len(tour_details))
     return 0
 
 
