@@ -20,7 +20,7 @@ DB = os.path.join(SITE, "db")
 BYE_NAME = "轮空"
 
 # Glicko-2 参数：初始分 1500、初始 RD 350、初始波动率 0.06、系统常数 tau 0.5
-G2_SCALE = 173.7178
+G2_SCALE = 400.0 / math.log(10)  # 精确值 ≈ 173.7178
 G2_RATING = 1500.0
 G2_RD = 350.0
 G2_SIGMA = 0.06
@@ -29,8 +29,6 @@ G2_TAU = 0.5
 # 轮空 / 弃权在数据库里统一记 "+-"、"-+"、"--"，不写 "-:-" 这种带冒号的写法
 RESULT_ALIAS = {
     "-:-": "--",
-    "---": "--",
-    "--:--": "--",
     "-:+": "-+",
     "+:-": "+-",
 }
@@ -48,8 +46,8 @@ def normalize_result(value):
 
 
 def _display(value):
-    """等级分与偏差统一保留一位小数（正好是整数也写 .0）。"""
-    return round(float(value), 1)
+    """等级分与偏差统一保留两位小数（正好是整数也写 .00）。"""
+    return round(float(value), 2)
 
 
 def _g(phi):
@@ -89,7 +87,11 @@ def _volatility(phi, sigma, v, delta, tau=G2_TAU, eps=1e-6):
 
 
 def compute_ratings(games_out):
-    """按比赛日分评级周期，逐日计算 Glicko-2，返回 {姓名: (分, RD)}。"""
+    """按比赛日分评级周期，逐日计算 Glicko-2。
+
+    返回 ({姓名: (分, RD)}, {姓名: [(日期, 分, RD), ...]})，
+    第二个是每期结束后的快照，用于棋手详情页的等级分曲线。
+    """
     periods = {}
     for g in games_out:
         if g["second"] == BYE_NAME:
@@ -100,6 +102,7 @@ def compute_ratings(games_out):
         periods.setdefault(str(g["date"]), []).append((g["first"], g["second"], s))
 
     mu, phi, sigma = {}, {}, {}
+    history = {}
 
     for date in sorted(periods):
         # 周期之间 RD 随波动率增长
@@ -142,7 +145,26 @@ def compute_ratings(games_out):
         for name, (m, p, s) in updated.items():
             mu[name], phi[name], sigma[name] = m, p, s
 
-    return {n: (G2_RATING + G2_SCALE * mu[n], G2_SCALE * phi[n]) for n in mu}
+        for name in mu:
+            history.setdefault(name, []).append(
+                (date, G2_RATING + G2_SCALE * mu[name], G2_SCALE * phi[name])
+            )
+
+    final = {n: (G2_RATING + G2_SCALE * mu[n], G2_SCALE * phi[n]) for n in mu}
+    return final, history
+
+
+def rating_at(history, name, date):
+    """取某棋手在 date（含）之前最后一次评级的 (分, RD)，没有记录时用初始值。"""
+    rows = history.get(name) or []
+    hit = None
+    for row_date, value, rd in rows:
+        if row_date <= date:
+            hit = (value, rd)
+        else:
+            break
+    return hit or (G2_RATING, G2_RD)
+
 
 
 
@@ -229,7 +251,7 @@ def build(games, players, tours, members):
         })
     tours_out.sort(key=lambda r: r["start_date"], reverse=True)
 
-    ratings = compute_ratings(games_out)
+    ratings, history = compute_ratings(games_out)
 
     players_out = []
     for p in players:
@@ -257,7 +279,100 @@ def build(games, players, tours, members):
         row["rank"] = index
         del row["_rating"]
 
-    return games_out, tours_out, players_out
+    return games_out, tours_out, players_out, history
+
+
+# 对局结果在详情页上的中文写法与配色类名
+PLAYER_RESULT = {
+    "1": ("胜", "win"),
+    "0": ("负", "loss"),
+    "0.5": ("和", "draw"),
+    "+-": ("弃权", "skip"),
+    "-+": ("弃权", "skip"),
+    "--": ("弃权", "skip"),
+}
+
+
+def build_details(games_out, players_out, history):
+    """每位棋手一份详情：基本信息 + 等级分曲线 + 按赛事分组的对局明细。"""
+    player_id = {p["name"]: p["player_id"] for p in players_out}
+    details = {}
+
+    for p in players_out:
+        name = p["name"]
+        pid = p["player_id"]
+        mine = [g for g in games_out if g["first"] == name or g["second"] == name]
+
+        wins = draws = losses = skips = 0
+        groups = {}
+        for g in mine:
+            is_first = g["first"] == name
+            opponent = g["second"] if is_first else g["first"]
+            result = str(g["result"])
+
+            if opponent == BYE_NAME:
+                label, klass = "轮空", "skip"
+            else:
+                label, klass = PLAYER_RESULT.get(result, (result, "skip"))
+
+            if klass == "win":
+                wins += 1
+            elif klass == "draw":
+                draws += 1
+            elif klass == "loss":
+                losses += 1
+            else:
+                skips += 1
+
+            opp_rating = None if opponent == BYE_NAME else _display(
+                rating_at(history, opponent, g["date"])[0]
+            )
+            group = groups.setdefault(g["tournament_id"], {
+                "tournament_id": g["tournament_id"],
+                "tournament": g["tournament"],
+                "end_date": g["date"],
+                "games": [],
+            })
+            if g["date"] > group["end_date"]:
+                group["end_date"] = g["date"]
+            group["games"].append({
+                "round": g["round"],
+                "board": g["board"],
+                "color": "假先" if is_first else "假后",
+                "result": label,
+                "class": klass,
+                "opponent": opponent,
+                "opponent_id": player_id.get(opponent),
+                "opponent_rating": opp_rating,
+            })
+
+        groups = sorted(groups.values(), key=lambda r: r["end_date"], reverse=True)
+        for group in groups:
+            group["games"].sort(key=lambda r: (r["round"], r["board"]))
+            group["rating"] = _display(rating_at(history, name, group["end_date"])[0])
+
+        curve = [[d, _display(v), _display(rd)] for d, v, rd in history.get(name, [])]
+        peak = max(history.get(name, [("", p["rating"], 0)]), key=lambda r: r[1])
+
+        details[pid] = {
+            "player_id": pid,
+            "name": name,
+            "rank": p["rank"],
+            "rating": p["rating"],
+            "rd": p["rd"],
+            "tournaments": p["tournaments"],
+            "games": len(mine),
+            "wins": wins,
+            "draws": draws,
+            "losses": losses,
+            "skips": skips,
+            "top_rating": _display(peak[1]),
+            "top_date": peak[0],
+            "history": curve,
+            "results": groups,
+        }
+
+    return details
 
 
 def dump(obj, name, compact=True):
@@ -279,12 +394,26 @@ def main():
         return 1
 
     games, players, tours, members = read_parquet(args.parquet)
-    games_out, tours_out, players_out = build(games, players, tours, members)
+    games_out, tours_out, players_out, history = build(games, players, tours, members)
     os.makedirs(DATA, exist_ok=True)
     dump(games_out, "games.json")
     dump(tours_out, "tournaments.json")
     dump(players_out, "players.json")
-    print("games", len(games_out), "tournaments", len(tours_out), "players", len(players_out))
+
+    # 棋手详情：data/player/<player_id>.json，一人一份，详情页只读自己那份
+    details = build_details(games_out, players_out, history)
+    player_dir = os.path.join(DATA, "player")
+    os.makedirs(player_dir, exist_ok=True)
+    keep = set()
+    for pid, detail in details.items():
+        dump(detail, os.path.join("player", "%d.json" % pid))
+        keep.add("%d.json" % pid)
+    for old in os.listdir(player_dir):
+        if old.endswith(".json") and old not in keep:
+            os.remove(os.path.join(player_dir, old))
+
+    print("games", len(games_out), "tournaments", len(tours_out),
+          "players", len(players_out), "player pages", len(details))
     return 0
 
 
