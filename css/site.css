@@ -202,6 +202,8 @@ body,
 		grid-row: 1;
 		grid-column: 2;
 		text-align: center;
+		/* 桌面端给轮次留的 1.1em 左内边距在卡片里会把字顶歪 */
+		padding-left: 0em;
 		color: #8a8a8a;
 		font-size: 0.85em;
 	}
@@ -382,7 +384,14 @@ body,
 #content table.tour-games td.rule {
 	white-space: nowrap;
 	text-align: center;
-	padding-left: 1.1em;
+}
+
+/* 只有桌面表格需要把规则列从轮次列推开；手机卡片里会顶歪 */
+@media (min-width: 641px) {
+	#content table.tour-games th:nth-child(3),
+	#content table.tour-games td.rule {
+		padding-left: 1.1em;
+	}
 }
 
 #content table.tour-games td.date {
