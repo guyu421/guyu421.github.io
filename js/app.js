@@ -167,10 +167,6 @@
         text + (index < parts.length - 1 ? "，" : "")));
     });
     box.appendChild(record);
-
-    if (data.top_rating) {
-      metaRow(box, "最高等级分", one(data.top_rating) + (data.top_date ? "（" + data.top_date + "）" : ""));
-    }
   }
 
   function svgNode(tag, attrs, text) {

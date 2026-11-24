@@ -363,7 +363,6 @@ def build_details(games_out, players_out, series):
             value, rd = rating_at(series, name, group["end_date"])
             curve.append([group["end_date"], _display(value), _display(rd),
                           group["tournament_id"]])
-        peak = max(curve, key=lambda r: r[1]) if curve else ("", p["rating"], 0, None)
 
         # 得分率：和棋算半分，只看真正下过的对局（轮空与弃权不掺进来）
         played = wins + draws + losses
@@ -385,8 +384,6 @@ def build_details(games_out, players_out, series):
             "self_skips": self_skips,
             "opp_skips": opp_skips,
             "double_skips": double_skips,
-            "top_rating": _display(peak[1]),
-            "top_date": peak[0],
             "history": curve,
             "results": groups,
         }
