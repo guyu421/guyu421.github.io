@@ -203,11 +203,6 @@ def build(games, players, tours, members):
     for row in tours_out:
         tid = row["tournament_id"]
         rows = by_tour[tid]
-        rules = []
-        for g in rows:
-            text = str(g.get("rule") or "").strip()
-            if text and text not in rules:
-                rules.append(text)
         tour_details[tid] = {
             "tournament_id": tid,
             "name": row["name"],
@@ -215,11 +210,11 @@ def build(games, players, tours, members):
             "end_date": row["end_date"],
             "players": row["players"],
             "game_count": row["games"],
-            "rules": rules,
             "games": [{
                 "date": g["date"],
                 "round": g["round"],
                 "board": g["board"],
+                "rule": g["rule"],
                 "first": g["first"],
                 "first_id": pid_of.get(g["first"]),
                 "second": g["second"],

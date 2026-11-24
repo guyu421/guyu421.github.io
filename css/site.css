@@ -197,7 +197,16 @@ body,
 		font-size: 0.85em;
 	}
 
-	#content table.tour-games td:nth-child(3) {
+	/* 规则放在卡片中间一行 */
+	#content table.tour-games td.rule {
+		grid-row: 1;
+		grid-column: 2;
+		text-align: center;
+		color: #8a8a8a;
+		font-size: 0.85em;
+	}
+
+	#content table.tour-games td:nth-child(4) {
 		grid-row: 2;
 		grid-column: 1;
 	}
@@ -208,7 +217,7 @@ body,
 		text-align: center;
 	}
 
-	#content table.tour-games td:nth-child(5) {
+	#content table.tour-games td:nth-child(6) {
 		grid-row: 2;
 		grid-column: 3;
 		text-align: right;
@@ -354,14 +363,18 @@ body,
 	margin-bottom: 0.9em;
 }
 
-#content table.tour-games {
-	width: 100%;
-}
-
 #content table.tour-games th:nth-child(2),
 #content table.tour-games td.rnd {
 	white-space: nowrap;
 	text-align: right;
+}
+
+#content table.tour-games th:nth-child(3),
+#content table.tour-games td.rule {
+	white-space: nowrap;
+	text-align: center;
+	padding-left: 1.1em;
+	color: #6f7b83;
 }
 
 #content table.tour-games td.date {

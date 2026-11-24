@@ -591,9 +591,7 @@
     var box = document.getElementById("tourMeta");
     if (!box) return;
     box.innerHTML = "";
-    // 规则不单列一行，跟在日期后面
-    var rules = data.rules && data.rules.length ? "（" + data.rules.join("、") + "）" : "";
-    metaRow(box, "日期", formatPeriod(data) + rules);
+    metaRow(box, "日期", formatPeriod(data));
     metaRow(box, "规模", data.players + " 人，" + data.game_count + " 个对局");
   }
 
@@ -609,6 +607,7 @@
       day.title = game.date;
       tr.appendChild(day);
       tr.appendChild(el("td", "rnd", "第" + game.round + "轮 第" + game.board + "台"));
+      tr.appendChild(el("td", "rule", game.rule || ""));
       tr.appendChild(playerCell(game.first, game.first_id));
       tr.appendChild(el("td", "score", RESULT_SCORE[String(game.result)] || String(game.result)));
       tr.appendChild(playerCell(game.second, game.second_id));
