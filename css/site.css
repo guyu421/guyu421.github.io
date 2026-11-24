@@ -325,7 +325,12 @@ body,
 	color: #1c4a63;
 }
 
-#content table.player-games th:nth-child(2),
+/* 表头「轮次」两个字居中，下面的「第X轮 第Y台」仍居右 */
+#content table.player-games th:nth-child(2) {
+	white-space: nowrap;
+	text-align: center;
+}
+
 #content table.player-games td.rnd {
 	white-space: nowrap;
 	text-align: right;
@@ -367,7 +372,11 @@ body,
 	margin-bottom: 0.9em;
 }
 
-#content table.tour-games th:nth-child(2),
+#content table.tour-games th:nth-child(2) {
+	white-space: nowrap;
+	text-align: center;
+}
+
 #content table.tour-games td.rnd {
 	white-space: nowrap;
 	text-align: right;
