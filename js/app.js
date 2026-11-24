@@ -540,8 +540,7 @@
         });
         Object.keys(byDate).forEach(function (date) {
           byDate[date].sort(function (a, b) {
-            return a.round - b.round || a.board - b.board ||
-              (a.game_no || 1) - (b.game_no || 1);
+            return a.round - b.round || a.board - b.board;
           });
         });
 

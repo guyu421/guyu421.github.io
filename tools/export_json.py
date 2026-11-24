@@ -19,6 +19,9 @@ DB = os.path.join(SITE, "db")
 
 BYE_NAME = "轮空"
 
+# 8-10 轮是加赛轮次（只打前几台决名次），不属于正赛，导出时跳过
+SKIP_ROUNDS = {8, 9, 10}
+
 # Glicko-2 参数：初始分 1500、初始 RD 350、初始波动率 0.06、系统常数 tau 0.5
 G2_SCALE = 400.0 / math.log(10)  # 精确值 ≈ 173.7178
 G2_RATING = 1500.0
@@ -203,7 +206,12 @@ def build(games, players, tours, members):
     tour_name = {t["tournament_id"]: t["name"] for t in tours}
 
     games_out = []
+    skipped = 0
     for g in games:
+        # 8-10 轮是加赛（只打前几台决名次），不属于正赛，直接跳过
+        if g["round"] in SKIP_ROUNDS:
+            skipped += 1
+            continue
         second = "" if g["second_id"] is None else name.get(g["second_id"], "")
         result = normalize_result(g["result"])
         if second in ("+", ""):
@@ -211,8 +219,7 @@ def build(games, players, tours, members):
         if second == BYE_NAME:
             result = "+-"
         games_out.append({
-            "id": g["id"],
-            "game_id": g["game_id"],
+            "game_id": 0,  # 导出时按最终顺序重排成从 1 开始的整数
             "date": g["date"],
             "rule": g["rule"],
             "first": name.get(g["first_id"], ""),
@@ -222,30 +229,23 @@ def build(games, players, tours, members):
             "tournament": tour_name.get(g["tournament_id"], ""),
             "round": g["round"],
             "board": g["board"],
-            "game_no": g["game_no"],
         })
-    # 源库里同一赛事、同一天、同一轮同一台会把同一盘棋重复登记（只有 game_no 不同），
-    # 这里每台只保留最早的一条，页面与等级分都不再出现重复对局
-    games_out.sort(key=lambda r: (r["date"], r["tournament_id"], r["round"],
-                                  r["board"], r["game_no"]))
+    # 同一赛事、同一天、同一轮同一台只应有一局，多出来的按重复数据丢掉
+    games_out.sort(key=lambda r: (r["date"], r["tournament_id"], r["round"], r["board"]))
     unique = {}
-    dropped = []
     for g in games_out:
-        key = (g["date"], g["tournament_id"], g["round"], g["board"])
-        if key in unique:
-            dropped.append(g)
-            continue
-        unique[key] = g
+        unique.setdefault((g["date"], g["tournament_id"], g["round"], g["board"]), g)
     games_out = list(unique.values())
-    for g in dropped:
-        print("去重：%s %s 第%d轮 第%d台 %s(假先) %s %s" % (
-            g["date"], g["tournament"], g["round"], g["board"],
-            g["first"], g["result"], g["second"]))
 
     # 同一天先按赛事分块（同一赛事的对局连在一起，不与其他赛事穿插），
     # 赛事内轮次从新到旧、台次从小到大
     games_out.sort(key=lambda r: (-int(str(r["date"]).replace("-", "") or 0),
                                   r["tournament_id"], -r["round"], r["board"]))
+    for index, g in enumerate(sorted(games_out, key=lambda r: (
+            r["date"], r["tournament_id"], r["round"], r["board"])), 1):
+        g["game_id"] = index
+    if skipped:
+        print("跳过加赛轮次对局 %d 条" % skipped)
 
     by_tour = {}
     for g in games_out:
@@ -277,7 +277,8 @@ def build(games, players, tours, members):
             continue
         mine = [g for g in games_out if g["first"] == p["name"] or g["second"] == p["name"]]
         tours_of_mine = mine_tours.get(p["player_id"], set())
-        if not mine and not tours_of_mine:
+        # 只有加赛记录（已被跳过）或根本没上场的棋手不进榜单
+        if not mine:
             continue
         rating, rd = ratings.get(p["name"], (G2_RATING, G2_RD))
         players_out.append({
