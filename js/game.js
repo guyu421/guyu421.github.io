@@ -170,15 +170,12 @@
     var scoreStr = RESULT_SCORE[String(data.result)] || String(data.result || "");
     var firstColor = "";
     var secondColor = "";
-    if (data.second !== "轮空") {
-      if (data.swap === "+") {
+    if (data.second !== "轮空" && data.swap) {
+      var plusCount = (String(data.swap).match(/\+/g) || []).length;
+      if (plusCount % 2 === 1) {
         firstColor = "白 ";
         secondColor = "黑 ";
-      } else if (
-        data.swap === "-" ||
-        data.tournament_id === 15 ||
-        (data.tournament_id >= 16 && data.tournament_id <= 23)
-      ) {
+      } else {
         firstColor = "黑 ";
         secondColor = "白 ";
       }
