@@ -702,12 +702,120 @@
       });
   }
 
+  /* ---------- 赛事列表的年份选择器 ---------- */
+
+  function season_year(row) {
+    var start = String(row.start_date || row.startDate || row.period || "").slice(0, 4);
+    if (/^\d{4}$/.test(start)) return start;
+    var end = String(row.end_date || row.endDate || "").slice(0, 4);
+    return /^\d{4}$/.test(end) ? end : "";
+  }
+
+  // 数据里出现过的年份，从新到旧
+  function tournamentYears(rows) {
+    var seen = {};
+    var list = [];
+    rows.forEach(function (row) {
+      var year = season_year(row || {});
+      if (year && !seen[year]) {
+        seen[year] = 1;
+        list.push(year);
+      }
+    });
+    return list.sort(function (a, b) { return a < b ? 1 : -1; });
+  }
+
+  function yearFromUrl() {
+    var match = /[?&]year=(\d{4})/.exec(window.location.search);
+    return match ? match[1] : null;
+  }
+
+  function yearUrl(year) {
+    return "index.html?year=" + encodeURIComponent(year);
+  }
+
+  // 年份选择：< [2026年 ▾] / 共 X 年 >，只看某一年，没有「全部」
+  function setupYearPicker(rows) {
+    var select = document.getElementById("yearSelect");
+    var prev = document.getElementById("yearPrev");
+    var next = document.getElementById("yearNext");
+    var total = document.getElementById("yearTotal");
+    var years = tournamentYears(rows);
+
+    if (!select || !years.length) {
+      render("tournaments", sortRows("tournaments", rows));
+      return;
+    }
+
+    select.innerHTML = "";
+    years.forEach(function (year) {
+      var option = document.createElement("option");
+      option.value = year;
+      option.textContent = year + "年";
+      select.appendChild(option);
+    });
+    if (total) total.textContent = "/ 共 " + years.length + " 年";
+
+    function syncNav() {
+      var index = years.indexOf(select.value);
+      if (prev) prev.disabled = index <= 0;
+      if (next) next.disabled = index < 0 || index >= years.length - 1;
+    }
+
+    function goTo(year, push) {
+      var index = years.indexOf(String(year));
+      if (index < 0) return;
+      var current = years[index];
+      select.value = current;
+      if (push && window.history && window.history.pushState) {
+        window.history.pushState({ year: current }, "", yearUrl(current));
+      }
+      var list = rows.filter(function (row) { return season_year(row || {}) === current; });
+      render("tournaments", sortRows("tournaments", list));
+      syncNav();
+    }
+
+    var wanted = yearFromUrl();
+    var current = years.indexOf(wanted) >= 0 ? wanted : years[0];
+    // 地址栏没带年份（或带了没有的年份）时补成实际显示的那一年
+    if (wanted !== current && window.history && window.history.replaceState) {
+      window.history.replaceState({ year: current }, "", yearUrl(current));
+    }
+    goTo(current, false);
+
+    select.addEventListener("change", function () {
+      goTo(select.value, true);
+    });
+
+    function step(delta) {
+      var index = years.indexOf(select.value);
+      if (index < 0) return;
+      goTo(years[index + delta], true);
+    }
+
+    if (prev) prev.addEventListener("click", function () { step(-1); });
+    if (next) next.addEventListener("click", function () { step(1); });
+
+    // 浏览器前进/后退时跟着地址栏上的年份走
+    window.addEventListener("popstate", function () {
+      var back = yearFromUrl();
+      goTo(years.indexOf(back) >= 0 ? back : years[0], false);
+    });
+  }
+
   function init() {
     if (document.querySelector("[data-player-page]")) return initPlayer();
     if (document.querySelector("[data-tournament-page]")) return initTournament();
     var feed = getFeed();
     if (!feed) return Promise.resolve();
-    return load(feed).then(function (rows) { return render(feed, sortRows(feed, rows)); });
+    return load(feed).then(function (rows) {
+      if (feed === "tournaments") {
+        setupYearPicker(rows);
+      } else {
+        render(feed, sortRows(feed, rows));
+      }
+      return rows;
+    });
   }
 
   if (document.readyState === "loading") {
