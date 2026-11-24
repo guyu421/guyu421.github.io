@@ -351,6 +351,13 @@ body,
 	color: #8a8a8a;
 }
 
+/* 结果列（胜/和/负）居中 */
+#content table.player-games td.win,
+#content table.player-games td.draw,
+#content table.player-games td.loss {
+	text-align: center;
+}
+
 #playerMeta p,
 #tourMeta p {
 	color: #444;
