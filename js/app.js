@@ -443,8 +443,12 @@
 
     (data.results || []).forEach(function (group) {
       var head = el("tr");
-      var th = el("th", "", group.tournament);
+      var th = el("th");
       th.colSpan = 7;
+      // 赛事名点进该赛事第 1 轮
+      var tourLink = el("a", "", group.tournament);
+      tourLink.href = tournamentUrl(group.tournament_id, 1);
+      th.appendChild(tourLink);
       head.appendChild(th);
       tbody.appendChild(head);
 
@@ -469,7 +473,13 @@
         var day = el("td", "date", short_date(game.date));
         day.title = game.date;
         tr.appendChild(day);
-        tr.appendChild(el("td", "rnd", "第" + game.round + "轮 第" + game.board + "台"));
+        var rnd = el("td", "rnd");
+        // 「第N轮」点进该赛事第 N 轮
+        var roundLink = el("a", "", "第" + game.round + "轮");
+        roundLink.href = tournamentUrl(group.tournament_id, game.round);
+        rnd.appendChild(roundLink);
+        rnd.appendChild(document.createTextNode("\u00a0第" + game.board + "台"));
+        tr.appendChild(rnd);
         tr.appendChild(el("td", "rule", game.rule || ""));
         tr.appendChild(el("td", "cnum", game.color));
         tr.appendChild(el("td", game["class"], game.result));
@@ -705,4 +715,4 @@
   } else {
     init();
   }
-})();
+})
