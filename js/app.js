@@ -324,6 +324,28 @@
 
     var current = -1;
 
+    var tip = el("div", "chart-tip");
+    tip.style.display = "none";
+    box.appendChild(tip);
+
+    // 浮动提示：日期、等级分、偏差，半透明底，位置贴着当前点
+    function placeTip(index) {
+      var point = points[index];
+      tip.innerHTML = "";
+      tip.appendChild(el("b", "", String(history[index][0]).slice(0, 10)));
+      tip.appendChild(el("span", "", "等级分 " + point.v.toFixed(2)));
+      tip.appendChild(el("span", "", "偏差 " + point.rd.toFixed(2)));
+      tip.style.display = "block";
+      var tw = tip.offsetWidth;
+      var th = tip.offsetHeight;
+      var left = xOf(point.t) - tw / 2;
+      left = Math.max(2, Math.min(left, width - tw - 2));
+      var top = yOf(point.v) - th - 12;
+      if (top < 2) top = yOf(point.v) + 12;
+      tip.style.left = left + "px";
+      tip.style.top = top + "px";
+    }
+
     function highlight(index, on) {
       var dot = dots[index];
       if (!dot) return;
@@ -340,12 +362,14 @@
       guide.setAttribute("x1", cx);
       guide.setAttribute("x2", cx);
       guide.setAttribute("visibility", "visible");
+      placeTip(index);
     }
 
     function clear() {
       if (current >= 0) highlight(current, false);
       current = -1;
       guide.setAttribute("visibility", "hidden");
+      tip.style.display = "none";
     }
 
     // 每个点给一块命中区域，按相邻点的中点为界，鼠标与手指都容易点中
@@ -360,11 +384,6 @@
         fill: "transparent"
       });
       hit.style.cursor = "pointer";
-      // 自带提示：日期 等级分 偏差
-      hit.appendChild(svgNode("title", {},
-        String(history[index][0]).slice(0, 10)
-        + " 等级分 " + p.v.toFixed(2)
-        + " 偏差 " + p.rd.toFixed(2)));
       hit.addEventListener("mouseenter", function () { show(index); });
       hit.addEventListener("click", function () { show(index); });
       hit.addEventListener("touchstart", function () { show(index); }, { passive: true });

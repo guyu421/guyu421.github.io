@@ -278,6 +278,32 @@ body,
 	max-width: 100%;
 }
 
+/* 曲线悬浮提示：半透明深色底，贴着当前节点 */
+.chart-tip {
+	position: absolute;
+	z-index: 2;
+	display: none;
+	padding: 0.45em 0.6em;
+	border-radius: 5px;
+	background: rgba(38, 42, 46, 0.78);
+	color: #fff;
+	font-size: 12px;
+	line-height: 1.5;
+	white-space: nowrap;
+	pointer-events: none;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+}
+
+.chart-tip b {
+	display: block;
+	font-weight: 600;
+}
+
+.chart-tip span {
+	display: block;
+	color: rgba(255, 255, 255, 0.82);
+}
+
 #content table.player-games th:nth-child(2),
 #content table.player-games td.rnd {
 	white-space: nowrap;
