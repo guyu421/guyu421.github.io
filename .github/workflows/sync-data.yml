@@ -26,7 +26,7 @@ jobs:
           python-version: "3.11"
 
       - name: 安装依赖
-        run: pip install pandas pyarrow
+        run: pip install pandas pyarrow whr
 
       - name: 从 db/*.parquet 导出 data/*.json
         run: python tools/export_json.py

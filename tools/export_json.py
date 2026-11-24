@@ -11,6 +11,9 @@ import json
 import math
 import os
 import sys
+from datetime import date as _date, timedelta
+
+import whr
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.dirname(HERE)
@@ -19,12 +22,16 @@ DB = os.path.join(SITE, "db")
 
 BYE_NAME = "轮空"
 
-# Glicko-2 参数：初始分 1500、初始 RD 350、初始波动率 0.06、系统常数 tau 0.5
-G2_SCALE = 400.0 / math.log(10)  # 精确值 ≈ 173.7178
-G2_RATING = 1500.0
-G2_RD = 350.0
-G2_SIGMA = 0.06
-G2_TAU = 0.5
+# WHR（Whole-History Rating）参数，与 rating.renju.net（wind23/whr_renju）保持一致：
+#   w2            每日等级分漂移的方差（Elo²/天），连棋用 19.3
+#   virtual_games 棋手首日先记两盘虚拟和棋，作为先验
+# WHR 算出的分数以 0 为中心，平移一个偏置才是通常看到的等级分
+WHR_W2 = 19.3
+WHR_VIRTUAL_GAMES = 2
+WHR_BIAS = 1900.0
+# 完全没有下过棋（只有轮空/弃权）时的兜底偏差
+WHR_PRIOR_RD = 350.0
+EPOCH = _date(1970, 1, 1)
 
 # 轮空 / 弃权在数据库里统一记 "+-"、"-+"、"--"，不写 "-:-" 这种带冒号的写法
 RESULT_ALIAS = {
@@ -33,8 +40,9 @@ RESULT_ALIAS = {
     "+:-": "+-",
 }
 
-# 只统计真正下过的对局：轮空（+-）与弃权（-+、--）不计入等级分
-POINTS = {"1": 1.0, "0": 0.0, "0.5": 0.5}
+# 库里 result 记的是假先方视角：1 假先胜、0 假先负、0.5 和棋
+# 轮空（+-）与弃权（-+、+-、--）不计入等级分
+WINNER = {"1": "B", "0": "W", "0.5": "D"}
 
 
 def normalize_result(value):
@@ -50,122 +58,63 @@ def _display(value):
     return round(float(value), 2)
 
 
-def _g(phi):
-    return 1.0 / math.sqrt(1.0 + 3.0 * phi * phi / (math.pi ** 2))
-
-
-def _expect(mu, mu_j, phi_j):
-    return 1.0 / (1.0 + math.exp(-_g(phi_j) * (mu - mu_j)))
-
-
-def _volatility(phi, sigma, v, delta, tau=G2_TAU, eps=1e-6):
-    a = math.log(sigma * sigma)
-
-    def f(x):
-        ex = math.exp(x)
-        d2 = phi * phi + v + ex
-        return (ex * (delta * delta - phi * phi - v - ex)) / (2.0 * d2 * d2) - (x - a) / (tau * tau)
-
-    A = a
-    if delta * delta > phi * phi + v:
-        B = math.log(delta * delta - phi * phi - v)
-    else:
-        k = 1
-        while f(a - k * tau) < 0:
-            k += 1
-        B = a - k * tau
-    fa, fb = f(A), f(B)
-    while abs(B - A) > eps:
-        C = A + (A - B) * fa / (fb - fa)
-        fc = f(C)
-        if fc * fb <= 0:
-            A, fa = B, fb
-        else:
-            fa = fa / 2.0
-        B, fb = C, fc
-    return math.exp(A / 2.0)
+def _day_of(date_text):
+    """日期换成 WHR 用的天序号（1970-01-01 起算的天数）。"""
+    y, m, d = (int(x) for x in str(date_text)[:10].split("-"))
+    return (_date(y, m, d) - EPOCH).days
 
 
 def compute_ratings(games_out):
-    """按比赛日分评级周期，逐日计算 Glicko-2。
+    """用 WHR（Whole-History Rating）算等级分。
 
-    返回 ({姓名: (分, RD)}, {姓名: [(日期, 分, RD), ...]})，
-    第二个是每期结束后的快照，用于棋手详情页的等级分曲线。
+    每局按自己的比赛日参与求解，全历史一次算完（不是逐日递推），
+    参数沿用 rating.renju.net 的连珠评分。返回
+    ({姓名: (分, 偏差)}, {姓名: [(日期, 分, 偏差), ...]})，
+    后者是该棋手每个比赛日的当日快照，供详情页曲线与对手分查询使用。
     """
-    periods = {}
+    trainable = []
     for g in games_out:
         if g["second"] == BYE_NAME:
             continue
-        s = POINTS.get(str(g["result"]))
-        if s is None:
+        winner = WINNER.get(str(g["result"]))
+        if winner is None:
             continue
-        periods.setdefault(str(g["date"]), []).append((g["first"], g["second"], s))
+        trainable.append([g["first"], g["second"], winner, _day_of(g["date"])])
+    trainable.sort(key=lambda r: r[3])
+    if not trainable:
+        return {}, {}
 
-    mu, phi, sigma = {}, {}, {}
-    history = {}
+    base = whr.Base(config={"w2": WHR_W2, "virtual_games": WHR_VIRTUAL_GAMES})
+    base.create_games(trainable)
+    base.iterate_until_converge(verbose=False)
 
-    for date in sorted(periods):
-        # 周期之间 RD 随波动率增长
-        for name in mu:
-            phi[name] = math.sqrt(phi[name] ** 2 + sigma[name] ** 2)
+    final_day = max(row[3] for row in trainable)
+    series = {}
+    for name, rows in base.get_ordered_ratings():
+        series[name] = [
+            ((EPOCH + timedelta(days=int(day))).isoformat(), elo + WHR_BIAS, float(std))
+            for day, elo, std in rows
+        ]
 
-        pairs = periods[date]
-        for a, b, _ in pairs:
-            for name in (a, b):
-                if name not in mu:
-                    mu[name] = 0.0
-                    phi[name] = G2_RD / G2_SCALE
-                    sigma[name] = G2_SIGMA
-
-        # 同一周期内合并该棋手所有对局，一次性更新
-        met = {}
-        for a, b, s in pairs:
-            met.setdefault(a, []).append((b, s))
-            met.setdefault(b, []).append((a, 1.0 - s))
-
-        updated = {}
-        for name, rows in met.items():
-            v_sum = 0.0
-            d_sum = 0.0
-            for opp, s in rows:
-                gv = _g(phi[opp])
-                e = _expect(mu[name], mu[opp], phi[opp])
-                v_sum += gv * gv * e * (1.0 - e)
-                d_sum += gv * (s - e)
-            if v_sum <= 0:
-                continue
-            v = 1.0 / v_sum
-            delta = v * d_sum
-            sig = _volatility(phi[name], sigma[name], v, delta)
-            phi_star = math.sqrt(phi[name] ** 2 + sig ** 2)
-            phi_new = 1.0 / math.sqrt(1.0 / (phi_star ** 2) + 1.0 / v)
-            mu_new = mu[name] + phi_new ** 2 * d_sum
-            updated[name] = (mu_new, phi_new, sig)
-
-        for name, (m, p, s) in updated.items():
-            mu[name], phi[name], sigma[name] = m, p, s
-
-        for name in mu:
-            history.setdefault(name, []).append(
-                (date, G2_RATING + G2_SCALE * mu[name], G2_SCALE * phi[name])
-            )
-
-    final = {n: (G2_RATING + G2_SCALE * mu[n], G2_SCALE * phi[n]) for n in mu}
-    return final, history
+    # 榜单上显示的是最后一次比赛的分，偏差则按「距最后一次比赛多少天」放大
+    final = {}
+    for name, points in series.items():
+        last_date, last_rating, last_rd = points[-1]
+        gap = max(final_day - _day_of(last_date), 0)
+        final[name] = (last_rating, math.sqrt(WHR_W2 * gap + last_rd * last_rd))
+    return final, series
 
 
-def rating_at(history, name, date):
-    """取某棋手在 date（含）之前最后一次评级的 (分, RD)，没有记录时用初始值。"""
-    rows = history.get(name) or []
+def rating_at(series, name, date):
+    """取某棋手在 date（含）之前的最后一次评级 (分, 偏差)，没下过棋就给先验。"""
+    rows = series.get(name) or []
     hit = None
     for row_date, value, rd in rows:
         if row_date <= date:
             hit = (value, rd)
         else:
             break
-    return hit or (G2_RATING, G2_RD)
-
-
+    return hit or (WHR_BIAS, WHR_PRIOR_RD)
 
 
 def read_parquet(folder):
@@ -248,7 +197,7 @@ def build(games, players, tours, members):
         })
     tours_out.sort(key=lambda r: r["start_date"], reverse=True)
 
-    ratings, history = compute_ratings(games_out)
+    ratings, series = compute_ratings(games_out)
 
     players_out = []
     for p in players:
@@ -259,7 +208,7 @@ def build(games, players, tours, members):
         # 只有加赛记录（已被跳过）或根本没上场的棋手不进榜单
         if not mine:
             continue
-        rating, rd = ratings.get(p["name"], (G2_RATING, G2_RD))
+        rating, rd = ratings.get(p["name"], (WHR_BIAS, WHR_PRIOR_RD))
         players_out.append({
             "player_id": p["player_id"],
             "rank": 0,
@@ -277,7 +226,7 @@ def build(games, players, tours, members):
         row["rank"] = index
         del row["_rating"]
 
-    return games_out, tours_out, players_out, history
+    return games_out, tours_out, players_out, series
 
 
 # 对局结果在详情页上的中文写法与配色类名
@@ -313,7 +262,7 @@ def classify_result(is_first, result, opponent):
     return ("opp", "对手弃权", "skip")
 
 
-def build_details(games_out, players_out, history):
+def build_details(games_out, players_out, series):
     """每位棋手一份详情：基本信息 + 等级分曲线 + 按赛事分组的对局明细。"""
     player_id = {p["name"]: p["player_id"] for p in players_out}
     details = {}
@@ -349,7 +298,7 @@ def build_details(games_out, players_out, history):
                 double_skips += 1
 
             opp_rating = None if opponent == BYE_NAME else _display(
-                rating_at(history, opponent, g["date"])[0]
+                rating_at(series, opponent, g["date"])[0]
             )
             group = groups.setdefault(g["tournament_id"], {
                 "tournament_id": g["tournament_id"],
@@ -375,10 +324,15 @@ def build_details(games_out, players_out, history):
         groups = sorted(groups.values(), key=lambda r: r["end_date"], reverse=True)
         for group in groups:
             group["games"].sort(key=lambda r: (r["round"], r["board"]))
-            group["rating"] = _display(rating_at(history, name, group["end_date"])[0])
+            group["rating"] = _display(rating_at(series, name, group["end_date"])[0])
 
-        curve = [[d, _display(v), _display(rd)] for d, v, rd in history.get(name, [])]
-        peak = max(history.get(name, [("", p["rating"], 0)]), key=lambda r: r[1])
+        # 曲线一个赛事一个节点：取他在该赛事打的最后一轮之后的等级分
+        curve = []
+        for group in sorted(groups, key=lambda r: r["end_date"]):
+            value, rd = rating_at(series, name, group["end_date"])
+            curve.append([group["end_date"], _display(value), _display(rd),
+                          group["tournament_id"]])
+        peak = max(curve, key=lambda r: r[1]) if curve else ("", p["rating"], 0, None)
 
         # 得分率：和棋算半分，只看真正下过的对局（轮空与弃权不掺进来）
         played = wins + draws + losses
@@ -428,14 +382,14 @@ def main():
         return 1
 
     games, players, tours, members = read_parquet(args.parquet)
-    games_out, tours_out, players_out, history = build(games, players, tours, members)
+    games_out, tours_out, players_out, series = build(games, players, tours, members)
     os.makedirs(DATA, exist_ok=True)
     dump(games_out, "games.json")
     dump(tours_out, "tournaments.json")
     dump(players_out, "players.json")
 
     # 棋手详情：data/player/<player_id>.json，一人一份，详情页只读自己那份
-    details = build_details(games_out, players_out, history)
+    details = build_details(games_out, players_out, series)
     player_dir = os.path.join(DATA, "player")
     os.makedirs(player_dir, exist_ok=True)
     keep = set()

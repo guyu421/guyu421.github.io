@@ -394,12 +394,17 @@
 
       var p = points[index];
       var date = String(history[index][0]).slice(0, 10);
+      var tourId = history[index][3];
       tip.innerHTML = "";
       tip.appendChild(el("p", "tip-date", date));
       tip.appendChild(el("p", "tip-value",
         "等级分 " + p.v.toFixed(2) + "　偏差 " + p.rd.toFixed(2)));
 
       var rows = (gamesByDate && gamesByDate[date]) || [];
+      // 折线一个赛事一个节点，同一天可能有别的赛事的对局，只留该赛事的
+      if (tourId !== undefined && tourId !== null) {
+        rows = rows.filter(function (game) { return game.tournament_id === tourId; });
+      }
       if (!rows.length) {
         tip.appendChild(el("p", "tip-game", "当日没有计入等级分的对局"));
       }
