@@ -171,7 +171,7 @@
     var firstColor = "";
     var secondColor = "";
     if (data.second !== "轮空") {
-      if (data.swap === "交换") {
+      if (data.swap === "+") {
         firstColor = "白 ";
         secondColor = "黑 ";
       } else if (
