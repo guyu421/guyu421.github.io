@@ -418,3 +418,11 @@ body,
 #content #primaryContent table td {
 	text-align: center;
 }
+
+/* 手机端赛事列表卡片：日期在左上角，靠左排，其余格子仍居中 */
+
+@media (max-width: 640px) {
+	#content #primaryContent table[data-feed="tournaments"] td:nth-child(1) {
+		text-align: left;
+	}
+}
