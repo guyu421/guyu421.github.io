@@ -118,6 +118,8 @@ def compute_ratings(games_out):
     final_day = max(row[3] for row in trainable)
     series = {}
     for name, rows in base.get_ordered_ratings():
+        if rows and isinstance(rows[0], (int, float)):
+            rows = base.ratings_for_player(name)
         series[name] = [
             ((EPOCH + timedelta(days=int(day))).isoformat(), elo + WHR_BIAS, float(std))
             for day, elo, std in rows
