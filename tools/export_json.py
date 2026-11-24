@@ -87,56 +87,62 @@ def _day_of(date_text):
 
 
 def compute_ratings(games_out):
-    """用 WHR（Whole-History Rating）算等级分。
+    """用 Glicko-2 计算全历史等级分，与预测模型使用同一套评级体系。
 
-    每局按自己的比赛日参与求解，全历史一次算完（不是逐日递推），
-    参数沿用 rating.renju.net 的连珠评分。返回
-    ({姓名: (分, 偏差)}, {姓名: [(日期, 分, 偏差), ...]})，
-    后者是该棋手每个比赛日的当日快照，供详情页曲线与对手分查询使用。
+    按 (date, tournament_id, round) 时序分组递推更新，返回
+    ({姓名: (分, 偏差)}, {姓名: [(日期, 分, 偏差), ...]})。
     """
+    predict_dir = os.path.join(HERE, "renju_predict")
+    if predict_dir not in sys.path:
+        sys.path.insert(0, predict_dir)
+    from glicko2 import Glicko2Tracker
+
+    score_map = {"1": 1.0, "0": 0.0, "0.5": 0.5}
     trainable = []
     for g in games_out:
-        if g["second"] == BYE_NAME:
+        if g["second"] == BYE_NAME or g["first"] == g["second"]:
             continue
-        winner = WINNER.get(str(g["result"]))
-        if winner is None:
+        if str(g["result"]) not in score_map:
             continue
-        trainable.append([g["first"], g["second"], winner, _day_of(g["date"])])
-    trainable.sort(key=lambda r: r[3])
+        trainable.append(g)
+
     if not trainable:
         return {}, {}
 
-    base = whr.Base(config={"w2": WHR_W2, "virtual_games": WHR_VIRTUAL_GAMES})
-    if hasattr(base, "create_games"):
-        base.create_games(trainable)
-        base.iterate_until_converge(verbose=False)
-    else:
-        for row in trainable:
-            base.create_game(*row, 0)
-        base.auto_iterate()
+    trainable.sort(key=lambda g: (g["date"], g["tournament_id"], g["round"], g["board"], g["game_id"]))
+    tracker = Glicko2Tracker()
+    series_map = {}
 
-    final_day = max(row[3] for row in trainable)
-    elo_per_nat = 400.0 / math.log(10.0)
-    series = {}
-    for name, rows in base.get_ordered_ratings():
-        if rows and isinstance(rows[0], (int, float)):
-            p_obj = base.players[name]
-            rows = [
-                (d.day, d.elo, math.sqrt(max(d.uncertainty, 0.0)) * elo_per_nat)
-                for d in p_obj.days
-            ]
-        series[name] = [
-            ((EPOCH + timedelta(days=int(day))).isoformat(), elo + WHR_BIAS, float(std))
-            for day, elo, std in rows
-        ]
+    i = 0
+    n = len(trainable)
+    while i < n:
+        p_date = trainable[i]["date"]
+        key = (p_date, trainable[i]["tournament_id"], trainable[i]["round"])
+        j = i
+        period_games = []
+        touched = set()
+        while j < n and (trainable[j]["date"], trainable[j]["tournament_id"], trainable[j]["round"]) == key:
+            g = trainable[j]
+            f_name = g["first"]
+            s_name = g["second"]
+            score = score_map[str(g["result"])]
+            period_games.append((f_name, s_name, score))
+            touched.add(f_name)
+            touched.add(s_name)
+            j += 1
 
-    # 榜单上显示的是最后一次比赛的分，偏差则按「距最后一次比赛多少天」放大
-    final = {}
-    for name, points in series.items():
-        last_date, last_rating, last_rd = points[-1]
-        gap = max(final_day - _day_of(last_date), 0)
-        final[name] = (last_rating, math.sqrt(WHR_W2 * gap + last_rd * last_rd))
-    return final, series
+        tracker.apply_period(period_games)
+        for nm in touched:
+            pr = tracker.get(nm)
+            lst = series_map.setdefault(nm, [])
+            if lst and lst[-1][0] == p_date:
+                lst[-1] = (p_date, pr.rating, pr.rd)
+            else:
+                lst.append((p_date, pr.rating, pr.rd))
+        i = j
+
+    ratings = {nm: (pr.rating, pr.rd) for nm, pr in tracker.ratings.items()}
+    return ratings, series_map
 
 
 def rating_at(series, name, date):
@@ -148,7 +154,7 @@ def rating_at(series, name, date):
             hit = (value, rd)
         else:
             break
-    return hit or (WHR_BIAS, WHR_PRIOR_RD)
+    return hit or (1500.0, 350.0)
 
 
 def compute_match_predictions(games_out, pid_of):
@@ -545,16 +551,22 @@ def build(games, players, tours, members, teams=None, team_matches=None):
 
     ratings, series = compute_ratings(games_out)
 
+    games_by_player = {}
+    for g in games_out:
+        games_by_player.setdefault(g["first"], []).append(g)
+        if g["second"] != g["first"]:
+            games_by_player.setdefault(g["second"], []).append(g)
+
     players_out = []
     for p in players:
         if str(p["name"]).strip() in (BYE_NAME, "+"):
             continue
-        mine = [g for g in games_out if g["first"] == p["name"] or g["second"] == p["name"]]
+        mine = games_by_player.get(p["name"], [])
         tours_of_mine = mine_tours.get(p["player_id"], set())
         # 只有加赛记录（已被跳过）或根本没上场的棋手不进榜单
         if not mine:
             continue
-        rating, rd = ratings.get(p["name"], (WHR_BIAS, WHR_PRIOR_RD))
+        rating, rd = ratings.get(p["name"], (1500.0, 350.0))
         players_out.append({
             "player_id": p["player_id"],
             "rank": 0,
@@ -619,12 +631,17 @@ def classify_result(is_first, result, opponent):
 def build_details(games_out, players_out, series):
     """每位棋手一份详情：基本信息 + 等级分曲线 + 按赛事分组的对局明细。"""
     player_id = {p["name"]: p["player_id"] for p in players_out}
+    games_by_player = {}
+    for g in games_out:
+        games_by_player.setdefault(g["first"], []).append(g)
+        if g["second"] != g["first"]:
+            games_by_player.setdefault(g["second"], []).append(g)
     details = {}
 
     for p in players_out:
         name = p["name"]
         pid = p["player_id"]
-        mine = [g for g in games_out if g["first"] == name or g["second"] == name]
+        mine = games_by_player.get(name, [])
 
         wins = draws = losses = 0
         byes = self_skips = opp_skips = double_skips = 0

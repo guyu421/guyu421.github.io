@@ -595,76 +595,52 @@
   }
 
   function renderTeamMatches(data, round) {
-    var wrap = document.querySelector(".table-wrap");
-    if (!wrap) return;
-    var container = document.getElementById("teamMatchList");
-    if (!container) {
-      container = el("div", "team-match-list");
-      container.id = "teamMatchList";
-      wrap.parentNode.insertBefore(container, wrap);
-    }
-    wrap.style.display = "none";
-    container.style.display = "";
-    container.innerHTML = "";
+    var table = document.querySelector("table.tour-games");
+    if (!table || !table.tBodies[0]) return;
+    var tbody = table.tBodies[0];
+    while (tbody.rows.length > 1) tbody.deleteRow(tbody.rows.length - 1);
 
     (data.team_matches || []).forEach(function (tm) {
       if (round !== null && Number(tm.round) !== round) return;
-      var card = el("div", "tm-card");
 
-      var meta = el("div", "tm-meta");
-      meta.appendChild(el("span", "tm-rnd", "第" + tm.round + "轮 第" + tm.match_board + "台"));
-      meta.appendChild(el("span", "tm-date", short_date(tm.date)));
-      if (tm.rule) meta.appendChild(el("span", "tm-rule", tm.rule));
-      card.appendChild(meta);
+      // 团体对抗汇总行（沿用原有表格列：日期 | 轮次 | 规则 | 队伍A | 局分 | 队伍B | 胜% | 平% | 负%）
+      var tr = el("tr");
+      var day = el("td", "date", short_date(tm.date));
+      day.title = tm.date;
+      tr.appendChild(day);
+      tr.appendChild(el("td", "rnd", "第" + tm.round + "轮 第" + tm.match_board + "台"));
+      tr.appendChild(el("td", "rule", tm.rule || ""));
+      var ta = el("td", "", tm.team_a_name);
+      ta.style.fontWeight = "600";
+      tr.appendChild(ta);
+      var sc = el("td", "score", tm.score_a + "-" + tm.score_b);
+      sc.style.fontWeight = "700";
+      tr.appendChild(sc);
+      var tb = el("td", "", tm.team_b_name);
+      tb.style.fontWeight = "600";
+      tr.appendChild(tb);
+      tr.appendChild(el("td", "prob", tm.p_win != null ? Number(tm.p_win).toFixed(1) + "%" : ""));
+      tr.appendChild(el("td", "prob", tm.p_draw != null ? Number(tm.p_draw).toFixed(1) + "%" : ""));
+      tr.appendChild(el("td", "prob", tm.p_loss != null ? Number(tm.p_loss).toFixed(1) + "%" : ""));
+      tbody.appendChild(tr);
 
-      var matchup = el("div", "tm-matchup");
-      var ta = el("div", "tm-team tm-team-a", tm.team_a_name);
-      var sc = el("div", "tm-score", tm.score_a + "-" + tm.score_b);
-      var tb = el("div", "tm-team tm-team-b", tm.team_b_name);
-      matchup.appendChild(ta);
-      matchup.appendChild(sc);
-      matchup.appendChild(tb);
-      card.appendChild(matchup);
-
-      if (tm.p_win != null) {
-        var predBox = el("div", "tm-pred-box");
-        var wdl = el("div", "tm-wdl");
-        wdl.appendChild(el("span", "tm-wdl-label", "场分预测"));
-        wdl.appendChild(el("span", "tm-wdl-item", "左队胜 " + Number(tm.p_win).toFixed(1) + "%"));
-        wdl.appendChild(el("span", "tm-wdl-item", "平 " + Number(tm.p_draw).toFixed(1) + "%"));
-        wdl.appendChild(el("span", "tm-wdl-item", "右队胜 " + Number(tm.p_loss).toFixed(1) + "%"));
-        predBox.appendChild(wdl);
-
-        if (tm.score_probs && tm.score_probs.length) {
-          var spRow = el("div", "tm-score-probs");
-          spRow.appendChild(el("span", "tm-sp-label", "局分概率"));
-          var actualScore = tm.score_a + "-" + tm.score_b;
-          tm.score_probs.forEach(function (sp) {
-            var cls = "tm-sp-pill" + (sp.score === actualScore ? " is-actual" : "");
-            spRow.appendChild(el("span", cls, sp.score + ": " + Number(sp.prob).toFixed(1) + "%"));
-          });
-          predBox.appendChild(spRow);
-        }
-        card.appendChild(predBox);
+      if (tm.score_probs && tm.score_probs.length) {
+        var spTr = el("tr");
+        var spTd = el("td", "prob");
+        spTd.colSpan = 9;
+        spTd.textContent = "局分概率：" + tm.score_probs.map(function (sp) {
+          return sp.score + " " + Number(sp.prob).toFixed(1) + "%";
+        }).join(" | ");
+        spTr.appendChild(spTd);
+        tbody.appendChild(spTr);
       }
 
-      var bTable = el("table", "tm-boards");
-      var tbody = el("tbody");
-      var hdr = el("tr");
-      ["台次", "假先", "结果", "假后", "假先胜", "和棋", "假后胜"].forEach(function (h) {
-        hdr.appendChild(el("th", "", h));
-      });
-      tbody.appendChild(hdr);
-
       (tm.boards || []).forEach(function (b) {
-        var tr = el("tr");
-        tr.appendChild(el("td", "tm-bno", "第" + b.board_no + "台"));
-
-        var c1 = playerCell(b.first || "—", b.first_id);
-        var side1 = b.team_a_side === "first" ? "左" : "右";
-        c1.insertBefore(el("span", "tm-side-tag " + (side1 === "左" ? "is-a" : "is-b"), side1), c1.firstChild);
-        tr.appendChild(c1);
-
+        var bTr = el("tr");
+        bTr.appendChild(el("td", "date", ""));
+        bTr.appendChild(el("td", "rnd", "第" + b.board_no + "台"));
+        bTr.appendChild(el("td", "rule", ""));
+        bTr.appendChild(playerCell(b.first || "—", b.first_id));
         var scoreTd = el("td", "score");
         var scoreText = RESULT_SCORE[String(b.result)] || String(b.result || "--");
         if (b.game_id !== null && b.game_id !== undefined) {
@@ -674,21 +650,13 @@
         } else {
           scoreTd.textContent = scoreText;
         }
-        tr.appendChild(scoreTd);
-
-        var c2 = playerCell(b.second || "—", b.second_id);
-        var side2 = b.team_a_side === "first" ? "右" : "左";
-        c2.insertBefore(el("span", "tm-side-tag " + (side2 === "左" ? "is-a" : "is-b"), side2), c2.firstChild);
-        tr.appendChild(c2);
-
-        tr.appendChild(el("td", "prob", b.p_first != null ? Number(b.p_first).toFixed(1) + "%" : ""));
-        tr.appendChild(el("td", "prob", b.p_draw != null ? Number(b.p_draw).toFixed(1) + "%" : ""));
-        tr.appendChild(el("td", "prob", b.p_second != null ? Number(b.p_second).toFixed(1) + "%" : ""));
-        tbody.appendChild(tr);
+        bTr.appendChild(scoreTd);
+        bTr.appendChild(playerCell(b.second || "—", b.second_id));
+        bTr.appendChild(el("td", "prob", b.p_first != null ? Number(b.p_first).toFixed(1) + "%" : ""));
+        bTr.appendChild(el("td", "prob", b.p_draw != null ? Number(b.p_draw).toFixed(1) + "%" : ""));
+        bTr.appendChild(el("td", "prob", b.p_second != null ? Number(b.p_second).toFixed(1) + "%" : ""));
+        tbody.appendChild(bTr);
       });
-      bTable.appendChild(tbody);
-      card.appendChild(bTable);
-      container.appendChild(card);
     });
   }
 
@@ -697,10 +665,6 @@
       renderTeamMatches(data, round);
       return;
     }
-    var wrap = document.querySelector(".table-wrap");
-    if (wrap) wrap.style.display = "";
-    var container = document.getElementById("teamMatchList");
-    if (container) container.style.display = "none";
 
     var table = document.querySelector("table.tour-games");
     if (!table || !table.tBodies[0]) return;

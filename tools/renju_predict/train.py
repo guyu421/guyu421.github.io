@@ -24,6 +24,8 @@ DEFAULT_MODELS_DIR = HERE / "models"
 RULE_MAP: Dict[str, int] = {
     "山口": 0,
     "塔拉山口-10": 1,
+    "索索夫-8": 2,
+    "五手两打": 3,
 }
 
 # Class index -> label
@@ -95,99 +97,168 @@ def make_lgbm() -> lgb.LGBMClassifier:
     return lgb.LGBMClassifier(
         objective="multiclass",
         num_class=3,
-        n_estimators=60,
-        learning_rate=0.04,
-        num_leaves=5,
-        max_depth=3,
-        min_child_samples=50,
+        n_estimators=250,
+        learning_rate=0.03,
+        num_leaves=23,
+        max_depth=5,
+        min_child_samples=40,
         subsample=0.8,
         subsample_freq=1,
         colsample_bytree=0.8,
-        reg_alpha=1.0,
-        reg_lambda=15.0,
+        reg_alpha=0.5,
+        reg_lambda=3.0,
         random_state=42,
         n_jobs=-1,
         verbose=-1,
     )
 
 
-def train_cutoff(
-    cutoff_key: str,
-    cutoff_date: str,
+def train_all_cutoffs(
+    cutoffs: List[Tuple[str, str]],
     all_games: pd.DataFrame,
     player_names: Dict[int, str],
     models_dir: Path,
-) -> Dict[str, object]:
-    sub = all_games[all_games["date"] < cutoff_date].copy()
-    if sub.empty:
-        raise RuntimeError(f"No games found before {cutoff_date}")
+) -> List[Dict[str, object]]:
+    """Compute Glicko-2 features in a single chronological pass and train all cutoff models."""
+    ordered = sorted(cutoffs, key=lambda x: x[1])
+    max_cutoff = ordered[-1][1]
+    sub_all = all_games[all_games["date"] < max_cutoff]
 
-    X, y, tracker = build_features_and_ratings(sub)
+    tracker = Glicko2Tracker()
+    rows: List[Dict[str, float | int]] = []
+    targets: List[int] = []
+    rule_counts: Dict[str, int] = {}
+    max_date = ""
+    snapshots: Dict[str, Tuple[int, Dict[int, Tuple[float, float, float]], str, Dict[str, int]]] = {}
 
-    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-    oof_probs = np.zeros((len(y), 3), dtype=np.float64)
-    for train_idx, val_idx in skf.split(X, y):
-        clf = make_lgbm()
-        clf.fit(
-            X.iloc[train_idx],
-            y[train_idx],
-            categorical_feature=["rule"],
+    c_idx = 0
+    for (p_date, _, _), period_df in sub_all.groupby(["date", "tournament_id", "round"], sort=True):
+        while c_idx < len(ordered) and p_date >= ordered[c_idx][1]:
+            key = ordered[c_idx][0]
+            snapshots[key] = (
+                len(rows),
+                {pid: (pr.rating, pr.rd, pr.vol) for pid, pr in tracker.ratings.items()},
+                max_date,
+                dict(rule_counts),
+            )
+            c_idx += 1
+
+        period_games: List[Tuple[int, int, float]] = []
+        for r in period_df.itertuples(index=False):
+            rule_str = str(r.rule)
+            rule_code = RULE_MAP.get(rule_str)
+            if rule_code is None:
+                raise ValueError(f"Unknown rule: {r.rule!r}")
+            p1 = tracker.get(r.first_id)
+            p2 = tracker.get(r.second_id)
+            rows.append(
+                {
+                    "rule": rule_code,
+                    "first_rating": p1.rating,
+                    "second_rating": p2.rating,
+                    "rating_diff": p1.rating - p2.rating,
+                    "first_rd": p1.rd,
+                    "second_rd": p2.rd,
+                }
+            )
+            targets.append(RESULT_TO_CLASS[str(r.result)])
+            rule_counts[rule_str] = rule_counts.get(rule_str, 0) + 1
+            if p_date > max_date:
+                max_date = p_date
+            period_games.append((r.first_id, r.second_id, RESULT_SCORE[str(r.result)]))
+
+        tracker.apply_period(period_games)
+
+    while c_idx < len(ordered):
+        key = ordered[c_idx][0]
+        snapshots[key] = (
+            len(rows),
+            {pid: (pr.rating, pr.rd, pr.vol) for pid, pr in tracker.ratings.items()},
+            max_date,
+            dict(rule_counts),
         )
-        oof_probs[val_idx] = clf.predict_proba(X.iloc[val_idx])
+        c_idx += 1
 
-    cv_logloss = float(log_loss(y, oof_probs, labels=[0, 1, 2]))
-    cv_acc = float(accuracy_score(y, np.argmax(oof_probs, axis=1)))
+    X_all = pd.DataFrame(rows, columns=FEATURE_NAMES)
+    X_all["rule"] = X_all["rule"].astype("category")
+    y_all = np.array(targets, dtype=np.int64)
 
-    final_clf = make_lgbm()
-    final_clf.fit(X, y, categorical_feature=["rule"])
+    summary: List[Dict[str, object]] = []
+    for key, cutoff_date in cutoffs:
+        n_games, snap_ratings, snap_max_date, snap_rules = snapshots[key]
+        if n_games == 0:
+            raise RuntimeError(f"No games found before {cutoff_date}")
 
-    out_dir = models_dir / cutoff_key
-    out_dir.mkdir(parents=True, exist_ok=True)
-    final_clf.booster_.save_model(str(out_dir / "model.txt"))
+        X = X_all.iloc[:n_games]
+        y = y_all[:n_games]
 
-    ratings_payload = {
-        "default": {
-            "rating": DEFAULT_RATING,
-            "rd": DEFAULT_RD,
-            "vol": DEFAULT_VOLATILITY,
-        },
-        "players": {
-            str(pid): {
-                "name": player_names.get(pid, str(pid)),
-                "rating": round(pr.rating, 4),
-                "rd": round(pr.rd, 4),
-                "vol": round(pr.vol, 6),
-            }
-            for pid, pr in sorted(tracker.ratings.items())
-        },
-    }
-    (out_dir / "ratings.json").write_text(
-        json.dumps(ratings_payload, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+        skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+        oof_probs = np.zeros((len(y), 3), dtype=np.float64)
+        for train_idx, val_idx in skf.split(X, y):
+            clf = make_lgbm()
+            clf.fit(X.iloc[train_idx], y[train_idx], categorical_feature=["rule"])
+            oof_probs[val_idx] = clf.predict_proba(X.iloc[val_idx])
 
-    class_counts = {
-        CLASS_LABELS[i]: int((y == i).sum()) for i in range(len(CLASS_LABELS))
-    }
-    metadata = {
-        "cutoff_key": cutoff_key,
-        "cutoff_date_exclusive": cutoff_date,
-        "max_game_date": str(sub["date"].max()),
-        "num_games": int(len(sub)),
-        "num_rated_players": int(len(tracker.ratings)),
-        "features": FEATURE_NAMES,
-        "rule_map": RULE_MAP,
-        "class_labels": CLASS_LABELS,
-        "class_counts": class_counts,
-        "rule_counts": {str(k): int(v) for k, v in sub["rule"].value_counts().items()},
-        "cv_5fold_logloss": round(cv_logloss, 5),
-        "cv_5fold_accuracy": round(cv_acc, 5),
-    }
-    (out_dir / "metadata.json").write_text(
-        json.dumps(metadata, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-    return metadata
+        cv_logloss = float(log_loss(y, oof_probs, labels=[0, 1, 2]))
+        cv_acc = float(accuracy_score(y, np.argmax(oof_probs, axis=1)))
+
+        final_clf = make_lgbm()
+        final_clf.fit(X, y, categorical_feature=["rule"])
+
+        out_dir = models_dir / key
+        out_dir.mkdir(parents=True, exist_ok=True)
+        final_clf.booster_.save_model(str(out_dir / "model.txt"))
+
+        ratings_payload = {
+            "default": {
+                "rating": DEFAULT_RATING,
+                "rd": DEFAULT_RD,
+                "vol": DEFAULT_VOLATILITY,
+            },
+            "players": {
+                str(pid): {
+                    "name": player_names.get(pid, str(pid)),
+                    "rating": round(rt, 4),
+                    "rd": round(rd, 4),
+                    "vol": round(vol, 6),
+                }
+                for pid, (rt, rd, vol) in sorted(snap_ratings.items())
+            },
+        }
+        (out_dir / "ratings.json").write_text(
+            json.dumps(ratings_payload, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
+        class_counts = {
+            CLASS_LABELS[i]: int((y == i).sum()) for i in range(len(CLASS_LABELS))
+        }
+        metadata = {
+            "cutoff_key": key,
+            "cutoff_date_exclusive": cutoff_date,
+            "max_game_date": snap_max_date,
+            "num_games": int(n_games),
+            "num_rated_players": int(len(snap_ratings)),
+            "features": FEATURE_NAMES,
+            "rule_map": RULE_MAP,
+            "class_labels": CLASS_LABELS,
+            "class_counts": class_counts,
+            "rule_counts": snap_rules,
+            "cv_5fold_logloss": round(cv_logloss, 5),
+            "cv_5fold_accuracy": round(cv_acc, 5),
+        }
+        (out_dir / "metadata.json").write_text(
+            json.dumps(metadata, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        summary.append(metadata)
+        print(
+            f"[{key}] (< {cutoff_date}) games={metadata['num_games']}, "
+            f"players={metadata['num_rated_players']}, "
+            f"5-fold logloss={metadata['cv_5fold_logloss']:.4f}, "
+            f"acc={metadata['cv_5fold_accuracy']:.4f}"
+        )
+    return summary
 
 
 def main() -> None:
@@ -204,13 +275,6 @@ def main() -> None:
 
     all_games, player_names = load_data(args.db_dir)
     cutoffs = [
-        ("20230331", "2023-04-01"),
-        ("20230630", "2023-07-01"),
-        ("20230930", "2023-10-01"),
-        ("20231231", "2024-01-01"),
-        ("20240331", "2024-04-01"),
-        ("20240630", "2024-07-01"),
-        ("20240930", "2024-10-01"),
         ("20241231", "2025-01-01"),
         ("20250331", "2025-04-01"),
         ("20250630", "2025-07-01"),
@@ -222,16 +286,7 @@ def main() -> None:
         ("20261123", args.today),
     ]
 
-    summary = []
-    for key, cutoff_date in cutoffs:
-        meta = train_cutoff(key, cutoff_date, all_games, player_names, args.models_dir)
-        summary.append(meta)
-        print(
-            f"[{key}] (< {cutoff_date}) games={meta['num_games']}, "
-            f"players={meta['num_rated_players']}, "
-            f"5-fold logloss={meta['cv_5fold_logloss']:.4f}, "
-            f"acc={meta['cv_5fold_accuracy']:.4f}"
-        )
+    summary = train_all_cutoffs(cutoffs, all_games, player_names, args.models_dir)
 
     (args.models_dir / "summary.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2),
