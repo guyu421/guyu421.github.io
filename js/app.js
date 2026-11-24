@@ -635,10 +635,14 @@
     });
   }
 
-  // 轮次下拉框：第1轮 … 最后一轮，没有「全部」
+  // 轮次选择：< [第N轮 ▾] / 共 X 轮 >，没有「全部」
   function setupRoundPicker(data, id) {
     var select = document.getElementById("roundSelect");
+    var prev = document.getElementById("roundPrev");
+    var next = document.getElementById("roundNext");
+    var total = document.getElementById("roundTotal");
     var rounds = tournamentRounds(data);
+
     if (!select || !rounds.length) {
       renderTournamentGames(data, null);
       return;
@@ -651,30 +655,51 @@
       option.textContent = "第" + round + "轮";
       select.appendChild(option);
     });
+    if (total) total.textContent = "/ 共 " + rounds.length + " 轮";
+
+    function syncNav() {
+      var index = rounds.indexOf(Number(select.value));
+      if (prev) prev.disabled = index <= 0;
+      if (next) next.disabled = index < 0 || index >= rounds.length - 1;
+    }
+
+    // push 为 true 时把这一轮写进地址栏（浏览器前进/后退可用）
+    function goTo(round, push) {
+      var index = rounds.indexOf(Number(round));
+      if (index < 0) return;
+      select.value = String(rounds[index]);
+      if (push && window.history && window.history.pushState) {
+        window.history.pushState({ round: rounds[index] }, "", tournamentUrl(id, rounds[index]));
+      }
+      renderTournamentGames(data, rounds[index]);
+      syncNav();
+    }
 
     var wanted = roundFromUrl();
     var current = rounds.indexOf(wanted) >= 0 ? wanted : rounds[0];
-    select.value = String(current);
     // 地址栏没带轮次（或带了不存在的轮次）时补成实际显示的那一轮
     if (wanted !== current && window.history && window.history.replaceState) {
       window.history.replaceState({ round: current }, "", tournamentUrl(id, current));
     }
-    renderTournamentGames(data, current);
+    goTo(current, false);
 
     select.addEventListener("change", function () {
-      var picked = Number(select.value);
-      if (window.history && window.history.pushState) {
-        window.history.pushState({ round: picked }, "", tournamentUrl(id, picked));
-      }
-      renderTournamentGames(data, picked);
+      goTo(Number(select.value), true);
     });
+
+    function step(delta) {
+      var index = rounds.indexOf(Number(select.value));
+      if (index < 0) return;
+      goTo(rounds[index + delta], true);
+    }
+
+    if (prev) prev.addEventListener("click", function () { step(-1); });
+    if (next) next.addEventListener("click", function () { step(1); });
 
     // 浏览器前进/后退时跟着地址栏上的轮次走
     window.addEventListener("popstate", function () {
       var back = roundFromUrl();
-      var target = rounds.indexOf(back) >= 0 ? back : rounds[0];
-      select.value = String(target);
-      renderTournamentGames(data, target);
+      goTo(rounds.indexOf(back) >= 0 ? back : rounds[0], false);
     });
   }
 

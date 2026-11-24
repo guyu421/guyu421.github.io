@@ -427,25 +427,53 @@ body,
 	}
 }
 
-/* 赛事页的轮次下拉框 */
+/* 赛事页的轮次选择：< [第N轮] / 共 X 轮 > */
 
 .round-pick {
-	margin: 0 0 0.85em;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.45em;
+	margin: 0 0 0.9em;
 	color: #444;
-}
-
-.round-pick label {
-	margin-right: 0.55em;
 }
 
 .round-pick select {
 	font: inherit;
 	font-size: 0.95em;
-	padding: 0.15em 0.35em;
+	padding: 0.15em 0.3em;
 	border: solid 1px #c3ccd2;
 	border-radius: 3px;
 	background: #fff;
 	color: #333;
+}
+
+.round-nav {
+	font: inherit;
+	font-size: 0.95em;
+	line-height: 1;
+	padding: 0.3em 0.6em;
+	border: solid 1px #c3ccd2;
+	border-radius: 3px;
+	background: #fff;
+	color: #333;
+	cursor: pointer;
+}
+
+.round-nav:hover:enabled {
+	background: #eef2f5;
+}
+
+.round-nav:disabled {
+	color: #bec6cc;
+	border-color: #e1e6ea;
+	cursor: default;
+}
+
+.round-total {
+	color: #6f7b83;
+	font-size: 0.9em;
+	white-space: nowrap;
 }
 
 @media (max-width: 640px) {

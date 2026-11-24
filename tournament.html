@@ -23,8 +23,10 @@
           <h1 id="tourName">赛事</h1>
           <div id="tourMeta"></div>
           <div class="round-pick">
-            <label for="roundSelect">轮次</label>
-            <select id="roundSelect"></select>
+            <button type="button" class="round-nav" id="roundPrev" aria-label="上一轮">&lt;</button>
+            <select id="roundSelect" aria-label="选择轮次"></select>
+            <span class="round-total" id="roundTotal"></span>
+            <button type="button" class="round-nav" id="roundNext" aria-label="下一轮">&gt;</button>
           </div>
           <div class="table-wrap">
             <table class="tour-games">
