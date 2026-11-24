@@ -211,9 +211,9 @@ def compute_match_predictions(games_out, pid_of):
             if is_bye or booster is None or g["rule"] not in metadata["rule_map"]:
                 preds[g["game_id"]] = (None, None, None)
             else:
-                r1 = tracker.get(fid).rating
-                r2 = tracker.get(sid).rating
-                p = predict_from_ratings(booster, metadata, g["rule"], r1, r2)
+                p1 = tracker.get(fid)
+                p2 = tracker.get(sid)
+                p = predict_from_ratings(booster, metadata, g["rule"], p1.rating, p2.rating, p1.rd, p2.rd)
                 preds[g["game_id"]] = (
                     round(p["假先胜率"] * 100, 1),
                     round(p["和棋率"] * 100, 1),

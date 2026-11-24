@@ -8,7 +8,9 @@
     "rule",
     "first_rating",
     "second_rating",
-    "rating_diff"
+    "rating_diff",
+    "first_rd",
+    "second_rd"
   ],
   "rule_map": {
     "山口": 0,
@@ -27,6 +29,6 @@
   "rule_counts": {
     "山口": 509
   },
-  "cv_5fold_logloss": 1.11564,
-  "cv_5fold_accuracy": 0.44401
+  "cv_5fold_logloss": 1.12031,
+  "cv_5fold_accuracy": 0.45187
 }

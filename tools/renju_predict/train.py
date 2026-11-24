@@ -33,7 +33,7 @@ RESULT_TO_CLASS: Dict[str, int] = {
     "1": 2,    # 假先胜
 }
 CLASS_LABELS = ["假后胜", "和棋", "假先胜"]
-FEATURE_NAMES = ["rule", "first_rating", "second_rating", "rating_diff"]
+FEATURE_NAMES = ["rule", "first_rating", "second_rating", "rating_diff", "first_rd", "second_rd"]
 RESULT_SCORE = {"1": 1.0, "0.5": 0.5, "0": 0.0}
 
 
@@ -68,14 +68,16 @@ def build_features_and_ratings(
             rule_code = RULE_MAP.get(str(r.rule))
             if rule_code is None:
                 raise ValueError(f"Unknown rule: {r.rule!r}")
-            r1 = tracker.get(r.first_id).rating
-            r2 = tracker.get(r.second_id).rating
+            p1 = tracker.get(r.first_id)
+            p2 = tracker.get(r.second_id)
             rows.append(
                 {
                     "rule": rule_code,
-                    "first_rating": r1,
-                    "second_rating": r2,
-                    "rating_diff": r1 - r2,
+                    "first_rating": p1.rating,
+                    "second_rating": p2.rating,
+                    "rating_diff": p1.rating - p2.rating,
+                    "first_rd": p1.rd,
+                    "second_rd": p2.rd,
                 }
             )
             targets.append(RESULT_TO_CLASS[str(r.result)])

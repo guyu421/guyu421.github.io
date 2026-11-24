@@ -9,7 +9,9 @@
       "rule",
       "first_rating",
       "second_rating",
-      "rating_diff"
+      "rating_diff",
+      "first_rd",
+      "second_rd"
     ],
     "rule_map": {
       "山口": 0,
@@ -28,8 +30,8 @@
     "rule_counts": {
       "山口": 509
     },
-    "cv_5fold_logloss": 1.11564,
-    "cv_5fold_accuracy": 0.44401
+    "cv_5fold_logloss": 1.12031,
+    "cv_5fold_accuracy": 0.45187
   },
   {
     "cutoff_key": "20241231",
@@ -41,7 +43,9 @@
       "rule",
       "first_rating",
       "second_rating",
-      "rating_diff"
+      "rating_diff",
+      "first_rd",
+      "second_rd"
     ],
     "rule_map": {
       "山口": 0,
@@ -61,8 +65,8 @@
       "山口": 509,
       "塔拉山口-10": 270
     },
-    "cv_5fold_logloss": 1.07472,
-    "cv_5fold_accuracy": 0.49166
+    "cv_5fold_logloss": 1.05604,
+    "cv_5fold_accuracy": 0.4878
   },
   {
     "cutoff_key": "20251231",
@@ -74,7 +78,9 @@
       "rule",
       "first_rating",
       "second_rating",
-      "rating_diff"
+      "rating_diff",
+      "first_rd",
+      "second_rd"
     ],
     "rule_map": {
       "山口": 0,
@@ -94,8 +100,8 @@
       "塔拉山口-10": 890,
       "山口": 509
     },
-    "cv_5fold_logloss": 1.01492,
-    "cv_5fold_accuracy": 0.49893
+    "cv_5fold_logloss": 1.00515,
+    "cv_5fold_accuracy": 0.5168
   },
   {
     "cutoff_key": "20261123",
@@ -107,7 +113,9 @@
       "rule",
       "first_rating",
       "second_rating",
-      "rating_diff"
+      "rating_diff",
+      "first_rd",
+      "second_rd"
     ],
     "rule_map": {
       "山口": 0,
@@ -127,7 +135,7 @@
       "塔拉山口-10": 1403,
       "山口": 509
     },
-    "cv_5fold_logloss": 1.00093,
-    "cv_5fold_accuracy": 0.5251
+    "cv_5fold_logloss": 0.9877,
+    "cv_5fold_accuracy": 0.54236
   }
 ]

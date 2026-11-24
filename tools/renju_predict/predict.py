@@ -87,22 +87,22 @@ def predict_from_ratings(
     rule: str,
     r1: float,
     r2: float,
+    rd1: float = 350.0,
+    rd2: float = 350.0,
 ) -> Dict[str, float]:
     rule_map: Dict[str, int] = metadata["rule_map"]
     if rule not in rule_map:
         raise ValueError(f"Unsupported rule {rule!r}. Choose from: {list(rule_map.keys())}")
 
-    X = pd.DataFrame(
-        [
-            {
-                "rule": rule_map[rule],
-                "first_rating": r1,
-                "second_rating": r2,
-                "rating_diff": r1 - r2,
-            }
-        ],
-        columns=metadata["features"],
-    )
+    row = {
+        "rule": rule_map[rule],
+        "first_rating": r1,
+        "second_rating": r2,
+        "rating_diff": r1 - r2,
+        "first_rd": rd1,
+        "second_rd": rd2,
+    }
+    X = pd.DataFrame([row], columns=metadata["features"])
     X["rule"] = X["rule"].astype("category")
     probs = booster.predict(X)[0]
     labels = metadata["class_labels"]
@@ -127,15 +127,17 @@ def predict_specific_match(
     models_dir: Path = DEFAULT_MODELS_DIR,
 ) -> List[Dict[str, object]]:
     tracker = compute_glicko2_before_match(games_df, target_date, target_tid, target_round)
-    r1 = tracker.get(first_id).rating
-    r2 = tracker.get(second_id).rating
+    p1 = tracker.get(first_id)
+    p2 = tracker.get(second_id)
+    r1, r2 = p1.rating, p2.rating
+    rd1, rd2 = p1.rd, p2.rd
     diff = r1 - r2
 
     results: List[Dict[str, object]] = []
     for cutoff_key in cutoff_keys:
         model_dir = models_dir / cutoff_key
         booster, metadata = load_cutoff_bundle(model_dir)
-        probs = predict_from_ratings(booster, metadata, rule, r1, r2)
+        probs = predict_from_ratings(booster, metadata, rule, r1, r2, rd1, rd2)
         results.append(
             {
                 "cutoff": cutoff_key,
@@ -148,6 +150,8 @@ def predict_specific_match(
                 "first_rating": round(r1, 2),
                 "second_rating": round(r2, 2),
                 "rating_diff": round(diff, 2),
+                "first_rd": round(rd1, 2),
+                "second_rd": round(rd2, 2),
                 "假先胜率": round(probs["假先胜率"], 6),
                 "和棋率": round(probs["和棋率"], 6),
                 "假后胜率": round(probs["假后胜率"], 6),
