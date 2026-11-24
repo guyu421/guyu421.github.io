@@ -239,7 +239,7 @@ body,
 
 	#content table.player-games th,
 	#content table.player-games td {
-		padding: 0.4em 0.3em;
+		padding: 0.4em 0.22em;
 	}
 
 	#chart {
@@ -250,6 +250,16 @@ body,
 @media (max-width: 360px) {
 	#content table {
 		font-size: 13px;
+	}
+
+	/* 详情表七列，再窄一档要缩字号、收边距才放得下 */
+	#content table.player-games {
+		font-size: 12.5px;
+	}
+
+	#content table.player-games th,
+	#content table.player-games td {
+		padding: 0.4em 0.15em;
 	}
 }
 
@@ -326,12 +336,10 @@ body,
 	color: #6f7b83;
 }
 
-#content table.player-games td.rnd .sub {
-	display: block;
-	font-size: 11px;
-	line-height: 1.2;
-	color: #8a8a8a;
+#content table.player-games th:nth-child(3),
+#content table.player-games td.rule {
 	white-space: nowrap;
+	text-align: center;
 }
 
 #content table.player-games td.skip {

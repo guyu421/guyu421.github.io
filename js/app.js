@@ -364,7 +364,8 @@
       rows.forEach(function (game) {
         var line = el("p", "tip-game");
         line.appendChild(el("span", "tip-meta",
-          short_date(game.date) + " 第" + game.round + "轮 第" + game.board + "台"));
+          short_date(game.date) + " 第" + game.round + "轮 第" + game.board + "台"
+          + (game.rule ? " " + game.rule : "")));
         line.appendChild(document.createTextNode(
           "　" + game.color + " " + game.result + " " + game.opponent));
         tip.appendChild(line);
@@ -459,7 +460,7 @@
     (data.results || []).forEach(function (group) {
       var head = el("tr");
       var th = el("th", "", group.tournament);
-      th.colSpan = 6;
+      th.colSpan = 7;
       head.appendChild(th);
       tbody.appendChild(head);
 
@@ -467,14 +468,14 @@
       var info = el("tr");
       info.appendChild(el("th", "second", "日期"));
       var dateCell = el("td", "num", span);
-      dateCell.colSpan = 3;
+      dateCell.colSpan = 4;
       info.appendChild(dateCell);
       info.appendChild(el("th", "second", "等级分"));
       info.appendChild(el("td", "num", one(group.rating)));
       tbody.appendChild(info);
 
       var titles = el("tr");
-      ["日期", "轮次", "先后", "结果", "对手", "等级分"].forEach(function (label) {
+      ["日期", "轮次", "规则", "先后", "结果", "对手", "等级分"].forEach(function (label) {
         titles.appendChild(el("th", "", label));
       });
       tbody.appendChild(titles);
@@ -484,10 +485,8 @@
         var day = el("td", "date", short_date(game.date));
         day.title = game.date;
         tr.appendChild(day);
-        // 轮次列后面带上这局用的规则
-        var rnd = el("td", "rnd", "第" + game.round + "轮 第" + game.board + "台");
-        if (game.rule) rnd.appendChild(el("span", "sub", game.rule));
-        tr.appendChild(rnd);
+        tr.appendChild(el("td", "rnd", "第" + game.round + "轮 第" + game.board + "台"));
+        tr.appendChild(el("td", "rule", game.rule || ""));
         tr.appendChild(el("td", "cnum", game.color));
         tr.appendChild(el("td", game["class"], game.result));
         var opp = el("td");
