@@ -44,6 +44,22 @@ RESULT_ALIAS = {
 # 轮空（+-）与弃权（-+、+-、--）不计入等级分
 WINNER = {"1": "B", "0": "W", "0.5": "D"}
 
+# 记分写法：页面上原样显示库里填的结果
+SCORE_TEXT = {
+    "1": "1:0",
+    "0": "0:1",
+    "0.5": "\u00bd://u00bd",
+    "+-": "+:-",
+    "-+": "-:+",
+    "--": "-:-",
+}
+
+
+def score_text(value):
+    """把库里的结果码换成记分写法（认不出来就原样返回）。"""
+    text = str(normalize_result(value))
+    return SCORE_TEXT.get(text, text)
+
 
 def normalize_result(value):
     if value is None:
@@ -280,7 +296,8 @@ def classify_result(is_first, result, opponent):
     if own in PLAYER_RESULT:
         return ("played",) + PLAYER_RESULT[own]
     if opponent == BYE_NAME:
-        return ("bye", "轮空", "skip")
+        # 轮空也按库里实际填的结果显示（一般是 "+:-"）
+        return ("bye", score_text(result), "skip")
     if result == "--":
         return ("double", "双弃", "skip")
     if (is_first and result == "-+") or ((not is_first) and result == "+-"):
@@ -341,6 +358,7 @@ def build_details(games_out, players_out, series):
                 "rule": g["rule"],
                 "color": "假先" if is_first else "假后",
                 "result": label,
+                "score": score_text(result),
                 "class": klass,
                 "kind": kind,
                 "opponent": opponent,
