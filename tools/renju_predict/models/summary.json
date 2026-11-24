@@ -454,8 +454,8 @@
     "cutoff_key": "20260630",
     "cutoff_date_exclusive": "2026-07-01",
     "max_game_date": "2026-06-01",
-    "num_games": 1854,
-    "num_rated_players": 233,
+    "num_games": 2036,
+    "num_rated_players": 247,
     "features": [
       "rule",
       "first_rating",
@@ -474,23 +474,23 @@
       "假先胜"
     ],
     "class_counts": {
-      "假后胜": 752,
-      "和棋": 312,
-      "假先胜": 790
+      "假后胜": 816,
+      "和棋": 337,
+      "假先胜": 883
     },
     "rule_counts": {
-      "塔拉山口-10": 1345,
+      "塔拉山口-10": 1527,
       "山口": 509
     },
-    "cv_5fold_logloss": 0.92934,
-    "cv_5fold_accuracy": 0.5712
+    "cv_5fold_logloss": 0.92405,
+    "cv_5fold_accuracy": 0.55796
   },
   {
     "cutoff_key": "20260930",
     "cutoff_date_exclusive": "2026-10-01",
     "max_game_date": "2026-07-09",
-    "num_games": 1987,
-    "num_rated_players": 242,
+    "num_games": 2169,
+    "num_rated_players": 256,
     "features": [
       "rule",
       "first_rating",
@@ -509,23 +509,23 @@
       "假先胜"
     ],
     "class_counts": {
-      "假后胜": 812,
-      "和棋": 323,
-      "假先胜": 852
+      "假后胜": 876,
+      "和棋": 348,
+      "假先胜": 945
     },
     "rule_counts": {
-      "塔拉山口-10": 1478,
+      "塔拉山口-10": 1660,
       "山口": 509
     },
-    "cv_5fold_logloss": 0.92002,
-    "cv_5fold_accuracy": 0.56668
+    "cv_5fold_logloss": 0.91815,
+    "cv_5fold_accuracy": 0.57123
   },
   {
     "cutoff_key": "20261123",
     "cutoff_date_exclusive": "2026-11-24",
     "max_game_date": "2026-11-16",
-    "num_games": 2184,
-    "num_rated_players": 253,
+    "num_games": 2366,
+    "num_rated_players": 266,
     "features": [
       "rule",
       "first_rating",
@@ -544,15 +544,15 @@
       "假先胜"
     ],
     "class_counts": {
-      "假后胜": 905,
-      "和棋": 347,
-      "假先胜": 932
+      "假后胜": 969,
+      "和棋": 372,
+      "假先胜": 1025
     },
     "rule_counts": {
-      "塔拉山口-10": 1675,
+      "塔拉山口-10": 1857,
       "山口": 509
     },
-    "cv_5fold_logloss": 0.92317,
-    "cv_5fold_accuracy": 0.5609
+    "cv_5fold_logloss": 0.91448,
+    "cv_5fold_accuracy": 0.57608
   }
 ]
