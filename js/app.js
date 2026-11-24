@@ -482,7 +482,15 @@
         tr.appendChild(rnd);
         tr.appendChild(el("td", "rule", game.rule || ""));
         tr.appendChild(el("td", "cnum", game.color));
-        tr.appendChild(el("td", game["class"], game.result));
+        var resTd = el("td", game["class"]);
+        if (game.kind !== "bye" && game.game_id !== null && game.game_id !== undefined) {
+          var resLink = el("a", "score-link", game.result);
+          resLink.href = "game.html?id=" + encodeURIComponent(game.game_id);
+          resTd.appendChild(resLink);
+        } else {
+          resTd.textContent = game.result;
+        }
+        tr.appendChild(resTd);
         var opp = el("td");
         if (game.opponent_id) {
           var link = el("a", "", game.opponent);
@@ -599,7 +607,17 @@
       tr.appendChild(el("td", "rule", game.rule || ""));
       tr.appendChild(playerCell(game.first, game.first_id));
       // 轮空也照库里填的记分显示（一般是 +:-），与其它台次一致
-      tr.appendChild(el("td", "score", RESULT_SCORE[String(game.result)] || String(game.result)));
+      var scoreTd = el("td", "score");
+      var scoreText = RESULT_SCORE[String(game.result)] || String(game.result);
+      var bye = game.first === "轮空" || game.second === "轮空";
+      if (!bye && game.game_id !== null && game.game_id !== undefined) {
+        var scoreLink = el("a", "score-link", scoreText);
+        scoreLink.href = "game.html?id=" + encodeURIComponent(game.game_id);
+        scoreTd.appendChild(scoreLink);
+      } else {
+        scoreTd.textContent = scoreText;
+      }
+      tr.appendChild(scoreTd);
       tr.appendChild(playerCell(game.second, game.second_id));
       tr.appendChild(el("td", "prob", game.p_first != null ? Number(game.p_first).toFixed(1) + "%" : ""));
       tr.appendChild(el("td", "prob", game.p_draw != null ? Number(game.p_draw).toFixed(1) + "%" : ""));

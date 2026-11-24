@@ -240,17 +240,26 @@ def read_parquet(folder):
     tp = pd.read_parquet(os.path.join(folder, "tournament_player.parquet"))
 
     games = []
-    for r in g.itertuples(index=False):
+    for r in g.to_dict("records"):
+        def _clean_str(val):
+            if val is None or pd.isna(val):
+                return None
+            s = str(val).strip()
+            return s if s else None
+
         games.append({
-            "game_id": int(r.game_id),
-            "date": str(r.date)[:10],
-            "rule": r.rule,
-            "first_id": None if pd.isna(r.first_id) else int(r.first_id),
-            "second_id": None if pd.isna(r.second_id) else int(r.second_id),
-            "result": r.result,
-            "tournament_id": int(r.tournament_id),
-            "round": int(r.round),
-            "board": int(r.board),
+            "game_id": int(r["game_id"]),
+            "date": str(r["date"])[:10],
+            "rule": r["rule"],
+            "first_id": None if pd.isna(r["first_id"]) else int(r["first_id"]),
+            "second_id": None if pd.isna(r["second_id"]) else int(r["second_id"]),
+            "result": r["result"],
+            "tournament_id": int(r["tournament_id"]),
+            "round": int(r["round"]),
+            "board": int(r["board"]),
+            "swap": _clean_str(r.get("swap")),
+            "5a": _clean_str(r.get("5a")),
+            "moves": _clean_str(r.get("moves")),
         })
     players = [{"player_id": int(r.player_id), "name": r.name} for r in p.itertuples(index=False)]
     tours = [{"tournament_id": int(r.tournament_id), "name": r.name} for r in t.itertuples(index=False)]
@@ -282,6 +291,9 @@ def build(games, players, tours, members):
             "tournament": tour_name.get(g["tournament_id"], ""),
             "round": g["round"],
             "board": g["board"],
+            "swap": g.get("swap"),
+            "5a": g.get("5a"),
+            "moves": g.get("moves"),
         })
 
     # 同一天先按赛事分块（同一赛事的对局连在一起，不与其他赛事穿插），
@@ -326,6 +338,7 @@ def build(games, players, tours, members):
             "players": row["players"],
             "game_count": row["games"],
             "games": [{
+                "game_id": g["game_id"],
                 "date": g["date"],
                 "round": g["round"],
                 "board": g["board"],
@@ -339,6 +352,30 @@ def build(games, players, tours, members):
                 "p_draw": match_preds.get(g["game_id"], (None, None, None))[1],
                 "p_second": match_preds.get(g["game_id"], (None, None, None))[2],
             } for g in sorted(rows, key=lambda r: (r["date"], r["round"], r["board"]))],
+        }
+
+    game_details = {}
+    for g in games_out:
+        pf, pd_val, ps = match_preds.get(g["game_id"], (None, None, None))
+        game_details[g["game_id"]] = {
+            "game_id": g["game_id"],
+            "tournament_id": g["tournament_id"],
+            "tournament": g["tournament"],
+            "date": g["date"],
+            "round": g["round"],
+            "board": g["board"],
+            "rule": g["rule"],
+            "first": g["first"],
+            "first_id": pid_of.get(g["first"]),
+            "second": g["second"],
+            "second_id": pid_of.get(g["second"]),
+            "result": g["result"],
+            "swap": g.get("swap"),
+            "5a": g.get("5a"),
+            "moves": g.get("moves"),
+            "p_first": pf,
+            "p_draw": pd_val,
+            "p_second": ps,
         }
 
     ratings, series = compute_ratings(games_out)
@@ -377,7 +414,7 @@ def build(games, players, tours, members):
             previous = row["rating"]
         row["rank"] = rank
 
-    return games_out, tours_out, players_out, series, tour_details
+    return games_out, tours_out, players_out, series, tour_details, game_details
 
 
 # 对局结果在详情页上的中文写法与配色类名
@@ -461,6 +498,7 @@ def build_details(games_out, players_out, series):
             if g["date"] > group["end_date"]:
                 group["end_date"] = g["date"]
             group["games"].append({
+                "game_id": g["game_id"],
                 "date": g["date"],
                 "round": g["round"],
                 "board": g["board"],
@@ -586,7 +624,7 @@ def main():
         print("updated tournament pages with predictions:", updated)
         return 0
 
-    games_out, tours_out, players_out, series, tour_details = build(games, players, tours, members)
+    games_out, tours_out, players_out, series, tour_details, game_details = build(games, players, tours, members)
     os.makedirs(DATA, exist_ok=True)
     dump(tours_out, "tournaments.json")
     dump(players_out, "players.json")
@@ -618,9 +656,19 @@ def main():
         if old.endswith(".json") and old not in keep:
             os.remove(os.path.join(player_dir, old))
 
+    game_dir = os.path.join(DATA, "game")
+    os.makedirs(game_dir, exist_ok=True)
+    keep_games = set()
+    for gid, detail in game_details.items():
+        dump(detail, os.path.join("game", "%d.json" % gid))
+        keep_games.add("%d.json" % gid)
+    for old in os.listdir(game_dir):
+        if old.endswith(".json") and old not in keep_games:
+            os.remove(os.path.join(game_dir, old))
+
     print("games", len(games_out), "tournaments", len(tours_out),
           "players", len(players_out), "player pages", len(details),
-          "tournament pages", len(tour_details))
+          "tournament pages", len(tour_details), "game pages", len(game_details))
     return 0
 
 

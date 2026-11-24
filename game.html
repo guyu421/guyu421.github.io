@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>对局详情</title>
+  <link href="css/default.css" rel="stylesheet" type="text/css" />
+  <link href="css/site.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+  <div id="outer">
+    <div id="header"></div>
+    <div id="menu">
+      <ul>
+        <li class="first"><a href="index.html">赛事</a></li>
+        <li><a href="players.html">棋手</a></li>
+      </ul>
+    </div>
+    <div id="content">
+      <div id="primaryContentContainer">
+        <div id="primaryContent" data-game-page>
+          <h1 id="gameTitle">对局详情</h1>
+          <div id="gameMeta" class="game-meta"></div>
+          <div id="gameRuleInfo" class="game-rule-info">
+            <span class="info-pill"><strong>交换序列：</strong><span id="swapVal">-</span></span>
+            <span class="info-pill"><strong>五手打点：</strong><span id="fiveAVal">-</span></span>
+          </div>
+          <div class="board-wrap">
+            <canvas id="renjuBoard" width="480" height="480"></canvas>
+            <div id="boardEmpty" class="board-empty" style="display:none;">暂无棋谱记录</div>
+          </div>
+          <div class="board-controls">
+            <button type="button" id="btnFirst" title="开局">&lt;&lt;</button>
+            <button type="button" id="btnPrev" title="上一手">&lt;</button>
+            <span id="stepInfo" class="step-info">0 / 0</span>
+            <button type="button" id="btnNext" title="下一手">&gt;</button>
+            <button type="button" id="btnLast" title="终局">&gt;&gt;</button>
+          </div>
+        </div>
+      </div>
+      <div class="clear"></div>
+    </div>
+  </div>
+  <script src="js/game.js"></script>
+</body>
+</html>

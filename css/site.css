@@ -396,6 +396,98 @@ body,
 	text-align: center;
 }
 
+/* 结果标志点击进入对局详情 */
+a.score-link {
+	color: inherit;
+	text-decoration: none;
+	border-bottom: 1px dashed #9aa7b2;
+	padding: 0 2px;
+}
+
+a.score-link:hover {
+	color: #1f5f99;
+	border-bottom-color: #1f5f99;
+}
+
+/* 对局详情页与棋盘 */
+.game-meta {
+	margin: 0.6em 0 0.8em;
+	line-height: 1.7;
+	font-size: 0.95em;
+}
+
+.game-rule-info {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75em;
+	margin: 0.6em 0 1em;
+}
+
+.game-rule-info .info-pill {
+	background: #f5f7f9;
+	border: 1px solid #d9e0e6;
+	border-radius: 4px;
+	padding: 0.35em 0.75em;
+	font-size: 0.92em;
+}
+
+.board-wrap {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	margin: 0.5em 0;
+}
+
+#renjuBoard {
+	display: block;
+	max-width: 100%;
+}
+
+.board-empty {
+	margin-top: 0.5em;
+	color: #7a8691;
+	font-size: 0.92em;
+}
+
+.board-controls {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 0.6em;
+	margin: 0.8em 0 1.4em;
+}
+
+.board-controls button {
+	min-width: 44px;
+	padding: 0.35em 0.75em;
+	font-size: 0.95em;
+	font-weight: 600;
+	border: 1px solid #c3ccd4;
+	background: #ffffff;
+	color: #2c3e50;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.board-controls button:hover:not(:disabled) {
+	background: #eef3f8;
+	border-color: #7b93a8;
+}
+
+.board-controls button:disabled {
+	opacity: 0.45;
+	cursor: default;
+}
+
+.board-controls .step-info {
+	min-width: 72px;
+	text-align: center;
+	font-variant-numeric: tabular-nums;
+	font-size: 0.92em;
+	color: #4f5d6b;
+}
+
 /* 手机端赛事列表卡片：日期在左上角，靠左排，其余格子仍居中 */
 
 @media (max-width: 640px) {
