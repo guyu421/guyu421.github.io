@@ -334,10 +334,6 @@ body,
 	white-space: nowrap;
 }
 
-#content table.player-games {
-	width: 100%;
-}
-
 #content table.player-games td.skip {
 	color: #8a8a8a;
 }

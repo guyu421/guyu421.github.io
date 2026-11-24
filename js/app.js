@@ -456,17 +456,6 @@
     var tbody = table.tBodies[0];
     tbody.innerHTML = "";
 
-    // 六列宽度：日期、轮次（含台次）、先后、结果、对手、等级分
-    var oldGroup = table.querySelector("colgroup");
-    if (oldGroup) table.removeChild(oldGroup);
-    var colgroup = document.createElement("colgroup");
-    [15, 18, 11, 15, 22, 19].forEach(function (share) {
-      var col = document.createElement("col");
-      col.style.width = share + "%";
-      colgroup.appendChild(col);
-    });
-    table.insertBefore(colgroup, table.tBodies[0]);
-
     (data.results || []).forEach(function (group) {
       var head = el("tr");
       var th = el("th", "", group.tournament);
