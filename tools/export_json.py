@@ -140,12 +140,13 @@ def rating_at(series, name, date):
 
 
 def compute_match_predictions(games_out, pid_of):
-    """用现有 LightGBM 模型与赛前 Glicko-2 等级分为每盘对局计算胜平负概率。
+    """用对局之前最近的现有 LightGBM 模型与赛前 Glicko-2 等级分为每盘对局计算胜平负概率。
 
-    仅使用该对局日期之前、或同赛事轮次更小的有效对局（不含轮空和弃权）更新 Glicko-2。
+    仅使用该对局日期之前、或同赛事轮次更小的有效对局（不含轮空和弃权）更新 Glicko-2；
+    若该对局日期之前没有任何可用模型，则返回 (None, None, None) 不显示分析。
     """
-    model_dir = os.path.join(PREDICT_DIR, "models", "20261123")
-    if not os.path.isdir(model_dir):
+    models_root = os.path.join(PREDICT_DIR, "models")
+    if not os.path.isdir(models_root):
         return {}
 
     if PREDICT_DIR not in sys.path:
@@ -154,8 +155,23 @@ def compute_match_predictions(games_out, pid_of):
     from glicko2 import Glicko2Tracker
     from predict import load_cutoff_bundle, predict_from_ratings
 
-    booster, metadata = load_cutoff_bundle(Path(model_dir))
-    rule_map = metadata["rule_map"]
+    # 加载所有可用模型，按 cutoff_date_exclusive 从新到旧排序
+    available_models = []
+    for entry in os.listdir(models_root):
+        mdir = os.path.join(models_root, entry)
+        if os.path.isdir(mdir) and os.path.isfile(os.path.join(mdir, "model.txt")):
+            booster, metadata = load_cutoff_bundle(Path(mdir))
+            available_models.append((metadata["cutoff_date_exclusive"], entry, booster, metadata))
+    available_models.sort(key=lambda item: item[0], reverse=True)
+    if not available_models:
+        return {}
+
+    def pick_model(game_date):
+        for cutoff_excl, _key, booster, metadata in available_models:
+            if game_date >= cutoff_excl:
+                return booster, metadata
+        return None, None
+
     score_map = {"1": 1.0, "0.5": 0.5, "0": 0.0}
 
     ordered = sorted(
@@ -179,7 +195,8 @@ def compute_match_predictions(games_out, pid_of):
             fid = pid_of.get(g["first"])
             sid = pid_of.get(g["second"])
             is_bye = g["first"] == BYE_NAME or g["second"] == BYE_NAME or fid is None or sid is None
-            if is_bye or g["rule"] not in rule_map:
+            booster, metadata = pick_model(g["date"])
+            if is_bye or booster is None or g["rule"] not in metadata["rule_map"]:
                 preds[g["game_id"]] = (None, None, None)
             else:
                 r1 = tracker.get(fid).rating
