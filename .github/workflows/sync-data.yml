@@ -27,7 +27,10 @@ jobs:
           python-version: "3.11"
 
       - name: 安装依赖
-        run: pip install pandas pyarrow whr lightgbm
+        run: pip install pandas pyarrow whr lightgbm scikit-learn
+
+      - name: 重新训练预测模型
+        run: python tools/renju_predict/train.py --db-dir db --models-dir tools/renju_predict/models
 
       - name: 从 db/*.parquet 导出 data/*.json
         run: python tools/export_json.py
@@ -38,7 +41,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data
+          git add data tools/renju_predict/models
           if git diff --cached --quiet; then
             echo "数据没有变化"
             exit 0

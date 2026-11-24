@@ -600,9 +600,8 @@
       tr.appendChild(el("td", "rnd", "第" + game.round + "轮 第" + game.board + "台"));
       tr.appendChild(el("td", "rule", game.rule || ""));
       tr.appendChild(playerCell(game.first, game.first_id));
-      // 轮空没有对手，比分格留空（假后列已经写着「轮空」）
-      var bye = game.first === "轮空" || game.second === "轮空";
-      tr.appendChild(el("td", "score", bye ? "" : (RESULT_SCORE[String(game.result)] || String(game.result))));
+      // 轮空也照库里填的记分显示（一般是 +:-），与其它台次一致
+      tr.appendChild(el("td", "score", RESULT_SCORE[String(game.result)] || String(game.result)));
       tr.appendChild(playerCell(game.second, game.second_id));
       tr.appendChild(el("td", "prob", game.p_first != null ? Number(game.p_first).toFixed(1) + "%" : ""));
       tr.appendChild(el("td", "prob", game.p_draw != null ? Number(game.p_draw).toFixed(1) + "%" : ""));

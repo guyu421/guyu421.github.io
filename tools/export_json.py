@@ -107,8 +107,13 @@ def compute_ratings(games_out):
         return {}, {}
 
     base = whr.Base(config={"w2": WHR_W2, "virtual_games": WHR_VIRTUAL_GAMES})
-    base.create_games(trainable)
-    base.iterate_until_converge(verbose=False)
+    if hasattr(base, "create_games"):
+        base.create_games(trainable)
+        base.iterate_until_converge(verbose=False)
+    else:
+        for row in trainable:
+            base.create_game(*row, 0)
+        base.auto_iterate()
 
     final_day = max(row[3] for row in trainable)
     series = {}
