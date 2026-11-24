@@ -958,6 +958,96 @@
     });
   }
 
+  function setupPlayersPager(rows) {
+    var sorted = sortRows("players", rows);
+    var pageSize = 100;
+    var totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+    var table = document.querySelector("table[data-feed='players']");
+    var wrap = table ? table.closest(".table-wrap") : null;
+    if (!wrap || !wrap.parentNode) {
+      render("players", sorted.slice(0, pageSize));
+      return;
+    }
+
+    function pageFromUrl() {
+      var m = /[?&]page=(\d+)/.exec(window.location.search);
+      var p = m ? Number(m[1]) : 1;
+      if (isNaN(p) || p < 1) return 1;
+      if (p > totalPages) return totalPages;
+      return p;
+    }
+
+    function buildPagerBar() {
+      var bar = document.createElement("div");
+      bar.style.cssText = "display:flex;align-items:center;gap:8px;margin:8px 0;flex-wrap:wrap;font-size:13px;";
+      var prevBtn = el("button", "", "上一页");
+      var select = document.createElement("select");
+      for (var p = 1; p <= totalPages; p++) {
+        var sIdx = (p - 1) * pageSize + 1;
+        var eIdx = Math.min(p * pageSize, sorted.length);
+        var opt = document.createElement("option");
+        opt.value = String(p);
+        opt.textContent = "第 " + p + " / " + totalPages + " 页 (" + sIdx + "-" + eIdx + ")";
+        select.appendChild(opt);
+      }
+      var nextBtn = el("button", "", "下一页");
+      var info = el("span", "", "共 " + sorted.length + " 人");
+      info.style.color = "#666";
+      bar.appendChild(prevBtn);
+      bar.appendChild(select);
+      bar.appendChild(nextBtn);
+      bar.appendChild(info);
+      return { bar: bar, prevBtn: prevBtn, select: select, nextBtn: nextBtn };
+    }
+
+    var topPager = buildPagerBar();
+    var botPager = buildPagerBar();
+    wrap.parentNode.insertBefore(topPager.bar, wrap);
+    wrap.parentNode.insertBefore(botPager.bar, wrap.nextSibling);
+
+    var currentPage = pageFromUrl();
+
+    function goTo(page, push) {
+      currentPage = Math.max(1, Math.min(totalPages, page));
+      var start = (currentPage - 1) * pageSize;
+      render("players", sorted.slice(start, start + pageSize));
+      [topPager, botPager].forEach(function (pg) {
+        pg.select.value = String(currentPage);
+        pg.prevBtn.disabled = currentPage <= 1;
+        pg.nextBtn.disabled = currentPage >= totalPages;
+      });
+      if (push && window.history && window.history.pushState) {
+        var url = "players.html?page=" + currentPage;
+        window.history.pushState({ page: currentPage }, "", url);
+      }
+    }
+
+    [topPager, botPager].forEach(function (pg) {
+      pg.prevBtn.addEventListener("click", function () {
+        if (currentPage > 1) {
+          goTo(currentPage - 1, true);
+          window.scrollTo(0, 0);
+        }
+      });
+      pg.nextBtn.addEventListener("click", function () {
+        if (currentPage < totalPages) {
+          goTo(currentPage + 1, true);
+          window.scrollTo(0, 0);
+        }
+      });
+      pg.select.addEventListener("change", function () {
+        goTo(Number(pg.select.value), true);
+        window.scrollTo(0, 0);
+      });
+    });
+
+    window.addEventListener("popstate", function () {
+      goTo(pageFromUrl(), false);
+    });
+
+    goTo(currentPage, false);
+  }
+
   function init() {
     if (document.querySelector("[data-player-page]")) return initPlayer();
     if (document.querySelector("[data-tournament-page]")) return initTournament();
@@ -966,6 +1056,8 @@
     return load(feed).then(function (rows) {
       if (feed === "tournaments") {
         setupYearPicker(rows);
+      } else if (feed === "players") {
+        setupPlayersPager(rows);
       } else {
         render(feed, sortRows(feed, rows));
       }
