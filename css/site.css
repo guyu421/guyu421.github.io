@@ -304,6 +304,11 @@ body,
 	white-space: nowrap;
 }
 
+#content table.player-games td.date {
+	white-space: nowrap;
+	color: #6f7b83;
+}
+
 #content table.player-games td.rnd .sub {
 	display: block;
 	font-size: 11px;

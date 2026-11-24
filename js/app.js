@@ -465,17 +465,40 @@
     box.appendChild(tip);
   }
 
+  // 表格里的日期用月-日，年份在赛事名和赛事日期行里已经有了
+  function short_date(value) {
+    var text = String(value || "");
+    return text.length >= 10 ? text.slice(5, 10) : text;
+  }
+
+  // 该赛事实际用到的日期范围
+  function dates_of_group(group) {
+    var list = [];
+    (group.games || []).forEach(function (game) {
+      if (game.date && list.indexOf(game.date) < 0) list.push(game.date);
+    });
+    if (!list.length) return group.end_date || "";
+    list.sort();
+    var first = list[0];
+    var last = list[list.length - 1];
+    if (first === last) return first;
+    if (first.slice(0, 4) === last.slice(0, 4)) {
+      return first + " 至 " + last.slice(5);
+    }
+    return first + " 至 " + last;
+  }
+
   function renderPlayerGames(data) {
     var table = document.querySelector("table.player-games");
     if (!table || !table.tBodies[0]) return;
     var tbody = table.tBodies[0];
     tbody.innerHTML = "";
 
-    // 五列宽度：轮次（含台次）与对手宽一些，先后与等级分窄
+    // 六列宽度：日期、轮次（含台次）、先后、结果、对手、等级分
     var oldGroup = table.querySelector("colgroup");
     if (oldGroup) table.removeChild(oldGroup);
     var colgroup = document.createElement("colgroup");
-    [24, 12, 17, 27, 20].forEach(function (share) {
+    [15, 25, 11, 15, 17, 17].forEach(function (share) {
       var col = document.createElement("col");
       col.style.width = share + "%";
       colgroup.appendChild(col);
@@ -485,27 +508,31 @@
     (data.results || []).forEach(function (group) {
       var head = el("tr");
       var th = el("th", "", group.tournament);
-      th.colSpan = 5;
+      th.colSpan = 6;
       head.appendChild(th);
       tbody.appendChild(head);
 
+      var span = dates_of_group(group);
       var info = el("tr");
       info.appendChild(el("th", "second", "日期"));
-      var dateCell = el("td", "num", group.end_date);
-      dateCell.colSpan = 2;
+      var dateCell = el("td", "num", span);
+      dateCell.colSpan = 3;
       info.appendChild(dateCell);
       info.appendChild(el("th", "second", "等级分"));
       info.appendChild(el("td", "num", one(group.rating)));
       tbody.appendChild(info);
 
       var titles = el("tr");
-      ["轮次", "先后", "结果", "对手", "等级分"].forEach(function (label) {
+      ["日期", "轮次", "先后", "结果", "对手", "等级分"].forEach(function (label) {
         titles.appendChild(el("th", "", label));
       });
       tbody.appendChild(titles);
 
       (group.games || []).forEach(function (game) {
         var tr = el("tr");
+        var day = el("td", "date", short_date(game.date));
+        day.title = game.date;
+        tr.appendChild(day);
         tr.appendChild(el("td", "rnd", "第" + game.round + "轮 第" + game.board + "台"));
         tr.appendChild(el("td", "cnum", game.color));
         tr.appendChild(el("td", game["class"], game.result));
