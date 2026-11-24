@@ -1,39 +1,22 @@
 #!/usr/bin/env python3
-"""把 Oracle Cloud 数据库（或 REST 接口）里的四张表导出成站点用的 data/*.json。
+"""把 db/ 目录下的四张 parquet 表导出成站点用的 data/*.json。
 
-用法（本地）：
-    python tools/export_json.py --parquet ../tmp_src/out
-    ORACLE_USER=... ORACLE_PASSWORD=... ORACLE_DSN=... python tools/export_json.py
-    RENJU_API_BASE=https://xxx.oraclecloudapps.com/ords/xxx/renju python tools/export_json.py
-
-数据源优先级：--parquet 目录 > Oracle 直连 > REST 接口。
+用法：
+    python tools/export_json.py                 # 读仓库内 db/
+    python tools/export_json.py --parquet dir   # 读指定目录
 """
 
 import argparse
-import base64
 import json
 import os
 import sys
-import tempfile
-import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.dirname(HERE)
 DATA = os.path.join(SITE, "data")
+DB = os.path.join(SITE, "db")
 
 BYE_NAME = "轮空"
-
-SQL = {
-    "games": """
-        SELECT id, game_id, TO_CHAR("DATE", 'YYYY-MM-DD') AS game_date, rule,
-               first_id, second_id, result, tournament_id,
-               "ROUND" AS rnd, board, game_no
-        FROM renju_prematch
-    """,
-    "tournament": "SELECT tournament_id, name FROM tournament",
-    "player": "SELECT player_id, name FROM player",
-    "tournament_player": "SELECT tournament_id, player_id, internal_id FROM tournament_player",
-}
 
 
 def read_parquet(folder):
@@ -66,109 +49,9 @@ def read_parquet(folder):
     return games, players, tours, members
 
 
-def read_oracle():
-    import oracledb
-
-    wallet_b64 = os.environ.get("ORACLE_WALLET_B64", "")
-    user = os.environ["ORACLE_USER"]
-    password = os.environ["ORACLE_PASSWORD"]
-    dsn = os.environ.get("ORACLE_DSN", "")
-
-    params = {"user": user, "password": password}
-    if wallet_b64:
-        wallet_dir = os.path.join(tempfile.mkdtemp(), "wallet")
-        os.makedirs(wallet_dir, exist_ok=True)
-        blob = base64.b64decode(wallet_b64)
-        try:
-            import io
-            import zipfile
-
-            with zipfile.ZipFile(io.BytesIO(blob)) as zf:
-                zf.extractall(wallet_dir)
-        except zipfile.BadZipFile:
-            # 也接受 {"文件名": "base64 内容"} 形式的 JSON
-            for name, content in json.loads(blob).items():
-                with open(os.path.join(wallet_dir, name), "wb") as fh:
-                    fh.write(base64.b64decode(content))
-        os.environ["TNS_ADMIN"] = wallet_dir
-        params["config_dir"] = wallet_dir
-        params["wallet_location"] = wallet_dir
-        if os.environ.get("ORACLE_WALLET_PASSWORD"):
-            params["wallet_password"] = os.environ["ORACLE_WALLET_PASSWORD"]
-        dsn = dsn or os.environ.get("ORACLE_ALIAS", "")
-    if dsn:
-        params["dsn"] = dsn
-
-    con = oracledb.connect(**params)
-    cur = con.cursor()
-    cur.execute(SQL["games"])
-    games = []
-    for row in cur:
-        games.append({
-            "id": int(row[0]),
-            "game_id": row[1],
-            "date": str(row[2])[:10],
-            "rule": row[3],
-            "first_id": None if row[4] is None else int(row[4]),
-            "second_id": None if row[5] is None else int(row[5]),
-            "result": row[6],
-            "tournament_id": int(row[7]),
-            "round": int(row[8]),
-            "board": int(row[9]),
-            "game_no": int(row[10]),
-        })
-    cur.execute(SQL["player"])
-    players = [{"player_id": int(r[0]), "name": r[1]} for r in cur]
-    cur.execute(SQL["tournament"])
-    tours = [{"tournament_id": int(r[0]), "name": r[1]} for r in cur]
-    cur.execute(SQL["tournament_player"])
-    members = [{"tournament_id": int(r[0]), "player_id": int(r[1])} for r in cur]
-    cur.close()
-    con.close()
-    return games, players, tours, members
-
-
-def read_rest():
-    base = os.environ["RENJU_API_BASE"].rstrip("/")
-    token = os.environ.get("RENJU_TOKEN", "")
-
-    def get(path):
-        req = urllib.request.Request(base + "/" + path, headers={"Accept": "application/json"})
-        if token:
-            req.add_header("Authorization", "Bearer " + token)
-        with urllib.request.urlopen(req, timeout=60) as res:
-            payload = json.loads(res.read().decode("utf-8"))
-        for key in ("items", "rows", "data", "results", "response"):
-            if isinstance(payload, dict) and isinstance(payload.get(key), list):
-                return payload[key]
-        return payload if isinstance(payload, list) else []
-
-    games = []
-    for r in get("games"):
-        games.append({
-            "id": int(r["id"]),
-            "game_id": r["game_id"],
-            "date": str(r.get("date") or r.get("game_date") or "")[:10],
-            "rule": r.get("rule"),
-            "first_id": None if r.get("first_id") in (None, "") else int(r["first_id"]),
-            "second_id": None if r.get("second_id") in (None, "") else int(r["second_id"]),
-            "result": r.get("result"),
-            "tournament_id": int(r["tournament_id"]),
-            "round": int(r["round"]),
-            "board": int(r["board"]),
-            "game_no": int(r.get("game_no") or 1),
-        })
-    players = [{"player_id": int(r["player_id"]), "name": r["name"]} for r in get("players")]
-    tours = [{"tournament_id": int(r["tournament_id"]), "name": r["name"]} for r in get("tournaments")]
-    members = [{"tournament_id": int(r["tournament_id"]), "player_id": int(r["player_id"])}
-               for r in get("tournament_players")]
-    return games, players, tours, members
-
-
 def build(games, players, tours, members):
     name = {p["player_id"]: p["name"] for p in players}
     tour_name = {t["tournament_id"]: t["name"] for t in tours}
-    bye_id = next((p["player_id"] for p in players if str(p["name"]).strip() in ("轮空", "+")), None)
 
     games_out = []
     for g in games:
@@ -245,19 +128,14 @@ def dump(obj, name, compact=True):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--parquet", help="从本地 parquet 目录导出（离线测试用）")
+    ap.add_argument("--parquet", default=DB, help="parquet 目录，默认仓库内 db/")
     args = ap.parse_args()
 
-    if args.parquet:
-        games, players, tours, members = read_parquet(args.parquet)
-    elif os.environ.get("ORACLE_USER"):
-        games, players, tours, members = read_oracle()
-    elif os.environ.get("RENJU_API_BASE"):
-        games, players, tours, members = read_rest()
-    else:
-        print("未配置数据源（ORACLE_* 或 RENJU_API_BASE），本次跳过")
-        return 0
+    if not os.path.isdir(args.parquet):
+        print("找不到 parquet 目录：%s" % args.parquet, file=sys.stderr)
+        return 1
 
+    games, players, tours, members = read_parquet(args.parquet)
     games_out, tours_out, players_out = build(games, players, tours, members)
     os.makedirs(DATA, exist_ok=True)
     dump(games_out, "games.json")

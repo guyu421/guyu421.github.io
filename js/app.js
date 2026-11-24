@@ -1,10 +1,6 @@
 (function () {
   "use strict";
 
-  var config = window.RENJU_CONFIG || {};
-  var base = String(config.apiBaseUrl || "").replace(/\/+$/, "");
-  var token = String(config.token || "");
-
   var COLUMNS = {
     games: ["date", "tournament", "rule", "round", "board", "first", "result", "second"],
     tournaments: ["period", "name", "players", "games"],
@@ -31,12 +27,6 @@
     return table ? table.getAttribute("data-feed") : "";
   }
 
-  function endpointFor(feed) {
-    var ep = (config.endpoints || {})[feed];
-    if (!base || !ep) return "";
-    return base + "/" + String(ep).replace(/^\/+/, "");
-  }
-
   function normalize(json) {
     if (Array.isArray(json)) return json;
     if (!json || typeof json !== "object") return [];
@@ -48,18 +38,6 @@
   }
 
   function load(feed) {
-    var url = endpointFor(feed);
-    if (url) {
-      var headers = { Accept: "application/json" };
-      if (token) headers.Authorization = "Bearer " + token;
-      return fetch(url, { headers: headers })
-        .then(function (res) {
-          if (!res.ok) throw new Error("HTTP " + res.status);
-          return res.json();
-        })
-        .then(normalize)
-        .catch(function () { return []; });
-    }
     return fetch("data/" + feed + ".json")
       .then(function (res) {
         if (!res.ok) throw new Error("HTTP " + res.status);
@@ -79,8 +57,7 @@
     return start || end;
   }
 
-  // 赛事日期范围来自 renju_prematch.date 的最小/最大值；
-  // 接口未返回时用对局数据现算。
+  // 赛事日期范围来自对局数据里 date 的最小/最大值。
   function withPeriods(rows) {
     var missing = rows.some(function (row) {
       return row && !row.start_date && !row.startDate && !row.period && !row.date_range;

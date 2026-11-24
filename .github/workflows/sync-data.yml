@@ -1,8 +1,11 @@
 name: 同步数据库数据
 
 on:
-  schedule:
-    - cron: "*/30 * * * *"
+  push:
+    paths:
+      - "db/**.parquet"
+      - "tools/export_json.py"
+      - ".github/workflows/sync-data.yml"
   workflow_dispatch:
 
 permissions:
@@ -23,17 +26,9 @@ jobs:
           python-version: "3.11"
 
       - name: 安装依赖
-        run: pip install "oracledb>=2,<3"
+        run: pip install pandas pyarrow
 
-      - name: 从数据库导出 data/*.json
-        env:
-          ORACLE_USER: ${{ secrets.ORACLE_USER }}
-          ORACLE_PASSWORD: ${{ secrets.ORACLE_PASSWORD }}
-          ORACLE_DSN: ${{ secrets.ORACLE_DSN }}
-          ORACLE_WALLET_B64: ${{ secrets.ORACLE_WALLET_B64 }}
-          ORACLE_WALLET_PASSWORD: ${{ secrets.ORACLE_WALLET_PASSWORD }}
-          RENJU_API_BASE: ${{ secrets.RENJU_API_BASE }}
-          RENJU_TOKEN: ${{ secrets.RENJU_TOKEN }}
+      - name: 从 db/*.parquet 导出 data/*.json
         run: python tools/export_json.py
 
       - name: 提交并推送
