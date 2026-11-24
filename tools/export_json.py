@@ -283,14 +283,28 @@ def build(games, players, tours, members):
 
 
 # 对局结果在详情页上的中文写法与配色类名
+# 真正下过的对局；轮空、弃权、双弃单独分类，不计胜负也不计入等级分
 PLAYER_RESULT = {
     "1": ("胜", "win"),
     "0": ("负", "loss"),
     "0.5": ("和", "draw"),
-    "+-": ("弃权", "skip"),
-    "-+": ("弃权", "skip"),
-    "--": ("弃权", "skip"),
 }
+
+
+def classify_result(is_first, result, opponent):
+    """把一局归到 胜/负/和/轮空/本人弃权/对手弃权/双弃。
+
+    "-+" 表示假先方弃权、假后方得 +，"+-" 反之，"--" 为双方弃权。
+    """
+    if result in PLAYER_RESULT:
+        return ("played",) + PLAYER_RESULT[result]
+    if opponent == BYE_NAME:
+        return ("bye", "轮空", "skip")
+    if result == "--":
+        return ("double", "双弃", "skip")
+    if (is_first and result == "-+") or ((not is_first) and result == "+-"):
+        return ("self", "弃权", "skip")
+    return ("opp", "对手弃权", "skip")
 
 
 def build_details(games_out, players_out, history):
@@ -303,17 +317,15 @@ def build_details(games_out, players_out, history):
         pid = p["player_id"]
         mine = [g for g in games_out if g["first"] == name or g["second"] == name]
 
-        wins = draws = losses = skips = 0
+        wins = draws = losses = 0
+        byes = self_skips = opp_skips = double_skips = 0
         groups = {}
         for g in mine:
             is_first = g["first"] == name
             opponent = g["second"] if is_first else g["first"]
             result = str(g["result"])
 
-            if opponent == BYE_NAME:
-                label, klass = "轮空", "skip"
-            else:
-                label, klass = PLAYER_RESULT.get(result, (result, "skip"))
+            kind, label, klass = classify_result(is_first, result, opponent)
 
             if klass == "win":
                 wins += 1
@@ -321,8 +333,14 @@ def build_details(games_out, players_out, history):
                 draws += 1
             elif klass == "loss":
                 losses += 1
+            elif kind == "bye":
+                byes += 1
+            elif kind == "self":
+                self_skips += 1
+            elif kind == "opp":
+                opp_skips += 1
             else:
-                skips += 1
+                double_skips += 1
 
             opp_rating = None if opponent == BYE_NAME else _display(
                 rating_at(history, opponent, g["date"])[0]
@@ -341,6 +359,7 @@ def build_details(games_out, players_out, history):
                 "color": "假先" if is_first else "假后",
                 "result": label,
                 "class": klass,
+                "kind": kind,
                 "opponent": opponent,
                 "opponent_id": player_id.get(opponent),
                 "opponent_rating": opp_rating,
@@ -365,7 +384,10 @@ def build_details(games_out, players_out, history):
             "wins": wins,
             "draws": draws,
             "losses": losses,
-            "skips": skips,
+            "byes": byes,
+            "self_skips": self_skips,
+            "opp_skips": opp_skips,
+            "double_skips": double_skips,
             "top_rating": _display(peak[1]),
             "top_date": peak[0],
             "history": curve,

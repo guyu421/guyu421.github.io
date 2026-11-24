@@ -186,7 +186,12 @@
     metaRow(box, "等级分", one(data.rating) + "（偏差 " + one(data.rd) + "）");
     var record = data.tournaments + " 个赛事，" + data.games + " 个对局，胜 " +
       data.wins + "，和 " + data.draws + "，负 " + data.losses;
-    if (data.skips) record += "，轮空或弃权 " + data.skips;
+    var extras = [];
+    if (data.byes) extras.push("轮空 " + data.byes);
+    if (data.self_skips) extras.push("弃权 " + data.self_skips);
+    if (data.opp_skips) extras.push("对手弃权 " + data.opp_skips);
+    if (data.double_skips) extras.push("双弃 " + data.double_skips);
+    if (extras.length) record += "，" + extras.join("，");
     metaRow(box, "战绩", record);
     if (data.top_rating) {
       metaRow(box, "最高等级分", one(data.top_rating) + (data.top_date ? "（" + data.top_date + "）" : ""));
@@ -366,7 +371,7 @@
     var oldGroup = table.querySelector("colgroup");
     if (oldGroup) table.removeChild(oldGroup);
     var colgroup = document.createElement("colgroup");
-    [11, 15, 14, 32, 28].forEach(function (share) {
+    [10, 14, 18, 30, 28].forEach(function (share) {
       var col = document.createElement("col");
       col.style.width = share + "%";
       colgroup.appendChild(col);
