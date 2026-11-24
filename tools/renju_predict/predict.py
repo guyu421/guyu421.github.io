@@ -16,7 +16,16 @@ HERE = Path(__file__).resolve().parent
 WORKSPACE = HERE.parent
 DEFAULT_DB_DIR = WORKSPACE / "all-renju" / "db"
 DEFAULT_MODELS_DIR = HERE / "models"
-CUTOFF_ORDER = ["20231231", "20241231", "20251231", "20261123"]
+CUTOFF_ORDER = [
+    "20230630",
+    "20231231",
+    "20240630",
+    "20241231",
+    "20250630",
+    "20251231",
+    "20260630",
+    "20261123",
+]
 RESULT_SCORE = {"1": 1.0, "0.5": 0.5, "0": 0.0}
 
 
