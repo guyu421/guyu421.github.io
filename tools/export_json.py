@@ -78,9 +78,18 @@ def read_oracle():
     if wallet_b64:
         wallet_dir = os.path.join(tempfile.mkdtemp(), "wallet")
         os.makedirs(wallet_dir, exist_ok=True)
-        for name, blob in json.loads(base64.b64decode(wallet_b64)).items():
-            with open(os.path.join(wallet_dir, name), "wb") as fh:
-                fh.write(base64.b64decode(blob))
+        blob = base64.b64decode(wallet_b64)
+        try:
+            import io
+            import zipfile
+
+            with zipfile.ZipFile(io.BytesIO(blob)) as zf:
+                zf.extractall(wallet_dir)
+        except zipfile.BadZipFile:
+            # 也接受 {"文件名": "base64 内容"} 形式的 JSON
+            for name, content in json.loads(blob).items():
+                with open(os.path.join(wallet_dir, name), "wb") as fh:
+                    fh.write(base64.b64decode(content))
         os.environ["TNS_ADMIN"] = wallet_dir
         params["config_dir"] = wallet_dir
         params["wallet_location"] = wallet_dir
