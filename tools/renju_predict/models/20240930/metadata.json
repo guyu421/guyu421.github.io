@@ -30,6 +30,6 @@
     "山口": 509,
     "塔拉山口-10": 190
   },
-  "cv_5fold_logloss": 1.10384,
-  "cv_5fold_accuracy": 0.45923
+  "cv_5fold_logloss": 0.99519,
+  "cv_5fold_accuracy": 0.51788
 }

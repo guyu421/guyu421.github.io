@@ -29,6 +29,6 @@
   "rule_counts": {
     "山口": 509
   },
-  "cv_5fold_logloss": 1.12031,
-  "cv_5fold_accuracy": 0.45187
+  "cv_5fold_logloss": 0.99775,
+  "cv_5fold_accuracy": 0.49509
 }
