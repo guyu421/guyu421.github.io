@@ -208,7 +208,8 @@
   }
 
   // 等级分走势：折线 + ± 偏差（RD）阴影带，配色与参考站点一致
-  function drawChart(history) {
+  // gamesByDate：该棋手每个比赛日的对局，用于点的悬浮详情
+  function drawChart(history, gamesByDate) {
     var box = document.getElementById("chart");
     if (!box) return;
     box.innerHTML = "";
@@ -331,15 +332,103 @@
       "clip-path": "url(#" + clipId + ")"
     }));
 
-    if (points.length <= 40) {
-      points.forEach(function (p) {
-        svg.appendChild(svgNode("circle", {
-          cx: xOf(p.t).toFixed(1), cy: yOf(p.v).toFixed(1), r: 2.4,
-          fill: "#ff7f0e", stroke: "#fff", "stroke-width": 1,
-          "clip-path": "url(#" + clipId + ")"
-        }));
+    // 悬浮/点按查看该期详情：日期、等级分与偏差、当日各局的轮次与台次
+    var dotR = 2.4;
+    var dots = [];
+    points.forEach(function (p) {
+      var dot = svgNode("circle", {
+        cx: xOf(p.t).toFixed(1), cy: yOf(p.v).toFixed(1), r: dotR,
+        fill: "#ff7f0e", stroke: "#fff", "stroke-width": 1,
+        "clip-path": "url(#" + clipId + ")"
       });
+      svg.appendChild(dot);
+      dots.push(dot);
+    });
+
+    var guide = svgNode("line", {
+      x1: 0, y1: pad.top, x2: 0, y2: pad.top + innerH,
+      stroke: "rgba(255,127,14,0.55)", "stroke-width": 1,
+      "stroke-dasharray": "3 3", visibility: "hidden"
+    });
+    svg.insertBefore(guide, dots[0]);
+
+    var tip = el("div", "chart-tip");
+    tip.style.display = "none";
+    var current = -1;
+
+    function repaint(index, on) {
+      var dot = dots[index];
+      if (!dot) return;
+      dot.setAttribute("r", on ? dotR + 2 : dotR);
+      dot.setAttribute("stroke-width", on ? 2 : 1);
     }
+
+    function hideTip() {
+      tip.style.display = "none";
+      guide.setAttribute("visibility", "hidden");
+      if (current >= 0) repaint(current, false);
+      current = -1;
+    }
+
+    function showTip(index) {
+      if (current === index) return;
+      if (current >= 0) repaint(current, false);
+      current = index;
+
+      var p = points[index];
+      var date = String(history[index][0]).slice(0, 10);
+      tip.innerHTML = "";
+      tip.appendChild(el("p", "tip-date", date));
+      tip.appendChild(el("p", "tip-value",
+        "等级分 " + p.v.toFixed(2) + "　偏差 " + p.rd.toFixed(2)));
+
+      var rows = (gamesByDate && gamesByDate[date]) || [];
+      if (!rows.length) {
+        tip.appendChild(el("p", "tip-game", "当日没有计入等级分的对局"));
+      }
+      rows.forEach(function (game) {
+        var line = el("p", "tip-game");
+        line.appendChild(el("span", "tip-meta",
+          "第" + game.round + "轮 第" + game.board + "台"));
+        line.appendChild(document.createTextNode(
+          "　" + game.color + " " + game.result + " " + game.opponent));
+        tip.appendChild(line);
+      });
+      tip.style.display = "block";
+
+      var w = tip.offsetWidth;
+      var h = tip.offsetHeight;
+      var cx = xOf(p.t);
+      var cy = yOf(p.v);
+      tip.style.left = Math.min(Math.max(cx - w / 2, 2), Math.max(width - w - 2, 2)) + "px";
+      var top = cy - h - 12;
+      tip.style.top = (top < 2 ? cy + 14 : top) + "px";
+
+      repaint(index, true);
+      guide.setAttribute("x1", cx.toFixed(1));
+      guide.setAttribute("x2", cx.toFixed(1));
+      guide.setAttribute("visibility", "visible");
+    }
+
+    // 每个点给一块命中区域，按相邻点的中点为界，鼠标与手指都容易点中
+    points.forEach(function (p, index) {
+      var left = index === 0 ? pad.left : (xOf(points[index - 1].t) + xOf(p.t)) / 2;
+      var right = index === points.length - 1
+        ? pad.left + innerW
+        : (xOf(p.t) + xOf(points[index + 1].t)) / 2;
+      var hit = svgNode("rect", {
+        x: left.toFixed(1), y: pad.top,
+        width: Math.max(right - left, 5).toFixed(1), height: innerH,
+        fill: "transparent"
+      });
+      hit.style.cursor = "pointer";
+      hit.addEventListener("mouseenter", function () { showTip(index); });
+      hit.addEventListener("click", function () { showTip(index); });
+      hit.addEventListener("touchstart", function () { showTip(index); }, { passive: true });
+      svg.appendChild(hit);
+    });
+    svg.addEventListener("mouseleave", hideTip);
+    box.addEventListener("mouseleave", hideTip);
 
     // 图例
     var legendX = Math.max(width - 158, pad.left + 4);
@@ -359,6 +448,7 @@
     }, "等级分"));
 
     box.appendChild(svg);
+    box.appendChild(tip);
   }
 
   function renderPlayerGames(data) {
@@ -367,11 +457,11 @@
     var tbody = table.tBodies[0];
     tbody.innerHTML = "";
 
-    // 五列宽度：轮次、先后、结果窄，对手与等级分宽
+    // 五列宽度：轮次（含台次）与对手宽一些，先后与等级分窄
     var oldGroup = table.querySelector("colgroup");
     if (oldGroup) table.removeChild(oldGroup);
     var colgroup = document.createElement("colgroup");
-    [10, 14, 18, 30, 28].forEach(function (share) {
+    [24, 12, 17, 27, 20].forEach(function (share) {
       var col = document.createElement("col");
       col.style.width = share + "%";
       colgroup.appendChild(col);
@@ -402,7 +492,7 @@
 
       (group.games || []).forEach(function (game) {
         var tr = el("tr");
-        tr.appendChild(el("td", "num", game.round));
+        tr.appendChild(el("td", "rnd", "第" + game.round + "轮 第" + game.board + "台"));
         tr.appendChild(el("td", "cnum", game.color));
         tr.appendChild(el("td", game["class"], game.result));
         var opp = el("td");
@@ -439,12 +529,28 @@
         document.title = data.name;
         if (heading) heading.textContent = data.name;
         renderPlayerMeta(data);
-        drawChart(data.history);
+
+        // 按比赛日归拢对局，供曲线的悬浮详情使用
+        var byDate = {};
+        (data.results || []).forEach(function (group) {
+          (group.games || []).forEach(function (game) {
+            if (!game.date) return;
+            (byDate[game.date] || (byDate[game.date] = [])).push(game);
+          });
+        });
+        Object.keys(byDate).forEach(function (date) {
+          byDate[date].sort(function (a, b) {
+            return a.round - b.round || a.board - b.board ||
+              (a.game_no || 1) - (b.game_no || 1);
+          });
+        });
+
+        drawChart(data.history, byDate);
         renderPlayerGames(data);
         var timer = null;
         window.addEventListener("resize", function () {
           if (timer) clearTimeout(timer);
-          timer = setTimeout(function () { drawChart(data.history); }, 150);
+          timer = setTimeout(function () { drawChart(data.history, byDate); }, 150);
         });
         return data;
       })

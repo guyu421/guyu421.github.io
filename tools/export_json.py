@@ -224,6 +224,24 @@ def build(games, players, tours, members):
             "board": g["board"],
             "game_no": g["game_no"],
         })
+    # 源库里同一赛事、同一天、同一轮同一台会把同一盘棋重复登记（只有 game_no 不同），
+    # 这里每台只保留最早的一条，页面与等级分都不再出现重复对局
+    games_out.sort(key=lambda r: (r["date"], r["tournament_id"], r["round"],
+                                  r["board"], r["game_no"]))
+    unique = {}
+    dropped = []
+    for g in games_out:
+        key = (g["date"], g["tournament_id"], g["round"], g["board"])
+        if key in unique:
+            dropped.append(g)
+            continue
+        unique[key] = g
+    games_out = list(unique.values())
+    for g in dropped:
+        print("去重：%s %s 第%d轮 第%d台 %s(假先) %s %s" % (
+            g["date"], g["tournament"], g["round"], g["board"],
+            g["first"], g["result"], g["second"]))
+
     # 同一天先按赛事分块（同一赛事的对局连在一起，不与其他赛事穿插），
     # 赛事内轮次从新到旧、台次从小到大
     games_out.sort(key=lambda r: (-int(str(r["date"]).replace("-", "") or 0),
@@ -354,6 +372,7 @@ def build_details(games_out, players_out, history):
             if g["date"] > group["end_date"]:
                 group["end_date"] = g["date"]
             group["games"].append({
+                "date": g["date"],
                 "round": g["round"],
                 "board": g["board"],
                 "color": "假先" if is_first else "假后",
