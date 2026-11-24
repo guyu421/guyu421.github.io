@@ -183,8 +183,8 @@
   }
 
   // 等级分走势：折线 + ± 偏差（RD）阴影带，配色与参考站点一致
-  // gamesByDate：该棋手每个比赛日的对局，用于点的悬浮详情
-  function drawChart(history, gamesByDate) {
+  // gamesByTour：该棋手每个赛事的全部对局，用于点的悬浮详情
+  function drawChart(history, gamesByTour) {
     var box = document.getElementById("chart");
     if (!box) return;
     box.innerHTML = "";
@@ -358,36 +358,22 @@
       tip.appendChild(el("p", "tip-value",
         "等级分 " + p.v.toFixed(2) + "　偏差 " + p.rd.toFixed(2)));
 
-      var rows = (gamesByDate && gamesByDate[date]) || [];
-      // 折线一个赛事一个节点，同一天可能有别的赛事的对局，只留该赛事的
-      if (tourId !== undefined && tourId !== null) {
-        rows = rows.filter(function (game) { return game.tournament_id === tourId; });
-      }
+      // 一个节点代表整个赛事，悬浮框里列出他在这个赛事打过的全部轮次
+      var rows = (gamesByTour && gamesByTour[tourId]) || [];
       if (!rows.length) {
-        tip.appendChild(el("p", "tip-game", "当日没有计入等级分的对局"));
+        tip.appendChild(el("p", "tip-game", "该赛事没有计入等级分的对局"));
+      } else if (rows[0].tournament) {
+        tip.appendChild(el("p", "tip-tour", rows[0].tournament));
       }
-      // 先写清楚是哪项赛事，再列该赛事当天的对局
-      var tourOrder = [];
-      var byTour = {};
       rows.forEach(function (game) {
-        var key = game.tournament || "";
-        if (!byTour[key]) {
-          byTour[key] = [];
-          tourOrder.push(key);
-        }
-        byTour[key].push(game);
+        var line = el("p", "tip-game");
+        line.appendChild(el("span", "tip-meta",
+          short_date(game.date) + " 第" + game.round + "轮 第" + game.board + "台"));
+        line.appendChild(document.createTextNode(
+          "　" + game.color + " " + game.result + " " + game.opponent));
+        tip.appendChild(line);
       });
-      tourOrder.forEach(function (key) {
-        if (key) tip.appendChild(el("p", "tip-tour", key));
-        byTour[key].forEach(function (game) {
-          var line = el("p", "tip-game");
-          line.appendChild(el("span", "tip-meta",
-            "第" + game.round + "轮 第" + game.board + "台"));
-          line.appendChild(document.createTextNode(
-            "　" + game.color + " " + game.result + " " + game.opponent));
-          tip.appendChild(line);
-        });
-      });
+
       tip.style.display = "block";
 
       var w = tip.offsetWidth;
@@ -551,32 +537,33 @@
         if (heading) heading.textContent = data.name;
         renderPlayerMeta(data);
 
-        // 按比赛日归拢对局，供曲线的悬浮详情使用（带上赛事名，悬浮框里要写清楚）
-        var byDate = {};
+        // 按赛事归拢对局，曲线的每个节点对应一个赛事，悬浮框列出该赛事全部轮次
+        var byTour = {};
         (data.results || []).forEach(function (group) {
+          var list = byTour[group.tournament_id] || (byTour[group.tournament_id] = []);
           (group.games || []).forEach(function (game) {
-            if (!game.date) return;
             var row = {};
             for (var key in game) {
               if (Object.prototype.hasOwnProperty.call(game, key)) row[key] = game[key];
             }
             row.tournament = group.tournament;
             row.tournament_id = group.tournament_id;
-            (byDate[game.date] || (byDate[game.date] = [])).push(row);
+            list.push(row);
           });
         });
-        Object.keys(byDate).forEach(function (date) {
-          byDate[date].sort(function (a, b) {
+        Object.keys(byTour).forEach(function (id) {
+          byTour[id].sort(function (a, b) {
+            if (a.date !== b.date) return a.date < b.date ? -1 : 1;
             return a.round - b.round || a.board - b.board;
           });
         });
 
-        drawChart(data.history, byDate);
+        drawChart(data.history, byTour);
         renderPlayerGames(data);
         var timer = null;
         window.addEventListener("resize", function () {
           if (timer) clearTimeout(timer);
-          timer = setTimeout(function () { drawChart(data.history, byDate); }, 150);
+          timer = setTimeout(function () { drawChart(data.history, byTour); }, 150);
         });
         return data;
       })
@@ -608,9 +595,10 @@
     var box = document.getElementById("tourMeta");
     if (!box) return;
     box.innerHTML = "";
-    metaRow(box, "日期", formatPeriod(data));
+    // 规则不单列一行，跟在日期后面
+    var rules = data.rules && data.rules.length ? "（" + data.rules.join("、") + "）" : "";
+    metaRow(box, "日期", formatPeriod(data) + rules);
     metaRow(box, "规模", data.players + " 人，" + data.game_count + " 个对局");
-    if (data.rules && data.rules.length) metaRow(box, "规则", data.rules.join("、"));
   }
 
   function renderTournamentGames(data) {

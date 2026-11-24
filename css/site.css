@@ -90,21 +90,65 @@ body,
 		padding: 0.5em 0.5em;
 	}
 
-	#content table[data-feed="tournaments"] td.num,
 	#content table[data-feed="players"] td.num {
 		text-align: center;
 	}
 
-	/* 赛事：日期单行不折，赛事名可换行 */
+	/* 赛事：手机上改成列表卡片，日期与人数/对局数在上，赛事名在下 */
 
-	#content table[data-feed="tournaments"] th:nth-child(1),
-	#content table[data-feed="tournaments"] td:nth-child(1) {
-		white-space: nowrap;
+	#content table[data-feed="tournaments"],
+	#content table[data-feed="tournaments"] tbody {
+		display: block;
+		width: 100%;
 	}
 
-	#content table[data-feed="tournaments"] th:nth-child(2),
-	#content table[data-feed="tournaments"] td:nth-child(2) {
+	#content table[data-feed="tournaments"] tr:nth-child(1) {
+		display: none;
+	}
+
+	#content table[data-feed="tournaments"] tr {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto auto;
+		align-items: baseline;
+		column-gap: 0.7em;
+		padding: 0.7em 0.85em;
+		border-top: solid 1px #fff;
+	}
+
+	#content table[data-feed="tournaments"] td {
+		border: 0em;
+		padding: 0em;
 		white-space: normal;
+		line-height: 1.7;
+	}
+
+	#content table[data-feed="tournaments"] td:nth-child(1) {
+		grid-row: 1;
+		grid-column: 1;
+		white-space: nowrap;
+		color: #8a8a8a;
+		font-size: 0.85em;
+	}
+
+	#content table[data-feed="tournaments"] td:nth-child(3),
+	#content table[data-feed="tournaments"] td:nth-child(4) {
+		grid-row: 1;
+		color: #8a8a8a;
+		font-size: 0.85em;
+		text-align: right;
+	}
+
+	#content table[data-feed="tournaments"] td:nth-child(3)::after {
+		content: " 人";
+	}
+
+	#content table[data-feed="tournaments"] td:nth-child(4)::after {
+		content: " 局";
+	}
+
+	#content table[data-feed="tournaments"] td:nth-child(2) {
+		grid-row: 2;
+		grid-column: 1 / -1;
 	}
 
 	/* 赛事对局：手机端改为两行卡片，日期与轮次在上、双方与比分在下 */
