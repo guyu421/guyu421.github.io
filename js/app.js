@@ -631,11 +631,12 @@
       tbody.appendChild(tr);
 
       if (tm.score_probs && tm.score_probs.length) {
-        var spTr = el("tr");
+        var spTr = el("tr", "score-probs-row");
         var spTd = el("td", "");
         spTd.colSpan = 9;
         spTd.style.padding = "0";
         var spTable = document.createElement("table");
+        spTable.className = "score-probs-table";
         spTable.style.width = "100%";
         spTable.style.borderCollapse = "collapse";
         spTable.style.margin = "0";

@@ -154,16 +154,16 @@ body,
 	/* 赛事对局：手机端改为两行卡片，日期与轮次在上、双方与比分在下 */
 
 	#content table.tour-games,
-	#content table.tour-games tbody {
+	#content table.tour-games > tbody {
 		display: block;
 		width: 100%;
 	}
 
-	#content table.tour-games thead {
+	#content table.tour-games > thead {
 		display: none;
 	}
 
-	#content table.tour-games tr {
+	#content table.tour-games > tbody > tr {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
 		align-items: baseline;
@@ -172,25 +172,25 @@ body,
 		border-top: solid 1px #fff;
 	}
 
-	#content table.tour-games tr:nth-child(1) {
+	#content table.tour-games > tbody > tr:nth-child(1) {
 		display: none;
 	}
 
-	#content table.tour-games td {
+	#content table.tour-games > tbody > tr:not(.score-probs-row) > td {
 		border: 0em;
 		padding: 0em;
 		white-space: normal;
 		line-height: 1.7;
 	}
 
-	#content table.tour-games td.date {
+	#content table.tour-games > tbody > tr:not(.score-probs-row) > td.date {
 		grid-row: 1;
 		grid-column: 1;
 		color: #8a8a8a;
 		font-size: 0.85em;
 	}
 
-	#content table.tour-games td.rnd {
+	#content table.tour-games > tbody > tr:not(.score-probs-row) > td.rnd {
 		grid-row: 1;
 		grid-column: 3;
 		color: #8a8a8a;
@@ -198,7 +198,7 @@ body,
 	}
 
 	/* 规则放在卡片中间一行 */
-	#content table.tour-games td.rule {
+	#content table.tour-games > tbody > tr:not(.score-probs-row) > td.rule {
 		grid-row: 1;
 		grid-column: 2;
 		text-align: center;
@@ -208,21 +208,66 @@ body,
 		font-size: 0.85em;
 	}
 
-	#content table.tour-games td:nth-child(4) {
+	#content table.tour-games > tbody > tr:not(.score-probs-row) > td:nth-child(4) {
 		grid-row: 2;
 		grid-column: 1;
 	}
 
-	#content table.tour-games td.score {
+	#content table.tour-games > tbody > tr:not(.score-probs-row) > td.score {
 		grid-row: 2;
 		grid-column: 2;
 		text-align: center;
 	}
 
-	#content table.tour-games td:nth-child(6) {
+	#content table.tour-games > tbody > tr:not(.score-probs-row) > td:nth-child(6) {
 		grid-row: 2;
 		grid-column: 3;
 		text-align: right;
+	}
+
+	/* 团体局分概率子表：保持完整双行表格并在窄屏下可横向滚动 */
+	#content table.tour-games > tbody > tr.score-probs-row {
+		display: block;
+		padding: 0 0.85em 0.7em;
+		border-top: 0;
+	}
+
+	#content table.tour-games > tbody > tr.score-probs-row > td {
+		display: block;
+		width: 100%;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		padding: 0;
+		border: 0;
+	}
+
+	#content table.tour-games table.score-probs-table {
+		display: table;
+		width: 100%;
+		min-width: max-content;
+		border-collapse: collapse;
+		margin: 0;
+		font-size: 12px;
+		text-align: center;
+	}
+
+	#content table.tour-games table.score-probs-table tr {
+		display: table-row;
+		padding: 0;
+		border: 0;
+	}
+
+	#content table.tour-games table.score-probs-table tr:nth-child(1) {
+		display: table-row;
+	}
+
+	#content table.tour-games table.score-probs-table td {
+		display: table-cell;
+		padding: 3px 6px;
+		border: 1px solid #ddd;
+		white-space: nowrap;
+		line-height: 1.4;
+		text-align: center;
 	}
 
 	/* 棋手详情：收紧表格，保证五列放得下 */
