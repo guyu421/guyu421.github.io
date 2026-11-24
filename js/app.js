@@ -598,6 +598,12 @@
     var table = document.querySelector("table.tour-games");
     if (!table || !table.tBodies[0]) return;
     var tbody = table.tBodies[0];
+    if (tbody.rows[0] && tbody.rows[0].cells.length >= 9) {
+      tbody.rows[0].cells[3].textContent = "左方";
+      tbody.rows[0].cells[5].textContent = "右方";
+      tbody.rows[0].cells[6].textContent = "左方胜率";
+      tbody.rows[0].cells[8].textContent = "右方胜率";
+    }
     while (tbody.rows.length > 1) tbody.deleteRow(tbody.rows.length - 1);
 
     (data.team_matches || []).forEach(function (tm) {
@@ -626,23 +632,70 @@
 
       if (tm.score_probs && tm.score_probs.length) {
         var spTr = el("tr");
-        var spTd = el("td", "prob");
+        var spTd = el("td", "");
         spTd.colSpan = 9;
-        spTd.textContent = "局分概率：" + tm.score_probs.map(function (sp) {
-          return sp.score + " " + Number(sp.prob).toFixed(1) + "%";
-        }).join(" | ");
+        spTd.style.padding = "4px 8px";
+        var spTable = document.createElement("table");
+        spTable.style.width = "100%";
+        spTable.style.borderCollapse = "collapse";
+        spTable.style.margin = "0";
+        spTable.style.fontSize = "12px";
+        spTable.style.textAlign = "center";
+        var headRow = document.createElement("tr");
+        var valRow = document.createElement("tr");
+        var hLabel = el("th", "", "局分");
+        hLabel.style.padding = "2px 6px";
+        hLabel.style.background = "#f5f5f5";
+        hLabel.style.border = "1px solid #ddd";
+        headRow.appendChild(hLabel);
+        var vLabel = el("td", "", "概率");
+        vLabel.style.padding = "2px 6px";
+        vLabel.style.fontWeight = "600";
+        vLabel.style.border = "1px solid #ddd";
+        valRow.appendChild(vLabel);
+        tm.score_probs.forEach(function (sp) {
+          var th = el("th", "", sp.score);
+          th.style.padding = "2px 6px";
+          th.style.background = "#f5f5f5";
+          th.style.border = "1px solid #ddd";
+          headRow.appendChild(th);
+          var td = el("td", "", Number(sp.prob).toFixed(1) + "%");
+          td.style.padding = "2px 6px";
+          td.style.border = "1px solid #ddd";
+          valRow.appendChild(td);
+        });
+        spTable.appendChild(headRow);
+        spTable.appendChild(valRow);
+        spTd.appendChild(spTable);
         spTr.appendChild(spTd);
         tbody.appendChild(spTr);
       }
 
+      var FLIP_SCORE = { "1-0": "0-1", "0-1": "1-0", "+-": "-+", "-+": "+-" };
       (tm.boards || []).forEach(function (b) {
         var bTr = el("tr");
         bTr.appendChild(el("td", "date", ""));
         bTr.appendChild(el("td", "rnd", "第" + b.board_no + "台"));
         bTr.appendChild(el("td", "rule", ""));
-        bTr.appendChild(playerCell(b.first || "—", b.first_id));
+
+        var aIsFirst = b.team_a_side !== "second";
+        var leftName = aIsFirst ? (b.first || "—") : (b.second || "—");
+        var leftId = aIsFirst ? b.first_id : b.second_id;
+        var rightName = aIsFirst ? (b.second || "—") : (b.first || "—");
+        var rightId = aIsFirst ? b.second_id : b.first_id;
+
+        var leftTd = playerCell(leftName, leftId);
+        if (aIsFirst && b.first) {
+          var starL = el("span", "", " *");
+          starL.style.color = "#c0392b";
+          starL.style.fontWeight = "700";
+          leftTd.appendChild(starL);
+        }
+        bTr.appendChild(leftTd);
+
         var scoreTd = el("td", "score");
-        var scoreText = RESULT_SCORE[String(b.result)] || String(b.result || "--");
+        var rawScore = RESULT_SCORE[String(b.result)] || String(b.result || "--");
+        var scoreText = aIsFirst ? rawScore : (FLIP_SCORE[rawScore] || rawScore);
         if (b.game_id !== null && b.game_id !== undefined) {
           var scoreLink = el("a", "score-link", scoreText);
           scoreLink.href = "game.html?id=" + encodeURIComponent(b.game_id);
@@ -651,10 +704,21 @@
           scoreTd.textContent = scoreText;
         }
         bTr.appendChild(scoreTd);
-        bTr.appendChild(playerCell(b.second || "—", b.second_id));
-        bTr.appendChild(el("td", "prob", b.p_first != null ? Number(b.p_first).toFixed(1) + "%" : ""));
+
+        var rightTd = playerCell(rightName, rightId);
+        if (!aIsFirst && b.first) {
+          var starR = el("span", "", " *");
+          starR.style.color = "#c0392b";
+          starR.style.fontWeight = "700";
+          rightTd.appendChild(starR);
+        }
+        bTr.appendChild(rightTd);
+
+        var pLeft = aIsFirst ? b.p_first : b.p_second;
+        var pRight = aIsFirst ? b.p_second : b.p_first;
+        bTr.appendChild(el("td", "prob", pLeft != null ? Number(pLeft).toFixed(1) + "%" : ""));
         bTr.appendChild(el("td", "prob", b.p_draw != null ? Number(b.p_draw).toFixed(1) + "%" : ""));
-        bTr.appendChild(el("td", "prob", b.p_second != null ? Number(b.p_second).toFixed(1) + "%" : ""));
+        bTr.appendChild(el("td", "prob", pRight != null ? Number(pRight).toFixed(1) + "%" : ""));
         tbody.appendChild(bTr);
       });
     });
