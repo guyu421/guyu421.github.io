@@ -168,7 +168,25 @@
       ? '<a href="player.html?id=' + encodeURIComponent(data.second_id) + '">' + escapeHtml(data.second || "") + "</a>"
       : escapeHtml(data.second || "");
     var scoreStr = RESULT_SCORE[String(data.result)] || String(data.result || "");
-    addRow("对阵与结果", firstHtml + " &nbsp;<strong>" + escapeHtml(scoreStr) + "</strong>&nbsp; " + secondHtml);
+    var firstColor = "";
+    var secondColor = "";
+    if (data.second !== "轮空") {
+      if (data.swap === "交换") {
+        firstColor = "白 ";
+        secondColor = "黑 ";
+      } else if (
+        data.swap === "-" ||
+        data.tournament_id === 15 ||
+        (data.tournament_id >= 16 && data.tournament_id <= 23)
+      ) {
+        firstColor = "黑 ";
+        secondColor = "白 ";
+      }
+    }
+    addRow(
+      "对阵与结果",
+      firstColor + firstHtml + " &nbsp;<strong>" + escapeHtml(scoreStr) + "</strong>&nbsp; " + secondColor + secondHtml
+    );
 
     if (data.p_first != null && data.p_draw != null && data.p_second != null) {
       addRow(
