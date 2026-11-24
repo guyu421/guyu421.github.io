@@ -140,30 +140,47 @@
     });
   }
 
+  function number(value) {
+    var n = parseFloat(value);
+    return isNaN(n) ? 0 : n;
+  }
+
+  // 对局、赛事从新到旧
+  function sortRows(feed, rows) {
+    var list = rows.slice();
+    if (feed === "games") {
+      list.sort(function (a, b) {
+        var da = String((a && a.date) || "");
+        var db = String((b && b.date) || "");
+        if (da !== db) return da < db ? 1 : -1;
+        var ra = number(a && a.round);
+        var rb = number(b && b.round);
+        if (ra !== rb) return rb - ra;
+        return number(a && a.board) - number(b && b.board);
+      });
+    } else if (feed === "tournaments") {
+      list.sort(function (a, b) {
+        var pa = formatPeriod(a || {});
+        var pb = formatPeriod(b || {});
+        if (pa !== pb) return pa < pb ? 1 : -1;
+        return 0;
+      });
+    }
+    return list;
+  }
+
   function init() {
     var feed = getFeed();
     if (!feed) return Promise.resolve();
     return load(feed).then(function (rows) {
       var prepared = feed === "tournaments" ? withPeriods(rows) : Promise.resolve(rows);
-      return prepared.then(function (list) { render(feed, list); });
-    });
-  }
-
-  // 接口已配置时定时刷新：数据库改完不用手动刷新页面
-  var REFRESH_MS = 60000;
-
-  function start() {
-    init();
-    if (!endpointFor(getFeed())) return;
-    setInterval(init, REFRESH_MS);
-    document.addEventListener("visibilitychange", function () {
-      if (!document.hidden) init();
+      return prepared.then(function (list) { render(feed, sortRows(feed, list)); });
     });
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", start);
+    document.addEventListener("DOMContentLoaded", init);
   } else {
-    start();
+    init();
   }
 })();
