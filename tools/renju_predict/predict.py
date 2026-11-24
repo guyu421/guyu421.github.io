@@ -27,7 +27,7 @@ def load_cutoff_bundle(model_dir: Path) -> Tuple[lgb.Booster, Dict]:
 
 
 def load_db(db_dir: Path) -> Tuple[pd.DataFrame, Dict[int, str], Dict[str, int]]:
-    games = pd.read_parquet(db_dir / "renju_prematch.parquet")
+    games = pd.read_parquet(db_dir / "match.parquet")
     players = pd.read_parquet(db_dir / "player.parquet")
     id_to_name = {int(r.player_id): str(r.name) for r in players.itertuples(index=False)}
     name_to_id = {str(r.name).strip(): int(r.player_id) for r in players.itertuples(index=False)}

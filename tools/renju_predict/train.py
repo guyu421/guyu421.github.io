@@ -38,7 +38,7 @@ RESULT_SCORE = {"1": 1.0, "0.5": 0.5, "0": 0.0}
 
 
 def load_data(db_dir: Path) -> Tuple[pd.DataFrame, Dict[int, str]]:
-    games = pd.read_parquet(db_dir / "renju_prematch.parquet")
+    games = pd.read_parquet(db_dir / "match.parquet")
     players = pd.read_parquet(db_dir / "player.parquet")
     player_names = {int(r.player_id): str(r.name) for r in players.itertuples(index=False)}
 

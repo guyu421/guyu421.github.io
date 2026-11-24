@@ -234,7 +234,7 @@ def compute_match_predictions(games_out, pid_of):
 def read_parquet(folder):
     import pandas as pd
 
-    g = pd.read_parquet(os.path.join(folder, "renju_prematch.parquet"))
+    g = pd.read_parquet(os.path.join(folder, "match.parquet"))
     p = pd.read_parquet(os.path.join(folder, "player.parquet"))
     t = pd.read_parquet(os.path.join(folder, "tournament.parquet"))
     tp = pd.read_parquet(os.path.join(folder, "tournament_player.parquet"))
