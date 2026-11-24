@@ -367,7 +367,7 @@
           short_date(game.date) + " 第" + game.round + "轮 第" + game.board + "台"
           + (game.rule ? " " + game.rule : "")));
         line.appendChild(document.createTextNode(
-          "　" + game.color + " " + game.result + " " + game.opponent));
+          "　" + game.color + " " + (game.result || game.score || "") + " " + game.opponent));
         tip.appendChild(line);
       });
 
@@ -600,7 +600,9 @@
       tr.appendChild(el("td", "rnd", "第" + game.round + "轮 第" + game.board + "台"));
       tr.appendChild(el("td", "rule", game.rule || ""));
       tr.appendChild(playerCell(game.first, game.first_id));
-      tr.appendChild(el("td", "score", RESULT_SCORE[String(game.result)] || String(game.result)));
+      // 轮空没有对手，比分格留空（假后列已经写着「轮空」）
+      var bye = game.first === "轮空" || game.second === "轮空";
+      tr.appendChild(el("td", "score", bye ? "" : (RESULT_SCORE[String(game.result)] || String(game.result))));
       tr.appendChild(playerCell(game.second, game.second_id));
       tbody.appendChild(tr);
     });

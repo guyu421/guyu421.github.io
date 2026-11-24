@@ -296,8 +296,8 @@ def classify_result(is_first, result, opponent):
     if own in PLAYER_RESULT:
         return ("played",) + PLAYER_RESULT[own]
     if opponent == BYE_NAME:
-        # 轮空也按库里实际填的结果显示（一般是 "+:-"）
-        return ("bye", score_text(result), "skip")
+        # 轮空不算胜，结果列留空（对手列已经写着「轮空」）
+        return ("bye", "", "skip")
     if result == "--":
         return ("double", "双弃", "skip")
     if (is_first and result == "-+") or ((not is_first) and result == "+-"):
@@ -378,9 +378,10 @@ def build_details(games_out, players_out, series):
             curve.append([group["end_date"], _display(value), _display(rd),
                           group["tournament_id"]])
 
-        # 得分率：和棋算半分，只看真正下过的对局（轮空与弃权不掺进来）
-        played = wins + draws + losses
-        score_rate = round((wins + 0.5 * draws) / played * 100, 1) if played else None
+        # 得分率：和棋半分；轮空、对手弃权按 1 分算；本人弃权、双弃算 0 分
+        scored = wins + 0.5 * draws + byes + opp_skips
+        total = wins + draws + losses + byes + opp_skips + self_skips + double_skips
+        score_rate = round(scored / total * 100, 1) if total else None
 
         details[pid] = {
             "player_id": pid,
