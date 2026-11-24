@@ -700,12 +700,16 @@ def build_details(games_out, players_out, series):
             group["games"].sort(key=lambda r: (r["round"], r["board"]))
             group["rating"] = _display(rating_at(series, name, group["end_date"])[0])
 
-        # 曲线一个赛事一个节点：取他在该赛事打的最后一轮之后的等级分
+        # 曲线按比赛内每个比赛日记录节点，不再把同个比赛压缩成一天
         curve = []
         for group in sorted(groups, key=lambda r: r["end_date"]):
-            value, rd = rating_at(series, name, group["end_date"])
-            curve.append([group["end_date"], _display(value), _display(rd),
-                          group["tournament_id"]])
+            dates = sorted({g["date"] for g in group["games"] if g.get("date")})
+            if not dates:
+                dates = [group["end_date"]]
+            for d in dates:
+                value, rd = rating_at(series, name, d)
+                curve.append([d, _display(value), _display(rd), group["tournament_id"]])
+        curve.sort(key=lambda pt: (pt[0], pt[3]))
 
         # 得分率：和棋半分；轮空、对手弃权按 1 分算；本人弃权、双弃算 0 分
         scored = wins + 0.5 * draws + byes + opp_skips
