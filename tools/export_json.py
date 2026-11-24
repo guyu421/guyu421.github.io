@@ -364,11 +364,18 @@ def build(games, players, tours, members):
             "_rating": rating,
         })
 
-    # 名次：按未取整的等级分排序，逐名递增，不因取整而并列
-    players_out.sort(key=lambda r: (-r["_rating"], -r["games"], r["name"]))
-    for index, row in enumerate(players_out, 1):
-        row["rank"] = index
+    # 名次：只比等级分（按显示的两位小数），完全相同即并列，并列之后名次顺延
+    players_out.sort(key=lambda r: -r["rating"])
+    rank = 0
+    previous = None
+    seen = 0
+    for row in players_out:
         del row["_rating"]
+        seen += 1
+        if row["rating"] != previous:
+            rank = seen
+            previous = row["rating"]
+        row["rank"] = rank
 
     return games_out, tours_out, players_out, series, tour_details
 
