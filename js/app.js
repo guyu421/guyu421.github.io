@@ -386,13 +386,27 @@
       if (!rows.length) {
         tip.appendChild(el("p", "tip-game", "当日没有计入等级分的对局"));
       }
+      // 先写清楚是哪项赛事，再列该赛事当天的对局
+      var tourOrder = [];
+      var byTour = {};
       rows.forEach(function (game) {
-        var line = el("p", "tip-game");
-        line.appendChild(el("span", "tip-meta",
-          "第" + game.round + "轮 第" + game.board + "台"));
-        line.appendChild(document.createTextNode(
-          "　" + game.color + " " + game.result + " " + game.opponent));
-        tip.appendChild(line);
+        var key = game.tournament || "";
+        if (!byTour[key]) {
+          byTour[key] = [];
+          tourOrder.push(key);
+        }
+        byTour[key].push(game);
+      });
+      tourOrder.forEach(function (key) {
+        if (key) tip.appendChild(el("p", "tip-tour", key));
+        byTour[key].forEach(function (game) {
+          var line = el("p", "tip-game");
+          line.appendChild(el("span", "tip-meta",
+            "第" + game.round + "轮 第" + game.board + "台"));
+          line.appendChild(document.createTextNode(
+            "　" + game.color + " " + game.result + " " + game.opponent));
+          tip.appendChild(line);
+        });
       });
       tip.style.display = "block";
 
@@ -530,12 +544,18 @@
         if (heading) heading.textContent = data.name;
         renderPlayerMeta(data);
 
-        // 按比赛日归拢对局，供曲线的悬浮详情使用
+        // 按比赛日归拢对局，供曲线的悬浮详情使用（带上赛事名，悬浮框里要写清楚）
         var byDate = {};
         (data.results || []).forEach(function (group) {
           (group.games || []).forEach(function (game) {
             if (!game.date) return;
-            (byDate[game.date] || (byDate[game.date] = [])).push(game);
+            var row = {};
+            for (var key in game) {
+              if (Object.prototype.hasOwnProperty.call(game, key)) row[key] = game[key];
+            }
+            row.tournament = group.tournament;
+            row.tournament_id = group.tournament_id;
+            (byDate[game.date] || (byDate[game.date] = [])).push(row);
           });
         });
         Object.keys(byDate).forEach(function (date) {
