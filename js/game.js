@@ -154,8 +154,12 @@
     var tourHtml = data.tournament_id
       ? '<a href="tournament.html?id=' + encodeURIComponent(data.tournament_id) + '">' + escapeHtml(data.tournament || "") + "</a>"
       : escapeHtml(data.tournament || "");
-    addRow("赛事", tourHtml + " · 第" + data.round + "轮 第" + data.board + "台");
-    addRow("日期 / 规则", escapeHtml(data.date || "") + " / " + escapeHtml(data.rule || ""));
+    var roundHtml = data.tournament_id
+      ? '<a href="tournament.html?id=' + encodeURIComponent(data.tournament_id) + "&round=" + encodeURIComponent(data.round) + '">第' + data.round + "轮</a>"
+      : "第" + data.round + "轮";
+    addRow("赛事", tourHtml + " · " + roundHtml + " 第" + data.board + "台");
+    addRow("日期", escapeHtml(data.date || ""));
+    addRow("规则", escapeHtml(data.rule || ""));
 
     var firstHtml = data.first_id
       ? '<a href="player.html?id=' + encodeURIComponent(data.first_id) + '">' + escapeHtml(data.first || "") + "</a>"
@@ -164,7 +168,7 @@
       ? '<a href="player.html?id=' + encodeURIComponent(data.second_id) + '">' + escapeHtml(data.second || "") + "</a>"
       : escapeHtml(data.second || "");
     var scoreStr = RESULT_SCORE[String(data.result)] || String(data.result || "");
-    addRow("对阵与结果", "假先 " + firstHtml + " &nbsp;<strong>" + escapeHtml(scoreStr) + "</strong>&nbsp; 假后 " + secondHtml);
+    addRow("对阵与结果", firstHtml + " &nbsp;<strong>" + escapeHtml(scoreStr) + "</strong>&nbsp; " + secondHtml);
 
     if (data.p_first != null && data.p_draw != null && data.p_second != null) {
       addRow(
@@ -175,10 +179,8 @@
       );
     }
 
-    var swapEl = document.getElementById("swapVal");
-    var fiveAEl = document.getElementById("fiveAVal");
-    if (swapEl) swapEl.textContent = data.swap ? String(data.swap) : "未记录";
-    if (fiveAEl) fiveAEl.textContent = data["5a"] ? String(data["5a"]) : "未记录";
+    addRow("交换序列", escapeHtml(data.swap ? String(data.swap) : "未记录"));
+    addRow("五手打点", escapeHtml(data["5a"] ? String(data["5a"]) : "未记录"));
   }
 
   function escapeHtml(s) {
@@ -210,16 +212,11 @@
         var step = total;
 
         var canvas = document.getElementById("renjuBoard");
-        var emptyEl = document.getElementById("boardEmpty");
         var stepInfo = document.getElementById("stepInfo");
         var btnFirst = document.getElementById("btnFirst");
         var btnPrev = document.getElementById("btnPrev");
         var btnNext = document.getElementById("btnNext");
         var btnLast = document.getElementById("btnLast");
-
-        if (total === 0 && emptyEl) {
-          emptyEl.style.display = "block";
-        }
 
         function update() {
           drawBoard(canvas, moves, step);
