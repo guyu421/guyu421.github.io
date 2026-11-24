@@ -338,6 +338,7 @@ def build_details(games_out, players_out, series):
                 "date": g["date"],
                 "round": g["round"],
                 "board": g["board"],
+                "rule": g["rule"],
                 "color": "假先" if is_first else "假后",
                 "result": label,
                 "class": klass,

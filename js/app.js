@@ -495,7 +495,10 @@
         var day = el("td", "date", short_date(game.date));
         day.title = game.date;
         tr.appendChild(day);
-        tr.appendChild(el("td", "rnd", "第" + game.round + "轮 第" + game.board + "台"));
+        // 轮次列后面带上这局用的规则
+        var rnd = el("td", "rnd", "第" + game.round + "轮 第" + game.board + "台");
+        if (game.rule) rnd.appendChild(el("span", "sub", game.rule));
+        tr.appendChild(rnd);
         tr.appendChild(el("td", "cnum", game.color));
         tr.appendChild(el("td", game["class"], game.result));
         var opp = el("td");
