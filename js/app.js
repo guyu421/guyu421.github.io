@@ -604,6 +604,9 @@
       var bye = game.first === "轮空" || game.second === "轮空";
       tr.appendChild(el("td", "score", bye ? "" : (RESULT_SCORE[String(game.result)] || String(game.result))));
       tr.appendChild(playerCell(game.second, game.second_id));
+      tr.appendChild(el("td", "prob", game.p_first != null ? Number(game.p_first).toFixed(1) + "%" : ""));
+      tr.appendChild(el("td", "prob", game.p_draw != null ? Number(game.p_draw).toFixed(1) + "%" : ""));
+      tr.appendChild(el("td", "prob", game.p_second != null ? Number(game.p_second).toFixed(1) + "%" : ""));
       tbody.appendChild(tr);
     });
   }

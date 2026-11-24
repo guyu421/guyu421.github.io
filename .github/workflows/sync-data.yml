@@ -5,6 +5,7 @@ on:
     paths:
       - "db/**.parquet"
       - "tools/export_json.py"
+      - "tools/renju_predict/**"
       - ".github/workflows/sync-data.yml"
   workflow_dispatch:
 
@@ -26,7 +27,7 @@ jobs:
           python-version: "3.11"
 
       - name: 安装依赖
-        run: pip install pandas pyarrow whr
+        run: pip install pandas pyarrow whr lightgbm
 
       - name: 从 db/*.parquet 导出 data/*.json
         run: python tools/export_json.py

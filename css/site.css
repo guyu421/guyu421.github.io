@@ -398,6 +398,11 @@ body,
 	color: #8a8a8a;
 }
 
+#content table.tour-games td.prob {
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
 /* 所有表格的单元格统一居中（表头与内容都居中对齐） */
 
 #content #primaryContent table th,

@@ -17,6 +17,12 @@ import whr
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.dirname(HERE)
+WORKSPACE = os.path.dirname(SITE)
+PREDICT_DIR = (
+    os.path.join(HERE, "renju_predict")
+    if os.path.isdir(os.path.join(HERE, "renju_predict"))
+    else os.path.join(WORKSPACE, "renju_predict")
+)
 DATA = os.path.join(SITE, "data")
 DB = os.path.join(SITE, "db")
 
@@ -133,6 +139,69 @@ def rating_at(series, name, date):
     return hit or (WHR_BIAS, WHR_PRIOR_RD)
 
 
+def compute_match_predictions(games_out, pid_of):
+    """用现有 LightGBM 模型与赛前 Glicko-2 等级分为每盘对局计算胜平负概率。
+
+    仅使用该对局日期之前、或同赛事轮次更小的有效对局（不含轮空和弃权）更新 Glicko-2。
+    """
+    model_dir = os.path.join(PREDICT_DIR, "models", "20261123")
+    if not os.path.isdir(model_dir):
+        return {}
+
+    if PREDICT_DIR not in sys.path:
+        sys.path.insert(0, PREDICT_DIR)
+    from pathlib import Path
+    from glicko2 import Glicko2Tracker
+    from predict import load_cutoff_bundle, predict_from_ratings
+
+    booster, metadata = load_cutoff_bundle(Path(model_dir))
+    rule_map = metadata["rule_map"]
+    score_map = {"1": 1.0, "0.5": 0.5, "0": 0.0}
+
+    ordered = sorted(
+        games_out,
+        key=lambda g: (g["date"], g["tournament_id"], g["round"], g["board"], g["game_id"]),
+    )
+    tracker = Glicko2Tracker()
+    preds = {}
+
+    i = 0
+    n = len(ordered)
+    while i < n:
+        key = (ordered[i]["date"], ordered[i]["tournament_id"], ordered[i]["round"])
+        j = i
+        while j < n and (ordered[j]["date"], ordered[j]["tournament_id"], ordered[j]["round"]) == key:
+            j += 1
+
+        # 先用本轮之前的 Glicko-2 预测本轮所有非轮空对局
+        period_updates = []
+        for g in ordered[i:j]:
+            fid = pid_of.get(g["first"])
+            sid = pid_of.get(g["second"])
+            is_bye = g["first"] == BYE_NAME or g["second"] == BYE_NAME or fid is None or sid is None
+            if is_bye or g["rule"] not in rule_map:
+                preds[g["game_id"]] = (None, None, None)
+            else:
+                r1 = tracker.get(fid).rating
+                r2 = tracker.get(sid).rating
+                p = predict_from_ratings(booster, metadata, g["rule"], r1, r2)
+                preds[g["game_id"]] = (
+                    round(p["假先胜率"] * 100, 1),
+                    round(p["和棋率"] * 100, 1),
+                    round(p["假后胜率"] * 100, 1),
+                )
+
+            # 轮空或弃权不计入 Glicko-2 等级分
+            if not is_bye and str(g["result"]) in score_map:
+                period_updates.append((fid, sid, score_map[str(g["result"])]))
+
+        if period_updates:
+            tracker.apply_period(period_updates)
+        i = j
+
+    return preds
+
+
 def read_parquet(folder):
     import pandas as pd
 
@@ -215,6 +284,7 @@ def build(games, players, tours, members):
 
     # 每个赛事单独一份：赛事页点进去只读自己那一段，不用拉全量对局
     pid_of = {p["name"]: p["player_id"] for p in players}
+    match_preds = compute_match_predictions(games_out, pid_of)
     tour_details = {}
     for row in tours_out:
         tid = row["tournament_id"]
@@ -236,6 +306,9 @@ def build(games, players, tours, members):
                 "second": g["second"],
                 "second_id": pid_of.get(g["second"]),
                 "result": g["result"],
+                "p_first": match_preds.get(g["game_id"], (None, None, None))[0],
+                "p_draw": match_preds.get(g["game_id"], (None, None, None))[1],
+                "p_second": match_preds.get(g["game_id"], (None, None, None))[2],
             } for g in sorted(rows, key=lambda r: (r["date"], r["round"], r["board"]))],
         }
 
@@ -418,6 +491,8 @@ def dump(obj, name, compact=True):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--parquet", default=DB, help="parquet 目录，默认仓库内 db/")
+    ap.add_argument("--predictions-only", action="store_true",
+                    help="仅更新 data/tournament/*.json 中的对局胜平负预测")
     args = ap.parse_args()
 
     if not os.path.isdir(args.parquet):
@@ -425,6 +500,56 @@ def main():
         return 1
 
     games, players, tours, members = read_parquet(args.parquet)
+    if args.predictions_only:
+        name = {p["player_id"]: p["name"] for p in players}
+        pid_of = {p["name"]: p["player_id"] for p in players}
+        games_out = []
+        for g in games:
+            second = "" if g["second_id"] is None else name.get(g["second_id"], "")
+            result = normalize_result(g["result"])
+            if second in ("+", ""):
+                second = BYE_NAME
+            if second == BYE_NAME:
+                result = "+-"
+            games_out.append({
+                "game_id": g["game_id"],
+                "date": g["date"],
+                "rule": g["rule"],
+                "first": name.get(g["first_id"], ""),
+                "second": second,
+                "result": result,
+                "tournament_id": g["tournament_id"],
+                "round": g["round"],
+                "board": g["board"],
+            })
+        match_preds = compute_match_predictions(games_out, pid_of)
+        by_key = {
+            (g["tournament_id"], g["date"], g["round"], g["board"], g["first"], g["second"]):
+            match_preds.get(g["game_id"], (None, None, None))
+            for g in games_out
+        }
+        tour_dir = os.path.join(DATA, "tournament")
+        updated = 0
+        for fname in sorted(os.listdir(tour_dir)):
+            if not fname.endswith(".json"):
+                continue
+            fpath = os.path.join(tour_dir, fname)
+            with open(fpath, "r", encoding="utf-8") as fh:
+                detail = json.load(fh)
+            tid = detail["tournament_id"]
+            for g in detail.get("games", []):
+                pf, pd_val, ps = by_key.get(
+                    (tid, g["date"], g["round"], g["board"], g["first"], g["second"]),
+                    (None, None, None),
+                )
+                g["p_first"] = pf
+                g["p_draw"] = pd_val
+                g["p_second"] = ps
+            dump(detail, os.path.join("tournament", fname))
+            updated += 1
+        print("updated tournament pages with predictions:", updated)
+        return 0
+
     games_out, tours_out, players_out, series, tour_details = build(games, players, tours, members)
     os.makedirs(DATA, exist_ok=True)
     dump(tours_out, "tournaments.json")
