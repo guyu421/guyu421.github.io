@@ -325,15 +325,9 @@ body,
 	color: #1c4a63;
 }
 
-/* 表头「轮次」两个字居中，下面的「第X轮 第Y台」仍居右 */
-#content table.player-games th:nth-child(2) {
-	white-space: nowrap;
-	text-align: center;
-}
-
+#content table.player-games th:nth-child(2),
 #content table.player-games td.rnd {
 	white-space: nowrap;
-	text-align: right;
 }
 
 #content table.player-games td.date {
@@ -379,14 +373,9 @@ body,
 	margin-bottom: 0.9em;
 }
 
-#content table.tour-games th:nth-child(2) {
-	white-space: nowrap;
-	text-align: center;
-}
-
+#content table.tour-games th:nth-child(2),
 #content table.tour-games td.rnd {
 	white-space: nowrap;
-	text-align: right;
 }
 
 #content table.tour-games th:nth-child(3),
@@ -407,4 +396,11 @@ body,
 
 #content table.tour-games td.skip {
 	color: #8a8a8a;
+}
+
+/* 所有表格的单元格统一居中（表头与内容都居中对齐） */
+
+#content #primaryContent table th,
+#content #primaryContent table td {
+	text-align: center;
 }
