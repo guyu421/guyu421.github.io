@@ -986,24 +986,25 @@
 
     function buildPagerBar() {
       var bar = document.createElement("div");
-      bar.style.cssText = "display:flex;align-items:center;gap:8px;margin:8px 0;flex-wrap:wrap;font-size:13px;";
-      var prevBtn = el("button", "", "上一页");
+      bar.className = "round-pick";
+      var prevBtn = el("button", "round-nav", "<");
+      prevBtn.type = "button";
       var select = document.createElement("select");
       for (var p = 1; p <= totalPages; p++) {
         var sIdx = (p - 1) * pageSize + 1;
         var eIdx = Math.min(p * pageSize, sorted.length);
         var opt = document.createElement("option");
         opt.value = String(p);
-        opt.textContent = "第 " + p + " / " + totalPages + " 页 (" + sIdx + "-" + eIdx + ")";
+        opt.textContent = "第 " + p + " 页 (" + sIdx + "-" + eIdx + ")";
         select.appendChild(opt);
       }
-      var nextBtn = el("button", "", "下一页");
-      var info = el("span", "", "共 " + sorted.length + " 人");
-      info.style.color = "#666";
+      var totalSpan = el("span", "round-total", "/ 共 " + totalPages + " 页（" + sorted.length + " 人）");
+      var nextBtn = el("button", "round-nav", ">");
+      nextBtn.type = "button";
       bar.appendChild(prevBtn);
       bar.appendChild(select);
+      bar.appendChild(totalSpan);
       bar.appendChild(nextBtn);
-      bar.appendChild(info);
       return { bar: bar, prevBtn: prevBtn, select: select, nextBtn: nextBtn };
     }
 
