@@ -8,6 +8,7 @@
 
 import argparse
 import json
+import math
 import os
 import sys
 
@@ -17,6 +18,109 @@ DATA = os.path.join(SITE, "data")
 DB = os.path.join(SITE, "db")
 
 BYE_NAME = "轮空"
+
+# Glicko-2 参数：初始分 1500、初始 RD 350、初始波动率 0.06、系统常数 tau 0.5
+G2_SCALE = 173.7178
+G2_RATING = 1500.0
+G2_RD = 350.0
+G2_SIGMA = 0.06
+G2_TAU = 0.5
+
+POINTS = {"1": 1.0, "0": 0.0, "0.5": 0.5, "+-": 1.0, "-+": 0.0}
+
+
+def _g(phi):
+    return 1.0 / math.sqrt(1.0 + 3.0 * phi * phi / (math.pi ** 2))
+
+
+def _expect(mu, mu_j, phi_j):
+    return 1.0 / (1.0 + math.exp(-_g(phi_j) * (mu - mu_j)))
+
+
+def _volatility(phi, sigma, v, delta, tau=G2_TAU, eps=1e-6):
+    a = math.log(sigma * sigma)
+
+    def f(x):
+        ex = math.exp(x)
+        d2 = phi * phi + v + ex
+        return (ex * (delta * delta - phi * phi - v - ex)) / (2.0 * d2 * d2) - (x - a) / (tau * tau)
+
+    A = a
+    if delta * delta > phi * phi + v:
+        B = math.log(delta * delta - phi * phi - v)
+    else:
+        k = 1
+        while f(a - k * tau) < 0:
+            k += 1
+        B = a - k * tau
+    fa, fb = f(A), f(B)
+    while abs(B - A) > eps:
+        C = A + (A - B) * fa / (fb - fa)
+        fc = f(C)
+        if fc * fb <= 0:
+            A, fa = B, fb
+        else:
+            fa = fa / 2.0
+        B, fb = C, fc
+    return math.exp(A / 2.0)
+
+
+def compute_ratings(games_out):
+    """按比赛日分评级周期，逐日计算 Glicko-2，返回 {姓名: (分, RD)}。"""
+    periods = {}
+    for g in games_out:
+        if g["second"] == BYE_NAME:
+            continue
+        s = POINTS.get(str(g["result"]))
+        if s is None:
+            continue
+        periods.setdefault(str(g["date"]), []).append((g["first"], g["second"], s))
+
+    mu, phi, sigma = {}, {}, {}
+
+    for date in sorted(periods):
+        # 周期之间 RD 随波动率增长
+        for name in mu:
+            phi[name] = math.sqrt(phi[name] ** 2 + sigma[name] ** 2)
+
+        pairs = periods[date]
+        for a, b, _ in pairs:
+            for name in (a, b):
+                if name not in mu:
+                    mu[name] = 0.0
+                    phi[name] = G2_RD / G2_SCALE
+                    sigma[name] = G2_SIGMA
+
+        # 同一周期内合并该棋手所有对局，一次性更新
+        met = {}
+        for a, b, s in pairs:
+            met.setdefault(a, []).append((b, s))
+            met.setdefault(b, []).append((a, 1.0 - s))
+
+        updated = {}
+        for name, rows in met.items():
+            v_sum = 0.0
+            d_sum = 0.0
+            for opp, s in rows:
+                gv = _g(phi[opp])
+                e = _expect(mu[name], mu[opp], phi[opp])
+                v_sum += gv * gv * e * (1.0 - e)
+                d_sum += gv * (s - e)
+            if v_sum <= 0:
+                continue
+            v = 1.0 / v_sum
+            delta = v * d_sum
+            sig = _volatility(phi[name], sigma[name], v, delta)
+            phi_star = math.sqrt(phi[name] ** 2 + sig ** 2)
+            phi_new = 1.0 / math.sqrt(1.0 / (phi_star ** 2) + 1.0 / v)
+            mu_new = mu[name] + phi_new ** 2 * d_sum
+            updated[name] = (mu_new, phi_new, sig)
+
+        for name, (m, p, s) in updated.items():
+            mu[name], phi[name], sigma[name] = m, p, s
+
+    return {n: (G2_RATING + G2_SCALE * mu[n], G2_SCALE * phi[n]) for n in mu}
+
 
 
 def read_parquet(folder):
@@ -102,6 +206,8 @@ def build(games, players, tours, members):
         })
     tours_out.sort(key=lambda r: r["start_date"], reverse=True)
 
+    ratings = compute_ratings(games_out)
+
     players_out = []
     for p in players:
         if str(p["name"]).strip() in (BYE_NAME, "+"):
@@ -110,13 +216,27 @@ def build(games, players, tours, members):
         tours_of_mine = mine_tours.get(p["player_id"], set())
         if not mine and not tours_of_mine:
             continue
+        rating, rd = ratings.get(p["name"], (G2_RATING, G2_RD))
         players_out.append({
             "player_id": p["player_id"],
+            "rank": 0,
             "name": p["name"],
+            "rating": int(round(rating)),
+            "rd": int(round(rd)),
             "tournaments": len(tours_of_mine),
             "games": len(mine),
         })
-    players_out.sort(key=lambda r: (-r["games"], -r["tournaments"], r["name"]))
+
+    # 名次：等级分从高到低，同分并列
+    players_out.sort(key=lambda r: (-r["rating"], -r["games"], r["name"]))
+    prev_rating = None
+    rank = 0
+    for index, row in enumerate(players_out, 1):
+        if row["rating"] != prev_rating:
+            rank = index
+            prev_rating = row["rating"]
+        row["rank"] = rank
+
     return games_out, tours_out, players_out
 
 

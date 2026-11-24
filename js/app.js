@@ -4,13 +4,13 @@
   var COLUMNS = {
     games: ["date", "tournament", "rule", "round", "board", "first", "result", "second"],
     tournaments: ["period", "name", "players", "games"],
-    players: ["name", "tournaments", "games"]
+    players: ["rank", "name", "rating", "tournaments", "games"]
   };
 
   var NUMERIC = {
     games: ["round", "board"],
     tournaments: ["players", "games"],
-    players: ["tournaments", "games"]
+    players: ["rank", "rating", "tournaments", "games"]
   };
 
   var RESULT_SCORE = {
