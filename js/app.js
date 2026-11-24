@@ -108,6 +108,8 @@
           td.textContent = formatPeriod(row);
         } else if (col === "result" && value !== undefined && value !== null) {
           td.textContent = RESULT_SCORE[String(value)] || String(value);
+        } else if (col === "rating" || col === "rd") {
+          td.textContent = value === null || value === undefined || value === "" ? "" : Number(value).toFixed(1);
         } else {
           td.textContent = value === null || value === undefined ? "" : String(value);
         }

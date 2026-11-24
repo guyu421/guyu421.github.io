@@ -48,11 +48,8 @@ def normalize_result(value):
 
 
 def _display(value):
-    """等级分保留一位小数；正好是整数时按整数显示。"""
-    rounded = round(float(value), 1)
-    if abs(rounded - round(rounded)) < 1e-9:
-        return int(round(rounded))
-    return rounded
+    """等级分与偏差统一保留一位小数（正好是整数也写 .0）。"""
+    return round(float(value), 1)
 
 
 def _g(phi):
