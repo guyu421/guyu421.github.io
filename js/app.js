@@ -739,7 +739,6 @@
     var select = document.getElementById("yearSelect");
     var prev = document.getElementById("yearPrev");
     var next = document.getElementById("yearNext");
-    var total = document.getElementById("yearTotal");
     var years = tournamentYears(rows);
 
     if (!select || !years.length) {
@@ -754,7 +753,6 @@
       option.textContent = year + "年";
       select.appendChild(option);
     });
-    if (total) total.textContent = "/ 共 " + years.length + " 年";
 
     function syncNav() {
       var index = years.indexOf(select.value);
