@@ -122,7 +122,7 @@
     return isNaN(n) ? 0 : n;
   }
 
-  // 对局、赛事从新到旧
+  // 对局、赛事从新到旧；同一天内按赛事分块，同一赛事的对局连在一起，再按轮次、台次
   function sortRows(feed, rows) {
     var list = rows.slice();
     if (feed === "games") {
@@ -130,6 +130,9 @@
         var da = String((a && a.date) || "");
         var db = String((b && b.date) || "");
         if (da !== db) return da < db ? 1 : -1;
+        var ta = number(a && a.tournament_id);
+        var tb = number(b && b.tournament_id);
+        if (ta !== tb) return ta - tb;
         var ra = number(a && a.round);
         var rb = number(b && b.round);
         if (ra !== rb) return rb - ra;

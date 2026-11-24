@@ -75,7 +75,10 @@ def build(games, players, tours, members):
             "board": g["board"],
             "game_no": g["game_no"],
         })
-    games_out.sort(key=lambda r: (r["date"], r["round"], -r["board"]), reverse=True)
+    # 同一天先按赛事分块（同一赛事的对局连在一起，不与其他赛事穿插），
+    # 赛事内轮次从新到旧、台次从小到大
+    games_out.sort(key=lambda r: (-int(str(r["date"]).replace("-", "") or 0),
+                                  r["tournament_id"], -r["round"], r["board"]))
 
     by_tour = {}
     for g in games_out:
