@@ -690,7 +690,16 @@
         tbody.appendChild(spTr);
       }
 
-      var FLIP_SCORE = { "1-0": "0-1", "0-1": "1-0", "+-": "-+", "-+": "+-" };
+      var FLIP_SCORE = {
+        "1:0": "0:1",
+        "0:1": "1:0",
+        "+:-": "-:+",
+        "-:+": "+:-",
+        "1-0": "0-1",
+        "0-1": "1-0",
+        "+-": "-+",
+        "-+": "+-"
+      };
       (tm.boards || []).forEach(function (b) {
         var bTr = el("tr");
         bTr.appendChild(el("td", "date", ""));
