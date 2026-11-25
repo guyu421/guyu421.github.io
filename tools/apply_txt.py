@@ -48,8 +48,10 @@ RESULT_ALIASES = {
     "½-½": "0.5",
     "和": "0.5",
     "平": "0.5",
+    "+": "+-",
     "+-": "+-",
     "+:-": "+-",
+    "-": "-+",
     "-+": "-+",
     "-:+": "-+",
     "--": "--",
@@ -79,8 +81,8 @@ def parse_match_line(line: str, default_rule: str) -> Dict[str, object]:
 
     rule = kv.get("rule", default_rule)
 
-    # Bye line: "<board> <player> + 轮空" or "<board> <player> 轮空"
-    m_bye = re.match(r"^(\d+)\s+(.+?)\s+(?:\+\s+)?轮空$", rest)
+    # Bye line: "<board> <player> + 轮空" or "<board> <player> +- 轮空" or "<board> <player> 轮空"
+    m_bye = re.match(r"^(\d+)\s+(.+?)\s+(?:[+-]+\s+)?轮空(?:\s+.*)?$", rest)
     if m_bye:
         return {
             "board": int(m_bye.group(1)),
