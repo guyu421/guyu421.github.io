@@ -220,8 +220,8 @@
       "塔拉山口-10": 798,
       "山口": 577
     },
-    "cv_5fold_logloss": 0.96505,
-    "cv_5fold_accuracy": 0.53964
+    "cv_5fold_logloss": 0.9468,
+    "cv_5fold_accuracy": 0.536
   },
   {
     "cutoff_key": "20251231",
@@ -276,8 +276,8 @@
       "塔拉山口-10": 1019,
       "山口": 577
     },
-    "cv_5fold_logloss": 0.98384,
-    "cv_5fold_accuracy": 0.5188
+    "cv_5fold_logloss": 0.95652,
+    "cv_5fold_accuracy": 0.53446
   },
   {
     "cutoff_key": "20260331",
@@ -332,8 +332,8 @@
       "塔拉山口-10": 1019,
       "山口": 577
     },
-    "cv_5fold_logloss": 0.98384,
-    "cv_5fold_accuracy": 0.5188
+    "cv_5fold_logloss": 0.95652,
+    "cv_5fold_accuracy": 0.53446
   },
   {
     "cutoff_key": "20260630",
@@ -388,8 +388,8 @@
       "塔拉山口-10": 1656,
       "山口": 577
     },
-    "cv_5fold_logloss": 0.95412,
-    "cv_5fold_accuracy": 0.54053
+    "cv_5fold_logloss": 0.93193,
+    "cv_5fold_accuracy": 0.55934
   },
   {
     "cutoff_key": "20260930",
@@ -445,8 +445,8 @@
       "山口": 577,
       "五手两打": 225
     },
-    "cv_5fold_logloss": 0.94975,
-    "cv_5fold_accuracy": 0.54199
+    "cv_5fold_logloss": 0.92405,
+    "cv_5fold_accuracy": 0.56252
   },
   {
     "cutoff_key": "20261124",
@@ -493,16 +493,16 @@
       "假先胜"
     ],
     "class_counts": {
-      "假后胜": 1178,
+      "假后胜": 1181,
       "和棋": 460,
-      "假先胜": 1286
+      "假先胜": 1283
     },
     "rule_counts": {
       "塔拉山口-10": 2122,
       "山口": 577,
       "五手两打": 225
     },
-    "cv_5fold_logloss": 0.92192,
-    "cv_5fold_accuracy": 0.56293
+    "cv_5fold_logloss": 0.9211,
+    "cv_5fold_accuracy": 0.55882
   }
 ]
