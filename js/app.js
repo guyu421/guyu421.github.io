@@ -272,7 +272,7 @@
       svg.appendChild(svgNode("text", {
         x: xOf(p.t), y: height - 6,
         "text-anchor": anchor, "font-size": 11, fill: "#6f7b83"
-      }, String(history[index][0]).slice(0, 7)));
+      }, String(history[index][0]).slice(0, 10)));
     });
 
     // 标准差带：等级分 ± std
@@ -429,6 +429,9 @@
     var first = list[0];
     var last = list[list.length - 1];
     if (first === last) return first;
+    if (first.slice(0, 4) === last.slice(0, 4)) {
+      return first + " 至 " + last.slice(5);
+    }
     return first + " 至 " + last;
   }
 
@@ -467,8 +470,8 @@
 
       (group.games || []).forEach(function (game) {
         var tr = el("tr");
-        var day = el("td", "date", game.date || "");
-        day.title = game.date || "";
+        var day = el("td", "date", short_date(game.date));
+        day.title = game.date;
         tr.appendChild(day);
         var rnd = el("td", "rnd");
         // 「第N轮」点进该赛事第 N 轮
