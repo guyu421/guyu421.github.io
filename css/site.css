@@ -826,7 +826,8 @@ a.score-link:hover {
 .model-tooltip {
 	position: absolute;
 	top: 12px;
-	background: rgba(255, 255, 255, 0.96);
+	z-index: 20;
+	background: #ffffff;
 	border: 1px solid #d0d8e0;
 	border-radius: 6px;
 	padding: 0.45em 0.65em;
