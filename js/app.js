@@ -1010,9 +1010,7 @@
     }
 
     var topPager = buildPagerBar();
-    var botPager = buildPagerBar();
     wrap.parentNode.insertBefore(topPager.bar, wrap);
-    wrap.parentNode.insertBefore(botPager.bar, wrap.nextSibling);
 
     var currentPage = pageFromUrl();
 
@@ -1020,34 +1018,30 @@
       currentPage = Math.max(1, Math.min(totalPages, page));
       var start = (currentPage - 1) * pageSize;
       render("players", sorted.slice(start, start + pageSize));
-      [topPager, botPager].forEach(function (pg) {
-        pg.select.value = String(currentPage);
-        pg.prevBtn.disabled = currentPage <= 1;
-        pg.nextBtn.disabled = currentPage >= totalPages;
-      });
+      topPager.select.value = String(currentPage);
+      topPager.prevBtn.disabled = currentPage <= 1;
+      topPager.nextBtn.disabled = currentPage >= totalPages;
       if (push && window.history && window.history.pushState) {
         var url = "players.html?page=" + currentPage;
         window.history.pushState({ page: currentPage }, "", url);
       }
     }
 
-    [topPager, botPager].forEach(function (pg) {
-      pg.prevBtn.addEventListener("click", function () {
-        if (currentPage > 1) {
-          goTo(currentPage - 1, true);
-          window.scrollTo(0, 0);
-        }
-      });
-      pg.nextBtn.addEventListener("click", function () {
-        if (currentPage < totalPages) {
-          goTo(currentPage + 1, true);
-          window.scrollTo(0, 0);
-        }
-      });
-      pg.select.addEventListener("change", function () {
-        goTo(Number(pg.select.value), true);
+    topPager.prevBtn.addEventListener("click", function () {
+      if (currentPage > 1) {
+        goTo(currentPage - 1, true);
         window.scrollTo(0, 0);
-      });
+      }
+    });
+    topPager.nextBtn.addEventListener("click", function () {
+      if (currentPage < totalPages) {
+        goTo(currentPage + 1, true);
+        window.scrollTo(0, 0);
+      }
+    });
+    topPager.select.addEventListener("change", function () {
+      goTo(Number(topPager.select.value), true);
+      window.scrollTo(0, 0);
     });
 
     window.addEventListener("popstate", function () {
