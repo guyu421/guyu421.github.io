@@ -160,9 +160,9 @@
       " · 和棋 " + (ec.draw != null ? ec.draw.toFixed(2) + "%" : "-") +
       " · 假后胜 " + (ec.second != null ? ec.second.toFixed(2) + "%" : "-");
     var cards = [
-      { label: "对数损失 (Log Loss)", value: m.logloss != null ? m.logloss.toFixed(4) : "-" },
-      { label: "布里尔分数 (Brier Score)", value: m.brier != null ? m.brier.toFixed(4) : "-" },
-      { label: "期望校准误差 (ECE)", value: m.ece != null ? m.ece.toFixed(2) + "%" : "-", sub: eceSub },
+      { label: "对数损失", value: m.logloss != null ? m.logloss.toFixed(4) : "-" },
+      { label: "布里尔分数", value: m.brier != null ? m.brier.toFixed(4) : "-" },
+      { label: "期望校准误差", value: m.ece != null ? m.ece.toFixed(2) + "%" : "-", sub: eceSub },
       { label: "全部预测准确率", value: allAcc != null ? allAcc.toFixed(2) + "%" : "-" },
     ];
     metricsEl.innerHTML = cards.map(function (c) {
