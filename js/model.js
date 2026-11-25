@@ -167,6 +167,13 @@
     if (!metricsEl || !data || !data.metrics) return;
     var m = data.metrics;
     var allAcc = data.summary && data.summary.all ? data.summary.all.accuracy : null;
+    var sum = data.summary || {};
+    var fmtPct = function (obj) { return obj && obj.accuracy != null ? obj.accuracy.toFixed(2) + "%" : "-"; };
+    var accSub =
+      "≥50% " + fmtPct(sum.p50) +
+      " · ≥60% " + fmtPct(sum.p60) +
+      " · ≥70% " + fmtPct(sum.p70) +
+      " · ≥80% " + fmtPct(sum.p80);
     var ec = m.ece_by_class || {};
     var eceSub =
       "假先胜 " + (ec.first != null ? ec.first.toFixed(2) + "%" : "-") +
@@ -176,7 +183,7 @@
       { label: "对数损失", value: m.logloss != null ? m.logloss.toFixed(4) : "-" },
       { label: "布里尔分数", value: m.brier != null ? m.brier.toFixed(4) : "-" },
       { label: "期望校准误差", value: m.ece != null ? m.ece.toFixed(2) + "%" : "-", sub: eceSub },
-      { label: "全部预测准确率", value: allAcc != null ? allAcc.toFixed(2) + "%" : "-" },
+      { label: "全部预测准确率", value: allAcc != null ? allAcc.toFixed(2) + "%" : "-", sub: accSub },
     ];
     metricsEl.innerHTML = cards.map(function (c) {
       return (
