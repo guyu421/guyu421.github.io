@@ -1154,35 +1154,15 @@
       "rating": 1673.6177,
       "std": 208.6955
     },
-    "346": {
-      "name": "楚明骏",
-      "rating": 1633.6801,
-      "std": 175.2004
-    },
-    "382": {
-      "name": "王弈霖",
-      "rating": 2327.5655,
-      "std": 133.8811
-    },
-    "384": {
-      "name": "彭程锦",
-      "rating": 2305.1144,
-      "std": 125.8471
-    },
-    "389": {
-      "name": "李金泽",
-      "rating": 1935.3294,
-      "std": 113.9654
-    },
     "402": {
       "name": "吉川知希",
-      "rating": 2153.6716,
-      "std": 97.3011
+      "rating": 2151.4406,
+      "std": 116.9089
     },
     "407": {
       "name": "LETOVALTSEV MATVEI",
-      "rating": 1949.9076,
-      "std": 113.3018
+      "rating": 1950.8918,
+      "std": 112.538
     },
     "408": {
       "name": "IVANOV IVAN",
@@ -1194,280 +1174,285 @@
       "rating": 1786.4689,
       "std": 126.2209
     },
+    "413": {
+      "name": "OZEROVA MARINA",
+      "rating": 1764.2027,
+      "std": 126.6862
+    },
     "414": {
       "name": "艾高强",
-      "rating": 1595.6317,
-      "std": 159.4311
+      "rating": 1576.4631,
+      "std": 153.7083
     },
     "415": {
       "name": "Alois Mikeš",
-      "rating": 1958.751,
-      "std": 111.0378
+      "rating": 1921.1101,
+      "std": 109.5899
     },
     "416": {
       "name": "Andrei Sokolov",
-      "rating": 1925.0989,
-      "std": 113.9351
+      "rating": 1893.5456,
+      "std": 112.48
     },
     "417": {
       "name": "Egor Fokichev",
-      "rating": 1841.6668,
-      "std": 101.3518
+      "rating": 1825.0577,
+      "std": 119.7364
     },
     "418": {
       "name": "河本翔真",
-      "rating": 2149.934,
-      "std": 96.8819
+      "rating": 2144.169,
+      "std": 115.7559
     },
     "419": {
       "name": "Matěj Holub",
-      "rating": 2233.5409,
-      "std": 124.7112
+      "rating": 2211.4576,
+      "std": 124.4405
     },
     "420": {
       "name": "宁皓然",
-      "rating": 1996.0617,
-      "std": 113.4514
+      "rating": 1956.5186,
+      "std": 112.8286
     },
     "421": {
       "name": "Rauno Lääne",
-      "rating": 1724.6516,
-      "std": 109.5036
+      "rating": 1701.7646,
+      "std": 134.3778
     },
     "422": {
       "name": "沈玮",
-      "rating": 2009.4354,
-      "std": 118.311
+      "rating": 1982.4237,
+      "std": 117.8336
     },
     "423": {
       "name": "Sören Kask",
-      "rating": 1376.1359,
-      "std": 146.7181
+      "rating": 1421.0936,
+      "std": 189.0291
     },
     "424": {
       "name": "董士霆",
-      "rating": 1786.3329,
-      "std": 115.66
+      "rating": 1794.6994,
+      "std": 122.4709
     },
     "425": {
       "name": "Vsevolod Troitsky",
-      "rating": 1768.1098,
-      "std": 160.1879
+      "rating": 1761.7809,
+      "std": 160.5228
     },
     "426": {
       "name": "Vyacheslav Kuvaev",
-      "rating": 2074.2656,
-      "std": 98.0914
+      "rating": 1912.3017,
+      "std": 110.3008
     },
     "427": {
       "name": "解皓阳",
-      "rating": 2052.7663,
-      "std": 91.6759
+      "rating": 2024.2642,
+      "std": 112.5257
     },
     "428": {
       "name": "袁華俊",
-      "rating": 1992.0732,
-      "std": 111.0829
+      "rating": 1970.4572,
+      "std": 111.0685
     },
     "429": {
       "name": "Alp Ali Kirkan",
-      "rating": 2194.9583,
-      "std": 107.3406
+      "rating": 2105.8313,
+      "std": 113.2292
     },
     "430": {
       "name": "Artem Virchenko",
-      "rating": 1470.6904,
-      "std": 138.341
+      "rating": 1444.7486,
+      "std": 193.5438
     },
     "431": {
       "name": "Artem Zolotarev",
-      "rating": 1710.4233,
-      "std": 103.3975
+      "rating": 1753.508,
+      "std": 122.9021
     },
     "432": {
       "name": "Artur Pärnamaa",
-      "rating": 1625.1414,
-      "std": 146.3571
+      "rating": 1626.1987,
+      "std": 146.4531
     },
     "433": {
       "name": "Danila Ananyev",
-      "rating": 1855.2649,
-      "std": 113.3595
+      "rating": 1857.662,
+      "std": 113.4401
     },
     "434": {
       "name": "邓旭恒",
-      "rating": 2029.7382,
-      "std": 115.4244
+      "rating": 2020.2895,
+      "std": 114.3129
     },
     "435": {
       "name": "Dmitri Kuzmin",
-      "rating": 1816.4136,
-      "std": 99.9165
+      "rating": 1801.9195,
+      "std": 122.5049
     },
     "436": {
       "name": "Egor Pavlovskiy",
-      "rating": 2028.4546,
-      "std": 97.8394
+      "rating": 2045.2283,
+      "std": 115.1513
     },
     "437": {
       "name": "Grigory Lokshtanov",
-      "rating": 1872.2672,
-      "std": 112.6012
+      "rating": 1867.5702,
+      "std": 111.2919
     },
     "438": {
       "name": "何彥希",
-      "rating": 1591.7371,
-      "std": 145.8377
+      "rating": 1592.5309,
+      "std": 145.9425
     },
     "439": {
       "name": "Konstantin Zolotarev",
-      "rating": 1893.0648,
-      "std": 101.959
+      "rating": 1912.3435,
+      "std": 124.4249
     },
     "440": {
       "name": "李子舜",
-      "rating": 2246.0339,
-      "std": 100.9764
+      "rating": 2171.4565,
+      "std": 117.5462
     },
     "441": {
       "name": "李甄正",
-      "rating": 1739.6536,
-      "std": 131.3476
+      "rating": 1736.0267,
+      "std": 131.1502
     },
     "442": {
       "name": "李源浩",
-      "rating": 2183.7013,
-      "std": 95.6365
+      "rating": 2184.54,
+      "std": 118.0853
     },
     "443": {
       "name": "梁皓博",
-      "rating": 1861.6727,
-      "std": 117.3384
+      "rating": 1867.1745,
+      "std": 116.4976
     },
     "444": {
       "name": "羅振軒",
-      "rating": 2221.139,
-      "std": 98.7402
+      "rating": 2190.7256,
+      "std": 118.7632
     },
     "445": {
       "name": "Mihkel Veer",
-      "rating": 1842.9019,
-      "std": 115.7803
+      "rating": 1843.0729,
+      "std": 114.4835
     },
     "446": {
       "name": "Mikhail Nikolaev",
-      "rating": 1856.5054,
-      "std": 94.9372
+      "rating": 1872.2444,
+      "std": 112.6387
     },
     "447": {
       "name": "Stepan Potapov",
-      "rating": 1811.9881,
-      "std": 104.3607
+      "rating": 1815.2622,
+      "std": 124.9401
     },
     "448": {
       "name": "Stepan Ryabov",
-      "rating": 1624.2548,
-      "std": 132.5611
+      "rating": 1620.8782,
+      "std": 133.315
     },
     "449": {
       "name": "鈴木由崇",
-      "rating": 1957.7035,
-      "std": 120.8991
+      "rating": 1955.3101,
+      "std": 118.5589
     },
     "450": {
       "name": "袁梓峰",
-      "rating": 1679.17,
-      "std": 128.6627
+      "rating": 1680.4682,
+      "std": 128.5473
     },
     "451": {
       "name": "Viktor Sokolov",
-      "rating": 1611.0385,
-      "std": 129.5608
+      "rating": 1611.8138,
+      "std": 130.1904
     },
     "452": {
       "name": "Vjacheslav Oboturov",
-      "rating": 1776.0503,
-      "std": 139.1139
+      "rating": 1778.7731,
+      "std": 139.3006
     },
     "453": {
       "name": "吴广谦",
-      "rating": 1898.19,
-      "std": 118.626
+      "rating": 1891.2559,
+      "std": 117.4404
     },
     "454": {
       "name": "须思齐",
-      "rating": 1709.7428,
-      "std": 115.0426
+      "rating": 1711.7244,
+      "std": 115.3611
     },
     "455": {
       "name": "詹浚鑫",
-      "rating": 1956.4845,
-      "std": 118.2484
+      "rating": 1957.2754,
+      "std": 118.2074
     },
     "456": {
       "name": "Aleksandra Bova",
-      "rating": 1571.228,
-      "std": 141.9266
+      "rating": 1554.4633,
+      "std": 142.3594
     },
     "457": {
       "name": "Anastasia Nikoletu",
-      "rating": 1680.9589,
-      "std": 130.3574
+      "rating": 1667.2134,
+      "std": 130.1613
     },
     "458": {
       "name": "Anna Fokicheva",
-      "rating": 2026.4101,
-      "std": 107.1834
+      "rating": 1966.334,
+      "std": 130.8558
     },
     "459": {
       "name": "Darina Nikitina",
-      "rating": 1771.6677,
-      "std": 103.6956
+      "rating": 1701.8788,
+      "std": 134.5341
     },
     "460": {
       "name": "Helena Gašová",
-      "rating": 1871.6593,
-      "std": 119.8941
+      "rating": 1858.4322,
+      "std": 121.5823
     },
     "461": {
       "name": "Ida-Liisa Välli",
-      "rating": 1740.996,
-      "std": 107.5969
+      "rating": 1744.6248,
+      "std": 120.5853
     },
     "462": {
       "name": "劉梓瑩",
-      "rating": 2245.577,
-      "std": 139.3466
+      "rating": 2242.5575,
+      "std": 140.0038
     },
     "463": {
       "name": "廖蕴彤",
-      "rating": 1999.6066,
-      "std": 113.4038
+      "rating": 1988.9216,
+      "std": 113.3613
     },
     "464": {
       "name": "Mariia Petrova",
-      "rating": 2175.2956,
-      "std": 101.2588
+      "rating": 2186.9591,
+      "std": 131.9681
     },
     "465": {
       "name": "Nataliya Zvezdina",
-      "rating": 1824.1138,
-      "std": 101.1281
+      "rating": 1852.8992,
+      "std": 121.5474
     },
     "466": {
       "name": "Natalya Porokhina",
-      "rating": 2060.9659,
-      "std": 126.6873
+      "rating": 2067.7371,
+      "std": 127.3683
     },
     "467": {
       "name": "陈泽雯",
-      "rating": 1988.8966,
-      "std": 100.0432
+      "rating": 2049.0786,
+      "std": 119.6244
     },
     "468": {
       "name": "王馨悦",
-      "rating": 1889.793,
-      "std": 116.7978
+      "rating": 1874.9173,
+      "std": 118.0564
     },
     "469": {
       "name": "Yulia Vostryakova",
