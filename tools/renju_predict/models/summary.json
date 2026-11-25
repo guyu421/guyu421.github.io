@@ -108,8 +108,8 @@
       "塔拉山口-10": 1105,
       "山口": 577
     },
-    "cv_5fold_logloss": 0.93309,
-    "cv_5fold_accuracy": 0.5321
+    "cv_5fold_logloss": 0.92651,
+    "cv_5fold_accuracy": 0.53924
   },
   {
     "cutoff_key": "20251231",
@@ -164,8 +164,8 @@
       "塔拉山口-10": 1326,
       "山口": 577
     },
-    "cv_5fold_logloss": 0.93125,
-    "cv_5fold_accuracy": 0.54178
+    "cv_5fold_logloss": 0.92835,
+    "cv_5fold_accuracy": 0.55018
   },
   {
     "cutoff_key": "20260331",
@@ -220,8 +220,8 @@
       "塔拉山口-10": 1326,
       "山口": 577
     },
-    "cv_5fold_logloss": 0.93125,
-    "cv_5fold_accuracy": 0.54178
+    "cv_5fold_logloss": 0.92835,
+    "cv_5fold_accuracy": 0.55018
   },
   {
     "cutoff_key": "20260630",
@@ -276,15 +276,15 @@
       "塔拉山口-10": 2115,
       "山口": 577
     },
-    "cv_5fold_logloss": 0.91788,
-    "cv_5fold_accuracy": 0.55609
+    "cv_5fold_logloss": 0.91631,
+    "cv_5fold_accuracy": 0.55646
   },
   {
     "cutoff_key": "20260930",
     "cutoff_date_exclusive": "2026-10-01",
     "max_game_date": "2026-09-13",
     "num_games": 3542,
-    "num_rated_players": 450,
+    "num_rated_players": 449,
     "features": [
       "rule",
       "first_rating",
@@ -333,15 +333,15 @@
       "山口": 577,
       "五手两打": 225
     },
-    "cv_5fold_logloss": 0.90668,
-    "cv_5fold_accuracy": 0.5655
+    "cv_5fold_logloss": 0.90514,
+    "cv_5fold_accuracy": 0.56663
   },
   {
     "cutoff_key": "20261124",
     "cutoff_date_exclusive": "2026-11-25",
     "max_game_date": "2026-11-16",
     "num_games": 3739,
-    "num_rated_players": 460,
+    "num_rated_players": 459,
     "features": [
       "rule",
       "first_rating",
@@ -390,7 +390,7 @@
       "山口": 577,
       "五手两打": 225
     },
-    "cv_5fold_logloss": 0.9046,
-    "cv_5fold_accuracy": 0.56807
+    "cv_5fold_logloss": 0.90516,
+    "cv_5fold_accuracy": 0.56726
   }
 ]

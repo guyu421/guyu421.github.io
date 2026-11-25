@@ -3,7 +3,7 @@
   "cutoff_date_exclusive": "2026-11-25",
   "max_game_date": "2026-11-16",
   "num_games": 3739,
-  "num_rated_players": 460,
+  "num_rated_players": 459,
   "features": [
     "rule",
     "first_rating",
@@ -52,6 +52,6 @@
     "山口": 577,
     "五手两打": 225
   },
-  "cv_5fold_logloss": 0.9046,
-  "cv_5fold_accuracy": 0.56807
+  "cv_5fold_logloss": 0.90516,
+  "cv_5fold_accuracy": 0.56726
 }
