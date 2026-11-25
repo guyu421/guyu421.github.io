@@ -238,6 +238,12 @@ def main() -> None:
         default=_date.today().isoformat(),
         help="Cutoff date (exclusive) for the latest model (YYYY-MM-DD).",
     )
+    parser.add_argument(
+        "--cutoffs",
+        type=str,
+        default="",
+        help="Optional comma-separated cutoff keys to retrain (e.g. 20260630,20260930,20261124).",
+    )
     args = parser.parse_args()
 
     all_games, player_names = load_data(args.db_dir)
@@ -252,11 +258,17 @@ def main() -> None:
         ("20260930", "2026-10-01"),
         ("20261124", "2026-11-25"),
     ]
+    target_keys = {k.strip() for k in args.cutoffs.split(",") if k.strip()} if args.cutoffs else {k for k, _ in cutoffs}
 
     X_all, y_all, dates_all, snapshots = build_all_cutoffs_features(all_games, cutoffs)
 
     summary = []
     for key, cutoff_date in cutoffs:
+        if key not in target_keys:
+            meta_path = args.models_dir / key / "metadata.json"
+            if meta_path.is_file():
+                summary.append(json.loads(meta_path.read_text(encoding="utf-8")))
+            continue
         meta = train_cutoff(
             key, cutoff_date, all_games, X_all, y_all, dates_all,
             snapshots[key], player_names, args.models_dir,
