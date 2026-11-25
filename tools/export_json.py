@@ -410,7 +410,54 @@ def build(games, players, tours, members, teams=None, team_matches=None):
     pid_of = {p["name"]: p["player_id"] for p in players}
     player_no_of = {(m["tournament_id"], m["player_id"]): m["player_no"]
                     for m in members if m.get("player_no") is not None}
-    match_preds = compute_match_predictions(games_out, pid_of)
+
+    team_by_key = {(t["tournament_id"], t["team_id"]): t for t in (teams or [])}
+    player_team_of = {}
+    for t in (teams or []):
+        for bkey in ("board1_id", "board2_id", "board3_id"):
+            player_team_of[(t["tournament_id"], t[bkey])] = t["team_id"]
+
+    virtual_games = []
+    missing_board_info = {}
+    if team_matches:
+        real_game_by_id = {g["game_id"]: g for g in games_out}
+        for tm in team_matches:
+            tid = tm["tournament_id"]
+            ta = team_by_key.get((tid, tm["team_a_id"]))
+            tb = team_by_key.get((tid, tm["team_b_id"]))
+            b1_side = None
+            for b_no, gid_key in ((1, "game_id_1"), (2, "game_id_2"), (3, "game_id_3")):
+                gid = tm.get(gid_key)
+                if gid is not None and gid in real_game_by_id:
+                    g = real_game_by_id[gid]
+                    t_first = player_team_of.get((tid, pid_of.get(g["first"])))
+                    side = "first" if t_first == tm["team_a_id"] else "second"
+                    b1_side = side if b_no in (1, 3) else ("second" if side == "first" else "first")
+                    break
+            if b1_side is None:
+                b1_side = "first"
+            for b_no, gid_key in ((1, "game_id_1"), (2, "game_id_2"), (3, "game_id_3")):
+                gid = tm.get(gid_key)
+                if gid is None or gid not in real_game_by_id:
+                    side = b1_side if b_no in (1, 3) else ("second" if b1_side == "first" else "first")
+                    pa_id = ta.get(f"board{b_no}_id") if ta else None
+                    pb_id = tb.get(f"board{b_no}_id") if tb else None
+                    first_id, second_id = (pa_id, pb_id) if side == "first" else (pb_id, pa_id)
+                    vgid = -(int(tm["team_match_id"]) * 10 + b_no)
+                    missing_board_info[(tm["team_match_id"], b_no)] = (side, first_id, second_id, vgid)
+                    virtual_games.append({
+                        "game_id": vgid,
+                        "date": tm["date"],
+                        "rule": tm["rule"],
+                        "first": name.get(first_id, ""),
+                        "second": name.get(second_id, ""),
+                        "result": "--",
+                        "tournament_id": tid,
+                        "round": tm["round"],
+                        "board": int(tm["match_board"]) * 10 + b_no,
+                    })
+
+    match_preds = compute_match_predictions(games_out + virtual_games, pid_of)
     tour_details = {}
     for row in tours_out:
         tid = row["tournament_id"]
@@ -442,11 +489,6 @@ def build(games, players, tours, members, teams=None, team_matches=None):
         }
 
     if team_matches:
-        team_by_key = {(t["tournament_id"], t["team_id"]): t for t in (teams or [])}
-        player_team_of = {}
-        for t in (teams or []):
-            for bkey in ("board1_id", "board2_id", "board3_id"):
-                player_team_of[(t["tournament_id"], t[bkey])] = t["team_id"]
         tm_by_tour = {}
         for tm in team_matches:
             tm_by_tour.setdefault(tm["tournament_id"], []).append(tm)
@@ -479,20 +521,20 @@ def build(games, players, tours, members, teams=None, team_matches=None):
                             "p_second": g["p_second"],
                         })
                     else:
-                        pa_id = ta[f"board{b_no}_id"] if ta else None
-                        pb_id = tb[f"board{b_no}_id"] if tb else None
+                        side, first_id, second_id, vgid = missing_board_info[(tm["team_match_id"], b_no)]
+                        pf, pd_val, ps = match_preds.get(vgid, (None, None, None))
                         boards.append({
                             "board_no": b_no,
                             "game_id": None,
-                            "first": name.get(pa_id, ""),
-                            "first_id": pa_id,
-                            "second": name.get(pb_id, ""),
-                            "second_id": pb_id,
+                            "first": name.get(first_id, ""),
+                            "first_id": first_id,
+                            "second": name.get(second_id, ""),
+                            "second_id": second_id,
                             "result": "--",
-                            "team_a_side": "first",
-                            "p_first": None,
-                            "p_draw": None,
-                            "p_second": None,
+                            "team_a_side": side,
+                            "p_first": pf,
+                            "p_draw": pd_val,
+                            "p_second": ps,
                         })
                 p_win, p_draw, p_loss, score_probs = _convolve_team_probs(boards)
                 out_tms.append({
