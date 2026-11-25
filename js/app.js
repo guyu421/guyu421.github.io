@@ -263,12 +263,30 @@
       }, Math.round(value)));
     }
 
-    // 横轴日期
-    var ticks = history.length > 1 ? [0, Math.floor((history.length - 1) / 2), history.length - 1] : [0];
+    // 横轴日期（按像素宽度避让，防止 YYYY-MM-DD 标签重叠）
+    var labelW = 74;
+    var lastIdx = history.length - 1;
+    var ticks = [0];
+    if (lastIdx > 0) {
+      var x0 = xOf(points[0].t);
+      var xLast = xOf(points[lastIdx].t);
+      if (xLast - x0 < labelW * 2 + 12) {
+        ticks = [lastIdx];
+      } else {
+        var midIdx = Math.floor(lastIdx / 2);
+        var xMid = xOf(points[midIdx].t);
+        if (midIdx > 0 && midIdx < lastIdx && (xMid - labelW / 2 - 8 > x0 + labelW) && (xMid + labelW / 2 + 8 < xLast - labelW)) {
+          ticks = [0, midIdx, lastIdx];
+        } else {
+          ticks = [0, lastIdx];
+        }
+      }
+    }
     ticks.forEach(function (index) {
       var p = points[index];
-      var anchor = index === 0 && ticks.length > 1 ? "start"
-        : index === ticks[ticks.length - 1] ? "end" : "middle";
+      var anchor = ticks.length === 1 ? "middle"
+        : index === 0 ? "start"
+        : index === lastIdx ? "end" : "middle";
       svg.appendChild(svgNode("text", {
         x: xOf(p.t), y: height - 6,
         "text-anchor": anchor, "font-size": 11, fill: "#6f7b83"
