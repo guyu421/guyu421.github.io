@@ -8,7 +8,9 @@
     "rule",
     "first_rating",
     "second_rating",
-    "rating_diff"
+    "rating_diff",
+    "first_std",
+    "second_std"
   ],
   "rule_map": {
     "山口": 0,

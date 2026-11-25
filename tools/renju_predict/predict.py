@@ -117,6 +117,8 @@ def predict_from_ratings(
         "first_rating": r1,
         "second_rating": r2,
         "rating_diff": r1 - r2,
+        "first_std": std1,
+        "second_std": std2,
     }
     X = pd.DataFrame([row], columns=metadata["features"])
     X["rule"] = X["rule"].astype(int)

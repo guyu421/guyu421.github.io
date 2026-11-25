@@ -54,7 +54,7 @@ RESULT_TO_CLASS: Dict[str, int] = {
     "1": 2,    # 假先胜
 }
 CLASS_LABELS = ["假后胜", "和棋", "假先胜"]
-FEATURE_NAMES = ["rule", "first_rating", "second_rating", "rating_diff"]
+FEATURE_NAMES = ["rule", "first_rating", "second_rating", "rating_diff", "first_std", "second_std"]
 RESULT_SCORE = {"1": 1.0, "0.5": 0.5, "0": 0.0}
 
 
@@ -108,6 +108,8 @@ def build_all_cutoffs_features(
                     "first_rating": p1.rating,
                     "second_rating": p2.rating,
                     "rating_diff": p1.rating - p2.rating,
+                    "first_std": p1.std,
+                    "second_std": p2.std,
                 }
             )
             targets.append(RESULT_TO_CLASS[str(r.result)])
