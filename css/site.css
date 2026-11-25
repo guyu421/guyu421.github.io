@@ -757,3 +757,101 @@ a.score-link:hover {
 	color: #7c5200;
 	border: 1px solid #ebd184;
 }
+
+/* 模型页 */
+
+.model-section {
+	margin-bottom: 1.5em;
+}
+
+.model-section h2 {
+	font-size: 1.15em;
+	margin: 0 0 0.65em 0;
+	color: #24303a;
+}
+
+.model-list {
+	margin: 0;
+	padding-left: 1.3em;
+	line-height: 1.65;
+	color: #333e48;
+}
+
+.model-list li {
+	margin-bottom: 0.45em;
+}
+
+.model-list code {
+	background: #f2f5f8;
+	padding: 0.1em 0.35em;
+	border-radius: 3px;
+	font-size: 0.9em;
+}
+
+.model-legend {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.6em 1.2em;
+	margin-bottom: 0.6em;
+	font-size: 0.92em;
+	color: #2c3842;
+}
+
+.model-legend-item {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45em;
+}
+
+.model-legend-line {
+	display: inline-block;
+	width: 14px;
+	height: 3px;
+	border-radius: 2px;
+}
+
+.model-chart-wrap {
+	position: relative;
+	width: 100%;
+	background: #ffffff;
+}
+
+.model-svg {
+	display: block;
+	width: 100%;
+	height: auto;
+}
+
+.model-tooltip {
+	position: absolute;
+	top: 12px;
+	background: rgba(255, 255, 255, 0.96);
+	border: 1px solid #d0d8e0;
+	border-radius: 6px;
+	padding: 0.45em 0.65em;
+	font-size: 0.82em;
+	line-height: 1.45;
+	color: #24303a;
+	pointer-events: none;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+	white-space: nowrap;
+}
+
+.model-tt-date {
+	font-weight: 600;
+	margin-bottom: 0.2em;
+}
+
+.model-tt-row {
+	display: flex;
+	align-items: center;
+	gap: 0.4em;
+}
+
+.model-tt-dot {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	display: inline-block;
+}

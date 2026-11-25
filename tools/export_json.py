@@ -753,6 +753,66 @@ def dump(obj, name, compact=True):
             json.dump(obj, fh, ensure_ascii=False, indent=1)
 
 
+def build_model_eval(game_details):
+    """按日期累计统计各置信度阈值下的无泄露预测准确率曲线。"""
+    thresholds = [
+        ("all", 0.0),
+        ("p50", 50.0),
+        ("p60", 60.0),
+        ("p70", 70.0),
+        ("p80", 80.0),
+    ]
+    valid = []
+    for g in game_details.values():
+        if g.get("p_first") is None or g.get("result") not in ("1", "0", "0.5"):
+            continue
+        probs = {"1": g["p_first"], "0.5": g["p_draw"], "0": g["p_second"]}
+        pred_cls = max(probs, key=probs.get)
+        conf = probs[pred_cls]
+        ok = 1 if pred_cls == g["result"] else 0
+        valid.append((g["date"], g["tournament_id"], g["round"], g["board"], g["game_id"], conf, ok))
+    valid.sort()
+
+    cum_ok = {k: 0 for k, _ in thresholds}
+    cum_tot = {k: 0 for k, _ in thresholds}
+    points = []
+    i = 0
+    n = len(valid)
+    while i < n:
+        cur_date = valid[i][0]
+        j = i
+        while j < n and valid[j][0] == cur_date:
+            conf = valid[j][5]
+            ok = valid[j][6]
+            for k, th in thresholds:
+                if conf >= th:
+                    cum_tot[k] += 1
+                    cum_ok[k] += ok
+            j += 1
+        # 当全部阈值均有至少 5 局累计样本后再画点，避免极早期 1~2 局的 0%/100% 抖动
+        if cum_tot["p80"] >= 5:
+            pt = {"date": cur_date}
+            for k, _ in thresholds:
+                tot = cum_tot[k]
+                ok = cum_ok[k]
+                pt[k] = round(ok * 100.0 / tot, 2) if tot > 0 else None
+                pt[k + "_n"] = tot
+                pt[k + "_ok"] = ok
+            points.append(pt)
+        i = j
+
+    summary = {}
+    for k, _ in thresholds:
+        tot = cum_tot[k]
+        ok = cum_ok[k]
+        summary[k] = {
+            "accuracy": round(ok * 100.0 / tot, 2) if tot > 0 else None,
+            "correct": ok,
+            "total": tot,
+        }
+    return {"points": points, "summary": summary}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--parquet", default=DB, help="parquet 目录，默认仓库内 db/")
@@ -859,6 +919,8 @@ def main():
     for old in os.listdir(game_dir):
         if old.endswith(".json") and old not in keep_games:
             os.remove(os.path.join(game_dir, old))
+
+    dump(build_model_eval(game_details), "model_eval.json")
 
     print("games", len(games_out), "tournaments", len(tours_out),
           "players", len(players_out), "player pages", len(details),

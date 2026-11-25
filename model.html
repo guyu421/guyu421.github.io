@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>模型</title>
+  <link href="css/default.css" rel="stylesheet" type="text/css" />
+  <link href="css/site.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+  <div id="outer">
+    <div id="header"></div>
+    <div id="menu">
+      <ul>
+        <li class="first"><a href="index.html">赛事</a></li>
+        <li><a href="players.html">棋手</a></li>
+        <li><a href="model.html">模型</a></li>
+      </ul>
+    </div>
+    <div id="content">
+      <div id="primaryContentContainer">
+        <div id="primaryContent">
+          <h1>预测模型</h1>
+
+          <div class="model-section">
+            <h2>模型原理</h2>
+            <ul class="model-list">
+              <li><strong>时序无泄露 WHR 等级分</strong>：严格按对局发生的时间顺序（日期、赛事、轮次）增量更新全历史等级分（Whole History Rating），每盘对局仅使用赛前历史数据计算双方等级分 <code>rating</code> 与不确定度 <code>std</code>，不引入未来信息。</li>
+              <li><strong>Elo 基准多项逻辑回归</strong>：以等级分差 <code>(r1 - r2) / 400</code>、双方等级分均值偏移 <code>(r1 + r2 - 3800) / 400</code>、标准差之和 <code>(std1 + std2) / 100</code>、标准差之差 <code>(std1 - std2) / 100</code>、不区分颜色的历史交锋和棋偏移 <code>h2h_draw_delta</code> 及比赛规则 <code>rule_*</code> 为特征，直接输出<code>假先胜</code>、<code>和棋</code>、<code>假后胜</code>三分类概率。</li>
+              <li><strong>分时间截断因果评估</strong>：每盘对局仅使用其发生日期之前最近截断日期训练的模型进行预测，统计各置信度阈值下的累计预测准确率。</li>
+            </ul>
+          </div>
+
+          <div class="model-section">
+            <h2>预测评估指标</h2>
+            <div class="model-legend" id="modelLegend"></div>
+            <div class="model-chart-wrap" id="modelChartWrap"></div>
+          </div>
+        </div>
+      </div>
+      <div class="clear"></div>
+    </div>
+  </div>
+  <script src="js/model.js"></script>
+</body>
+</html>
