@@ -38,8 +38,8 @@ BYE_NAME = "轮空"
 WHR_W2 = 19.3
 WHR_VIRTUAL_GAMES = 2
 WHR_BIAS = 1900.0
-# 完全没有下过棋（只有轮空/弃权）时的兜底偏差
-WHR_PRIOR_RD = 350.0
+# 完全没有下过棋（只有轮空/弃权）时的兜底标准差
+WHR_PRIOR_STD = 350.0
 EPOCH = _date(1970, 1, 1)
 
 # 轮空 / 弃权在数据库里统一记 "+-"、"-+"、"--"，不写 "-:-" 这种带冒号的写法
@@ -139,7 +139,7 @@ def rating_at(series, name, date):
             hit = (value, rd)
         else:
             break
-    return hit or (WHR_BIAS, WHR_PRIOR_RD)
+    return hit or (WHR_BIAS, WHR_PRIOR_STD)
 
 
 def compute_match_predictions(games_out, pid_of):
@@ -162,7 +162,7 @@ def compute_match_predictions(games_out, pid_of):
     available_models = []
     for entry in os.listdir(models_root):
         mdir = os.path.join(models_root, entry)
-        if os.path.isdir(mdir) and os.path.isfile(os.path.join(mdir, "model.txt")):
+        if os.path.isdir(mdir) and os.path.isfile(os.path.join(mdir, "model.cbm")):
             booster, metadata = load_cutoff_bundle(Path(mdir))
             available_models.append((metadata["cutoff_date_exclusive"], entry, booster, metadata))
     available_models.sort(key=lambda item: item[0], reverse=True)
@@ -205,7 +205,7 @@ def compute_match_predictions(games_out, pid_of):
             else:
                 p1 = tracker.get(fid, day_int)
                 p2 = tracker.get(sid, day_int)
-                p = predict_from_ratings(booster, metadata, g["rule"], p1.rating, p2.rating, p1.rd, p2.rd)
+                p = predict_from_ratings(booster, metadata, g["rule"], p1.rating, p2.rating, p1.std, p2.std)
                 preds[g["game_id"]] = (
                     round(p["假先胜率"] * 100, 1),
                     round(p["和棋率"] * 100, 1),
@@ -557,13 +557,13 @@ def build(games, players, tours, members, teams=None, team_matches=None):
         # 只有加赛记录（已被跳过）或根本没上场的棋手不进榜单
         if not mine:
             continue
-        rating, rd = ratings.get(p["name"], (WHR_BIAS, WHR_PRIOR_RD))
+        rating, std = ratings.get(p["name"], (WHR_BIAS, WHR_PRIOR_STD))
         players_out.append({
             "player_id": p["player_id"],
             "rank": 0,
             "name": p["name"],
             "rating": _display(rating),
-            "rd": _display(rd),
+            "std": _display(std),
             "tournaments": len(tours_of_mine),
             "games": len(mine),
             "_rating": rating,
@@ -712,7 +712,7 @@ def build_details(games_out, players_out, series):
             "name": name,
             "rank": p["rank"],
             "rating": p["rating"],
-            "rd": p["rd"],
+            "std": p["std"],
             "tournaments": p["tournaments"],
             "games": len(mine),
             "wins": wins,

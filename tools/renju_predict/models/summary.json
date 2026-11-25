@@ -10,8 +10,8 @@
       "first_rating",
       "second_rating",
       "rating_diff",
-      "first_rd",
-      "second_rd"
+      "first_std",
+      "second_std"
     ],
     "rule_map": {
       "山口": 0,
@@ -52,8 +52,8 @@
       "山口": 577,
       "塔拉山口-10": 270
     },
-    "cv_5fold_logloss": 1.02845,
-    "cv_5fold_accuracy": 0.48406
+    "cv_5fold_logloss": 1.00273,
+    "cv_5fold_accuracy": 0.48996
   },
   {
     "cutoff_key": "20250331",
@@ -66,8 +66,8 @@
       "first_rating",
       "second_rating",
       "rating_diff",
-      "first_rd",
-      "second_rd"
+      "first_std",
+      "second_std"
     ],
     "rule_map": {
       "山口": 0,
@@ -108,8 +108,8 @@
       "山口": 577,
       "塔拉山口-10": 270
     },
-    "cv_5fold_logloss": 1.02845,
-    "cv_5fold_accuracy": 0.48406
+    "cv_5fold_logloss": 1.00273,
+    "cv_5fold_accuracy": 0.48996
   },
   {
     "cutoff_key": "20250630",
@@ -122,8 +122,8 @@
       "first_rating",
       "second_rating",
       "rating_diff",
-      "first_rd",
-      "second_rd"
+      "first_std",
+      "second_std"
     ],
     "rule_map": {
       "山口": 0,
@@ -164,8 +164,8 @@
       "山口": 577,
       "塔拉山口-10": 537
     },
-    "cv_5fold_logloss": 0.98865,
-    "cv_5fold_accuracy": 0.50539
+    "cv_5fold_logloss": 0.97084,
+    "cv_5fold_accuracy": 0.51975
   },
   {
     "cutoff_key": "20250930",
@@ -178,8 +178,8 @@
       "first_rating",
       "second_rating",
       "rating_diff",
-      "first_rd",
-      "second_rd"
+      "first_std",
+      "second_std"
     ],
     "rule_map": {
       "山口": 0,
@@ -234,8 +234,8 @@
       "first_rating",
       "second_rating",
       "rating_diff",
-      "first_rd",
-      "second_rd"
+      "first_std",
+      "second_std"
     ],
     "rule_map": {
       "山口": 0,
@@ -290,8 +290,8 @@
       "first_rating",
       "second_rating",
       "rating_diff",
-      "first_rd",
-      "second_rd"
+      "first_std",
+      "second_std"
     ],
     "rule_map": {
       "山口": 0,
@@ -346,8 +346,8 @@
       "first_rating",
       "second_rating",
       "rating_diff",
-      "first_rd",
-      "second_rd"
+      "first_std",
+      "second_std"
     ],
     "rule_map": {
       "山口": 0,
@@ -402,8 +402,8 @@
       "first_rating",
       "second_rating",
       "rating_diff",
-      "first_rd",
-      "second_rd"
+      "first_std",
+      "second_std"
     ],
     "rule_map": {
       "山口": 0,
@@ -459,8 +459,8 @@
       "first_rating",
       "second_rating",
       "rating_diff",
-      "first_rd",
-      "second_rd"
+      "first_std",
+      "second_std"
     ],
     "rule_map": {
       "山口": 0,
@@ -502,7 +502,7 @@
       "山口": 577,
       "五手两打": 225
     },
-    "cv_5fold_logloss": 0.94742,
-    "cv_5fold_accuracy": 0.54446
+    "cv_5fold_logloss": 0.92192,
+    "cv_5fold_accuracy": 0.56293
   }
 ]

@@ -8,13 +8,13 @@ from datetime import date as _date
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-import lightgbm as lgb
+from catboost import CatBoostClassifier
 import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score, log_loss
 from sklearn.model_selection import StratifiedKFold
 
-from whr_tracker import WHR_BIAS, WHR_PRIOR_RD, WHRTracker, day_of
+from whr_tracker import WHR_BIAS, WHR_PRIOR_STD, WHRTracker, day_of
 
 HERE = Path(__file__).resolve().parent
 WORKSPACE = HERE.parent
@@ -54,7 +54,7 @@ RESULT_TO_CLASS: Dict[str, int] = {
     "1": 2,    # 假先胜
 }
 CLASS_LABELS = ["假后胜", "和棋", "假先胜"]
-FEATURE_NAMES = ["rule", "first_rating", "second_rating", "rating_diff", "first_rd", "second_rd"]
+FEATURE_NAMES = ["rule", "first_rating", "second_rating", "rating_diff", "first_std", "second_std"]
 RESULT_SCORE = {"1": 1.0, "0.5": 0.5, "0": 0.0}
 
 
@@ -75,16 +75,26 @@ def load_data(db_dir: Path) -> Tuple[pd.DataFrame, Dict[int, str]]:
     return valid, player_names
 
 
-def build_features_and_ratings(
+def build_all_cutoffs_features(
     df: pd.DataFrame,
-) -> Tuple[pd.DataFrame, np.ndarray, WHRTracker]:
-    """Compute pre-match WHR features chronologically without leakage."""
+    cutoffs: List[Tuple[str, str]],
+) -> Tuple[pd.DataFrame, np.ndarray, pd.Series, Dict[str, Dict[int, object]]]:
+    """Compute pre-match WHR features once chronologically and snapshot ratings at each cutoff."""
     tracker = WHRTracker()
     rows: List[Dict[str, float | int]] = []
     targets: List[int] = []
+    dates: List[str] = []
+    snapshots: Dict[str, Dict[int, object]] = {}
+    sorted_cutoffs = sorted(cutoffs, key=lambda x: x[1])
+    c_idx = 0
 
     for (p_date, _tid, _rnd), period_df in df.groupby(["date", "tournament_id", "round"], sort=True):
-        day_int = day_of(str(p_date))
+        p_date_str = str(p_date)
+        while c_idx < len(sorted_cutoffs) and p_date_str >= sorted_cutoffs[c_idx][1]:
+            snapshots[sorted_cutoffs[c_idx][0]] = dict(tracker.ratings)
+            c_idx += 1
+
+        day_int = day_of(p_date_str)
         period_games: List[Tuple[int, int, float]] = []
         for r in period_df.itertuples(index=False):
             rule_code = RULE_MAP.get(str(r.rule))
@@ -98,38 +108,36 @@ def build_features_and_ratings(
                     "first_rating": p1.rating,
                     "second_rating": p2.rating,
                     "rating_diff": p1.rating - p2.rating,
-                    "first_rd": p1.rd,
-                    "second_rd": p2.rd,
+                    "first_std": p1.std,
+                    "second_std": p2.std,
                 }
             )
             targets.append(RESULT_TO_CLASS[str(r.result)])
+            dates.append(p_date_str)
             period_games.append((r.first_id, r.second_id, RESULT_SCORE[str(r.result)]))
 
         tracker.apply_period(period_games, day_int)
 
+    while c_idx < len(sorted_cutoffs):
+        snapshots[sorted_cutoffs[c_idx][0]] = dict(tracker.ratings)
+        c_idx += 1
+
     X = pd.DataFrame(rows, columns=FEATURE_NAMES)
-    X["rule"] = X["rule"].astype("category")
+    X["rule"] = X["rule"].astype(int)
     y = np.array(targets, dtype=np.int64)
-    return X, y, tracker
+    return X, y, pd.Series(dates), snapshots
 
 
-def make_lgbm() -> lgb.LGBMClassifier:
-    return lgb.LGBMClassifier(
-        objective="multiclass",
-        num_class=3,
-        n_estimators=250,
+def make_model() -> CatBoostClassifier:
+    return CatBoostClassifier(
+        loss_function="MultiClass",
+        iterations=500,
         learning_rate=0.03,
-        num_leaves=23,
-        max_depth=5,
-        min_child_samples=40,
-        subsample=0.8,
-        subsample_freq=1,
-        colsample_bytree=0.8,
-        reg_alpha=0.5,
-        reg_lambda=3.0,
-        random_state=42,
-        n_jobs=-1,
-        verbose=-1,
+        depth=5,
+        l2_leaf_reg=5.0,
+        random_seed=42,
+        thread_count=-1,
+        verbose=0,
     )
 
 
@@ -137,48 +145,58 @@ def train_cutoff(
     cutoff_key: str,
     cutoff_date: str,
     all_games: pd.DataFrame,
+    X_all: pd.DataFrame,
+    y_all: np.ndarray,
+    dates_all: pd.Series,
+    ratings_snapshot: Dict[int, object],
     player_names: Dict[int, str],
     models_dir: Path,
 ) -> Dict[str, object]:
-    sub = all_games[all_games["date"] < cutoff_date].copy()
+    mask_df = all_games["date"] < cutoff_date
+    sub = all_games[mask_df]
     if sub.empty:
         raise RuntimeError(f"No games found before {cutoff_date}")
 
-    X, y, tracker = build_features_and_ratings(sub)
+    mask_x = dates_all < cutoff_date
+    X = X_all[mask_x].reset_index(drop=True)
+    y = y_all[mask_x.to_numpy()]
 
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     oof_probs = np.zeros((len(y), 3), dtype=np.float64)
     for train_idx, val_idx in skf.split(X, y):
-        clf = make_lgbm()
+        clf = make_model()
         clf.fit(
             X.iloc[train_idx],
             y[train_idx],
-            categorical_feature=["rule"],
+            cat_features=["rule"],
         )
         oof_probs[val_idx] = clf.predict_proba(X.iloc[val_idx])
 
     cv_logloss = float(log_loss(y, oof_probs, labels=[0, 1, 2]))
     cv_acc = float(accuracy_score(y, np.argmax(oof_probs, axis=1)))
 
-    final_clf = make_lgbm()
-    final_clf.fit(X, y, categorical_feature=["rule"])
+    final_clf = make_model()
+    final_clf.fit(X, y, cat_features=["rule"])
 
     out_dir = models_dir / cutoff_key
     out_dir.mkdir(parents=True, exist_ok=True)
-    final_clf.booster_.save_model(str(out_dir / "model.txt"))
+    stale_lgb = out_dir / "model.txt"
+    if stale_lgb.exists():
+        stale_lgb.unlink()
+    final_clf.save_model(str(out_dir / "model.cbm"))
 
     ratings_payload = {
         "default": {
             "rating": WHR_BIAS,
-            "rd": WHR_PRIOR_RD,
+            "std": WHR_PRIOR_STD,
         },
         "players": {
             str(pid): {
                 "name": player_names.get(pid, str(pid)),
                 "rating": round(pr.rating, 4),
-                "rd": round(pr.rd, 4),
+                "std": round(pr.std, 4),
             }
-            for pid, pr in sorted(tracker.ratings.items())
+            for pid, pr in sorted(ratings_snapshot.items())
         },
     }
     (out_dir / "ratings.json").write_text(
@@ -194,7 +212,7 @@ def train_cutoff(
         "cutoff_date_exclusive": cutoff_date,
         "max_game_date": str(sub["date"].max()),
         "num_games": int(len(sub)),
-        "num_rated_players": int(len(tracker.ratings)),
+        "num_rated_players": int(len(ratings_snapshot)),
         "features": FEATURE_NAMES,
         "rule_map": RULE_MAP,
         "class_labels": CLASS_LABELS,
@@ -211,7 +229,7 @@ def train_cutoff(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Train LightGBM models with Glicko-2 features.")
+    parser = argparse.ArgumentParser(description="Train CatBoost models with chronological WHR features.")
     parser.add_argument("--db-dir", type=Path, default=DEFAULT_DB_DIR)
     parser.add_argument("--models-dir", type=Path, default=DEFAULT_MODELS_DIR)
     parser.add_argument(
@@ -235,9 +253,14 @@ def main() -> None:
         ("20261124", "2026-11-25"),
     ]
 
+    X_all, y_all, dates_all, snapshots = build_all_cutoffs_features(all_games, cutoffs)
+
     summary = []
     for key, cutoff_date in cutoffs:
-        meta = train_cutoff(key, cutoff_date, all_games, player_names, args.models_dir)
+        meta = train_cutoff(
+            key, cutoff_date, all_games, X_all, y_all, dates_all,
+            snapshots[key], player_names, args.models_dir,
+        )
         summary.append(meta)
         print(
             f"[{key}] (< {cutoff_date}) games={meta['num_games']}, "

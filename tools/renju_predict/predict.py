@@ -7,10 +7,10 @@ import json
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-import lightgbm as lgb
+from catboost import CatBoostClassifier
 import pandas as pd
 
-from whr_tracker import WHR_PRIOR_RD, WHRTracker, day_of
+from whr_tracker import WHR_PRIOR_STD, WHRTracker, day_of
 
 HERE = Path(__file__).resolve().parent
 WORKSPACE = HERE.parent
@@ -37,10 +37,11 @@ CUTOFF_ORDER = [
 RESULT_SCORE = {"1": 1.0, "0.5": 0.5, "0": 0.0}
 
 
-def load_cutoff_bundle(model_dir: Path) -> Tuple[lgb.Booster, Dict]:
-    booster = lgb.Booster(model_file=str(model_dir / "model.txt"))
+def load_cutoff_bundle(model_dir: Path) -> Tuple[CatBoostClassifier, Dict]:
+    model = CatBoostClassifier()
+    model.load_model(str(model_dir / "model.cbm"))
     metadata = json.loads((model_dir / "metadata.json").read_text(encoding="utf-8"))
-    return booster, metadata
+    return model, metadata
 
 
 def load_db(db_dir: Path) -> Tuple[pd.DataFrame, Dict[int, str], Dict[str, int]]:
@@ -99,13 +100,13 @@ def compute_glicko2_before_match(
 
 
 def predict_from_ratings(
-    booster: lgb.Booster,
+    model: CatBoostClassifier,
     metadata: Dict,
     rule: str,
     r1: float,
     r2: float,
-    rd1: float = WHR_PRIOR_RD,
-    rd2: float = WHR_PRIOR_RD,
+    std1: float = WHR_PRIOR_STD,
+    std2: float = WHR_PRIOR_STD,
 ) -> Dict[str, float]:
     rule_map: Dict[str, int] = metadata["rule_map"]
     if rule not in rule_map:
@@ -116,12 +117,12 @@ def predict_from_ratings(
         "first_rating": r1,
         "second_rating": r2,
         "rating_diff": r1 - r2,
-        "first_rd": rd1,
-        "second_rd": rd2,
+        "first_std": std1,
+        "second_std": std2,
     }
     X = pd.DataFrame([row], columns=metadata["features"])
-    X["rule"] = X["rule"].astype("category")
-    probs = booster.predict(X)[0]
+    X["rule"] = X["rule"].astype(int)
+    probs = model.predict_proba(X)[0]
     labels = metadata["class_labels"]
     prob_map = {labels[i]: float(probs[i]) for i in range(len(labels))}
     return {
@@ -147,14 +148,14 @@ def predict_specific_match(
     p1 = tracker.get(first_id, day_of(target_date))
     p2 = tracker.get(second_id, day_of(target_date))
     r1, r2 = p1.rating, p2.rating
-    rd1, rd2 = p1.rd, p2.rd
+    std1, std2 = p1.std, p2.std
     diff = r1 - r2
 
     results: List[Dict[str, object]] = []
     for cutoff_key in cutoff_keys:
         model_dir = models_dir / cutoff_key
         booster, metadata = load_cutoff_bundle(model_dir)
-        probs = predict_from_ratings(booster, metadata, rule, r1, r2, rd1, rd2)
+        probs = predict_from_ratings(booster, metadata, rule, r1, r2, std1, std2)
         results.append(
             {
                 "cutoff": cutoff_key,
@@ -167,8 +168,8 @@ def predict_specific_match(
                 "first_rating": round(r1, 2),
                 "second_rating": round(r2, 2),
                 "rating_diff": round(diff, 2),
-                "first_rd": round(rd1, 2),
-                "second_rd": round(rd2, 2),
+                "first_std": round(std1, 2),
+                "second_std": round(std2, 2),
                 "假先胜率": round(probs["假先胜率"], 6),
                 "和棋率": round(probs["和棋率"], 6),
                 "假后胜率": round(probs["假后胜率"], 6),

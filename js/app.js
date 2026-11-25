@@ -3,12 +3,12 @@
 
   var COLUMNS = {
     tournaments: ["period", "name", "players", "games"],
-    players: ["rank", "name", "rating", "rd", "tournaments", "games"]
+    players: ["rank", "name", "rating", "std", "tournaments", "games"]
   };
 
   var NUMERIC = {
     tournaments: ["players", "games"],
-    players: ["rank", "rating", "rd", "tournaments", "games"]
+    players: ["rank", "rating", "std", "tournaments", "games"]
   };
 
   var RESULT_SCORE = {
@@ -80,7 +80,7 @@
           td.className = "period";
         } else if (col === "result" && value !== undefined && value !== null) {
           td.textContent = RESULT_SCORE[String(value)] || String(value);
-        } else if (col === "rating" || col === "rd") {
+        } else if (col === "rating" || col === "std") {
           td.textContent = value === null || value === undefined || value === "" ? "" : Number(value).toFixed(2);
         } else if (col === "name" && feed === "players") {
           var link = document.createElement("a");
@@ -148,7 +148,7 @@
     if (!box) return;
     box.innerHTML = "";
     metaRow(box, "名次", data.rank ? "第 " + data.rank + " 名" : "-");
-    metaRow(box, "等级分", one(data.rating) + "（偏差 " + one(data.rd) + "）");
+    metaRow(box, "等级分", one(data.rating) + "（标准差 " + one(data.std) + "）");
 
     // 战绩：每一项都锁成一段，换行只发生在逗号之后，不会把“胜 5”拆成两行
     var record = el("p");
@@ -192,11 +192,11 @@
     var innerH = height - pad.top - pad.bottom;
 
     var points = history.map(function (row) {
-      var rd = row.length > 2 ? Number(row[2]) : 0;
+      var std = row.length > 2 ? Number(row[2]) : 0;
       return {
         t: Date.parse(String(row[0]).slice(0, 10)) || 0,
         v: Number(row[1]),
-        rd: isNaN(rd) ? 0 : rd
+        std: isNaN(std) ? 0 : std
       };
     });
     var tMin = points[0].t, tMax = points[points.length - 1].t;
@@ -204,10 +204,10 @@
     var values = points.map(function (p) { return p.v; });
     var curveMin = Math.min.apply(null, values);
     var curveMax = Math.max.apply(null, values);
-    var bandMin = Math.min.apply(null, points.map(function (p) { return p.v - p.rd; }));
-    var bandMax = Math.max.apply(null, points.map(function (p) { return p.v + p.rd; }));
+    var bandMin = Math.min.apply(null, points.map(function (p) { return p.v - p.std; }));
+    var bandMax = Math.max.apply(null, points.map(function (p) { return p.v + p.std; }));
 
-    // 纵轴范围覆盖偏差带，早期不确定度大时呈喇叭形
+    // 纵轴范围覆盖标准差带，早期不确定度大时呈喇叭形
     var vMin, vMax;
     if (bandMax > bandMin) {
       vMin = bandMin;
@@ -275,14 +275,14 @@
       }, String(history[index][0]).slice(0, 7)));
     });
 
-    // 偏差带：等级分 ± RD
-    var hasBand = points.some(function (p) { return p.rd > 0; });
+    // 标准差带：等级分 ± std
+    var hasBand = points.some(function (p) { return p.std > 0; });
     if (hasBand) {
       var upper = points.map(function (p, index) {
-        return (index === 0 ? "M" : "L") + xOf(p.t).toFixed(1) + " " + yOf(p.v + p.rd).toFixed(1);
+        return (index === 0 ? "M" : "L") + xOf(p.t).toFixed(1) + " " + yOf(p.v + p.std).toFixed(1);
       }).join(" ");
       var lower = points.slice().reverse().map(function (p) {
-        return "L" + xOf(p.t).toFixed(1) + " " + yOf(p.v - p.rd).toFixed(1);
+        return "L" + xOf(p.t).toFixed(1) + " " + yOf(p.v - p.std).toFixed(1);
       }).join(" ");
       svg.appendChild(svgNode("path", {
         d: upper + " " + lower + " Z",
@@ -334,7 +334,7 @@
       tip.innerHTML = "";
       tip.appendChild(el("b", "", String(history[index][0]).slice(0, 10)));
       tip.appendChild(el("span", "", "等级分 " + point.v.toFixed(2)));
-      tip.appendChild(el("span", "", "偏差 " + point.rd.toFixed(2)));
+      tip.appendChild(el("span", "", "标准差 " + point.std.toFixed(2)));
       tip.style.display = "block";
       var tw = tip.offsetWidth;
       var th = tip.offsetHeight;
@@ -400,7 +400,7 @@
     }));
     svg.appendChild(svgNode("text", {
       x: legendX + 17, y: 14, "font-size": 11, fill: "#6f7b83"
-    }, "± 偏差"));
+    }, "± 标准差"));
     svg.appendChild(svgNode("line", {
       x1: legendX + 78, y1: 10, x2: legendX + 92, y2: 10,
       stroke: "#ff7f0e", "stroke-width": 1.6
