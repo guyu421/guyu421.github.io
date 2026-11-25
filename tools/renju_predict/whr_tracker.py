@@ -18,7 +18,7 @@ WHR_PRIOR_STD = 350.0
 EPOCH = _date(1970, 1, 1)
 
 _THIS_DIR = Path(__file__).resolve().parent
-_DLL_PATH = _THIS_DIR / "whr_kernel.dll"
+_DLL_PATH = _THIS_DIR / ("whr_kernel.dll" if os.name == "nt" else "whr_kernel.so")
 _C_LIB = None
 
 if _DLL_PATH.is_file():

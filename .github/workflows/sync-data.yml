@@ -27,7 +27,10 @@ jobs:
           python-version: "3.11"
 
       - name: 安装依赖
-        run: pip install pandas pyarrow whr lightgbm scikit-learn
+        run: pip install pandas pyarrow whr catboost scikit-learn
+
+      - name: 编译 WHR C 内核
+        run: gcc -O3 -shared -fPIC tools/renju_predict/whr_kernel.c -o tools/renju_predict/whr_kernel.so -lm
 
       - name: 重新训练预测模型
         run: python tools/renju_predict/train.py --db-dir db --models-dir tools/renju_predict/models
