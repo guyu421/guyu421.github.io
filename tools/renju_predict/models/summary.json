@@ -9,10 +9,7 @@
       "rule",
       "first_rating",
       "second_rating",
-      "rating_diff",
-      "eff_diff",
-      "first_std",
-      "second_std"
+      "rating_diff"
     ],
     "rule_map": {
       "山口": 0,
@@ -66,10 +63,7 @@
       "rule",
       "first_rating",
       "second_rating",
-      "rating_diff",
-      "eff_diff",
-      "first_std",
-      "second_std"
+      "rating_diff"
     ],
     "rule_map": {
       "山口": 0,
@@ -123,10 +117,7 @@
       "rule",
       "first_rating",
       "second_rating",
-      "rating_diff",
-      "eff_diff",
-      "first_std",
-      "second_std"
+      "rating_diff"
     ],
     "rule_map": {
       "山口": 0,
@@ -180,10 +171,7 @@
       "rule",
       "first_rating",
       "second_rating",
-      "rating_diff",
-      "eff_diff",
-      "first_std",
-      "second_std"
+      "rating_diff"
     ],
     "rule_map": {
       "山口": 0,
@@ -237,10 +225,7 @@
       "rule",
       "first_rating",
       "second_rating",
-      "rating_diff",
-      "eff_diff",
-      "first_std",
-      "second_std"
+      "rating_diff"
     ],
     "rule_map": {
       "山口": 0,
@@ -294,10 +279,7 @@
       "rule",
       "first_rating",
       "second_rating",
-      "rating_diff",
-      "eff_diff",
-      "first_std",
-      "second_std"
+      "rating_diff"
     ],
     "rule_map": {
       "山口": 0,
@@ -352,10 +334,7 @@
       "rule",
       "first_rating",
       "second_rating",
-      "rating_diff",
-      "eff_diff",
-      "first_std",
-      "second_std"
+      "rating_diff"
     ],
     "rule_map": {
       "山口": 0,

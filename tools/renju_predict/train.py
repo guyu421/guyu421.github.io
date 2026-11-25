@@ -1,10 +1,9 @@
-"""Train LightGBM (linear_tree=True) match-outcome models for multiple date cutoffs using WHR features."""
+"""Train basic LightGBM match-outcome models for multiple date cutoffs using WHR features."""
 
 from __future__ import annotations
 
 import argparse
 import json
-import math
 from datetime import date as _date
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -55,7 +54,7 @@ RESULT_TO_CLASS: Dict[str, int] = {
     "1": 2,    # 假先胜
 }
 CLASS_LABELS = ["假后胜", "和棋", "假先胜"]
-FEATURE_NAMES = ["rule", "first_rating", "second_rating", "rating_diff", "eff_diff", "first_std", "second_std"]
+FEATURE_NAMES = ["rule", "first_rating", "second_rating", "rating_diff"]
 RESULT_SCORE = {"1": 1.0, "0.5": 0.5, "0": 0.0}
 
 
@@ -103,17 +102,12 @@ def build_all_cutoffs_features(
                 raise ValueError(f"Unknown rule: {r.rule!r}")
             p1 = tracker.get(r.first_id, day_int)
             p2 = tracker.get(r.second_id, day_int)
-            diff = p1.rating - p2.rating
-            s_comb = math.sqrt(1.0 + 3.0 * (p1.std * p1.std + p2.std * p2.std) / (400.0 * 400.0))
             rows.append(
                 {
                     "rule": rule_code,
                     "first_rating": p1.rating,
                     "second_rating": p2.rating,
-                    "rating_diff": diff,
-                    "eff_diff": diff / s_comb,
-                    "first_std": p1.std,
-                    "second_std": p2.std,
+                    "rating_diff": p1.rating - p2.rating,
                 }
             )
             targets.append(RESULT_TO_CLASS[str(r.result)])
@@ -138,9 +132,7 @@ def make_model(n_estimators: int = 500) -> lgb.LGBMClassifier:
         num_class=3,
         n_estimators=n_estimators,
         learning_rate=0.03,
-        num_leaves=15,
-        linear_tree=True,
-        reg_lambda=5.0,
+        num_leaves=31,
         random_state=42,
         n_jobs=-1,
         verbose=-1,

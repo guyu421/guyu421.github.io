@@ -112,16 +112,11 @@ def predict_from_ratings(
     if rule not in rule_map:
         raise ValueError(f"Unsupported rule {rule!r}. Choose from: {list(rule_map.keys())}")
 
-    diff = r1 - r2
-    s_comb = math.sqrt(1.0 + 3.0 * (std1 * std1 + std2 * std2) / (400.0 * 400.0))
     row = {
         "rule": rule_map[rule],
         "first_rating": r1,
         "second_rating": r2,
-        "rating_diff": diff,
-        "eff_diff": diff / s_comb,
-        "first_std": std1,
-        "second_std": std2,
+        "rating_diff": r1 - r2,
     }
     X = pd.DataFrame([row], columns=metadata["features"])
     X["rule"] = X["rule"].astype(int)
