@@ -90,15 +90,15 @@ def _day_of(date_text):
 
 
 def compute_ratings(games_out):
-    """用 Glicko-2 计算全历史等级分，与预测模型使用同一套评级体系。
+    """用标准 TrueSkill 计算全历史等级分，与预测模型使用同一套评级体系。
 
     按 (date, tournament_id, round) 时序分组递推更新，返回
-    ({姓名: (分, 偏差)}, {姓名: [(日期, 分, 偏差), ...]})。
+    ({姓名: (mu, sigma)}, {姓名: [(日期, mu, sigma), ...]})。
     """
     predict_dir = PREDICT_DIR
     if predict_dir not in sys.path:
         sys.path.insert(0, predict_dir)
-    from glicko2 import Glicko2Tracker
+    from trueskill_tracker import TrueSkillTracker
 
     score_map = {"1": 1.0, "0": 0.0, "0.5": 0.5}
     trainable = []
@@ -113,7 +113,7 @@ def compute_ratings(games_out):
         return {}, {}
 
     trainable.sort(key=lambda g: (g["date"], g["tournament_id"], g["round"], g["board"], g["game_id"]))
-    tracker = Glicko2Tracker()
+    tracker = TrueSkillTracker()
     series_map = {}
 
     i = 0
@@ -149,7 +149,7 @@ def compute_ratings(games_out):
 
 
 def rating_at(series, name, date):
-    """取某棋手在 date（含）之前的最后一次评级 (分, 偏差)，没下过棋就给先验。"""
+    """取某棋手在 date（含）之前的最后一次评级 (mu, sigma)，没下过棋就给标准 TrueSkill 先验。"""
     rows = series.get(name) or []
     hit = None
     for row_date, value, rd in rows:
@@ -157,13 +157,13 @@ def rating_at(series, name, date):
             hit = (value, rd)
         else:
             break
-    return hit or (1500.0, 350.0)
+    return hit or (25.0, 25.0 / 3.0)
 
 
 def compute_match_predictions(games_out, pid_of):
-    """用对局之前最近的现有 LightGBM 模型与赛前 Glicko-2 等级分为每盘对局计算胜平负概率。
+    """用对局之前最近的现有 LightGBM 模型与赛前 TrueSkill 等级分为每盘对局计算胜平负概率。
 
-    仅使用该对局日期之前、或同赛事轮次更小的有效对局（不含轮空和弃权）更新 Glicko-2；
+    仅使用该对局日期之前、或同赛事轮次更小的有效对局（不含轮空和弃权）更新 TrueSkill；
     若该对局日期之前没有任何可用模型，则返回 (None, None, None) 不显示分析。
     """
     models_root = os.path.join(PREDICT_DIR, "models")
@@ -173,7 +173,7 @@ def compute_match_predictions(games_out, pid_of):
     if PREDICT_DIR not in sys.path:
         sys.path.insert(0, PREDICT_DIR)
     from pathlib import Path
-    from glicko2 import Glicko2Tracker
+    from trueskill_tracker import TrueSkillTracker
     from predict import load_cutoff_bundle, predict_from_ratings
 
     # 加载所有可用模型，按 cutoff_date_exclusive 从新到旧排序
@@ -199,7 +199,7 @@ def compute_match_predictions(games_out, pid_of):
         games_out,
         key=lambda g: (g["date"], g["tournament_id"], g["round"], g["board"], g["game_id"]),
     )
-    tracker = Glicko2Tracker()
+    tracker = TrueSkillTracker()
     preds = {}
 
     i = 0

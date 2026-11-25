@@ -10,7 +10,7 @@ from typing import Dict, List, Tuple
 import lightgbm as lgb
 import pandas as pd
 
-from glicko2 import Glicko2Tracker
+from trueskill_tracker import DEFAULT_SIGMA, TrueSkillTracker
 
 HERE = Path(__file__).resolve().parent
 WORKSPACE = HERE.parent
@@ -88,7 +88,7 @@ def compute_glicko2_before_match(
         ["date", "tournament_id", "round", "board", "game_id"]
     )
 
-    tracker = Glicko2Tracker()
+    tracker = TrueSkillTracker()
     for _, period_df in prior.groupby(["date", "tournament_id", "round"], sort=True):
         period_games = [
             (r.first_id, r.second_id, RESULT_SCORE[str(r.result)])
@@ -104,8 +104,8 @@ def predict_from_ratings(
     rule: str,
     r1: float,
     r2: float,
-    rd1: float = 350.0,
-    rd2: float = 350.0,
+    rd1: float = DEFAULT_SIGMA,
+    rd2: float = DEFAULT_SIGMA,
 ) -> Dict[str, float]:
     rule_map: Dict[str, int] = metadata["rule_map"]
     if rule not in rule_map:
