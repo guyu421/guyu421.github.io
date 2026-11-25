@@ -6,11 +6,11 @@
   "num_rated_players": 308,
   "features": [
     "rule",
-    "first_mu",
-    "second_mu",
-    "mu_diff",
-    "first_sigma",
-    "second_sigma"
+    "first_rating",
+    "second_rating",
+    "rating_diff",
+    "first_rd",
+    "second_rd"
   ],
   "rule_map": {
     "山口": 0,
@@ -51,6 +51,6 @@
     "塔拉山口-10": 2122,
     "山口": 577
   },
-  "cv_5fold_logloss": 0.94712,
-  "cv_5fold_accuracy": 0.53983
+  "cv_5fold_logloss": 0.94911,
+  "cv_5fold_accuracy": 0.54428
 }

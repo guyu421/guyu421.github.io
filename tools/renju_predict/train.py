@@ -14,7 +14,7 @@ import pandas as pd
 from sklearn.metrics import accuracy_score, log_loss
 from sklearn.model_selection import StratifiedKFold
 
-from trueskill_tracker import DEFAULT_MU, DEFAULT_SIGMA, TrueSkillTracker
+from glicko2 import DEFAULT_RD, DEFAULT_RATING, DEFAULT_VOLATILITY, Glicko2Tracker
 
 HERE = Path(__file__).resolve().parent
 WORKSPACE = HERE.parent
@@ -54,7 +54,7 @@ RESULT_TO_CLASS: Dict[str, int] = {
     "1": 2,    # 假先胜
 }
 CLASS_LABELS = ["假后胜", "和棋", "假先胜"]
-FEATURE_NAMES = ["rule", "first_mu", "second_mu", "mu_diff", "first_sigma", "second_sigma"]
+FEATURE_NAMES = ["rule", "first_rating", "second_rating", "rating_diff", "first_rd", "second_rd"]
 RESULT_SCORE = {"1": 1.0, "0.5": 0.5, "0": 0.0}
 
 
@@ -77,9 +77,9 @@ def load_data(db_dir: Path) -> Tuple[pd.DataFrame, Dict[int, str]]:
 
 def build_features_and_ratings(
     df: pd.DataFrame,
-) -> Tuple[pd.DataFrame, np.ndarray, TrueSkillTracker]:
-    """Compute pre-match TrueSkill features chronologically without leakage."""
-    tracker = TrueSkillTracker()
+) -> Tuple[pd.DataFrame, np.ndarray, Glicko2Tracker]:
+    """Compute pre-match Glicko-2 features chronologically without leakage."""
+    tracker = Glicko2Tracker()
     rows: List[Dict[str, float | int]] = []
     targets: List[int] = []
 
@@ -94,11 +94,11 @@ def build_features_and_ratings(
             rows.append(
                 {
                     "rule": rule_code,
-                    "first_mu": p1.mu,
-                    "second_mu": p2.mu,
-                    "mu_diff": p1.mu - p2.mu,
-                    "first_sigma": p1.sigma,
-                    "second_sigma": p2.sigma,
+                    "first_rating": p1.rating,
+                    "second_rating": p2.rating,
+                    "rating_diff": p1.rating - p2.rating,
+                    "first_rd": p1.rd,
+                    "second_rd": p2.rd,
                 }
             )
             targets.append(RESULT_TO_CLASS[str(r.result)])
@@ -168,14 +168,16 @@ def train_cutoff(
 
     ratings_payload = {
         "default": {
-            "mu": round(DEFAULT_MU, 4),
-            "sigma": round(DEFAULT_SIGMA, 4),
+            "rating": DEFAULT_RATING,
+            "rd": DEFAULT_RD,
+            "vol": DEFAULT_VOLATILITY,
         },
         "players": {
             str(pid): {
                 "name": player_names.get(pid, str(pid)),
-                "mu": round(pr.mu, 4),
-                "sigma": round(pr.sigma, 4),
+                "rating": round(pr.rating, 4),
+                "rd": round(pr.rd, 4),
+                "vol": round(pr.vol, 6),
             }
             for pid, pr in sorted(tracker.ratings.items())
         },

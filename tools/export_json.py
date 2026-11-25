@@ -90,15 +90,15 @@ def _day_of(date_text):
 
 
 def compute_ratings(games_out):
-    """用标准 TrueSkill 计算全历史等级分，与预测模型使用同一套评级体系。
+    """用 Glicko-2 计算全历史等级分，与预测模型使用同一套评级体系。
 
     按 (date, tournament_id, round) 时序分组递推更新，返回
-    ({姓名: (mu, sigma)}, {姓名: [(日期, mu, sigma), ...]})。
+    ({姓名: (分, 偏差)}, {姓名: [(日期, 分, 偏差), ...]})。
     """
     predict_dir = PREDICT_DIR
     if predict_dir not in sys.path:
         sys.path.insert(0, predict_dir)
-    from trueskill_tracker import TrueSkillTracker
+    from glicko2 import Glicko2Tracker
 
     score_map = {"1": 1.0, "0": 0.0, "0.5": 0.5}
     trainable = []
@@ -113,7 +113,7 @@ def compute_ratings(games_out):
         return {}, {}
 
     trainable.sort(key=lambda g: (g["date"], g["tournament_id"], g["round"], g["board"], g["game_id"]))
-    tracker = TrueSkillTracker()
+    tracker = Glicko2Tracker()
     series_map = {}
 
     i = 0
@@ -139,17 +139,17 @@ def compute_ratings(games_out):
             pr = tracker.get(nm)
             lst = series_map.setdefault(nm, [])
             if lst and lst[-1][0] == p_date:
-                lst[-1] = (p_date, pr.mu, pr.sigma)
+                lst[-1] = (p_date, pr.rating, pr.rd)
             else:
-                lst.append((p_date, pr.mu, pr.sigma))
+                lst.append((p_date, pr.rating, pr.rd))
         i = j
 
-    ratings = {nm: (pr.mu, pr.sigma) for nm, pr in tracker.ratings.items()}
+    ratings = {nm: (pr.rating, pr.rd) for nm, pr in tracker.ratings.items()}
     return ratings, series_map
 
 
 def rating_at(series, name, date):
-    """取某棋手在 date（含）之前的最后一次评级 (mu, sigma)，没下过棋就给标准 TrueSkill 先验。"""
+    """取某棋手在 date（含）之前的最后一次评级 (分, 偏差)，没下过棋就给先验。"""
     rows = series.get(name) or []
     hit = None
     for row_date, value, rd in rows:
@@ -157,13 +157,13 @@ def rating_at(series, name, date):
             hit = (value, rd)
         else:
             break
-    return hit or (25.0, 25.0 / 3.0)
+    return hit or (1500.0, 350.0)
 
 
 def compute_match_predictions(games_out, pid_of):
-    """用对局之前最近的现有 LightGBM 模型与赛前 TrueSkill 等级分为每盘对局计算胜平负概率。
+    """用对局之前最近的现有 LightGBM 模型与赛前 Glicko-2 等级分为每盘对局计算胜平负概率。
 
-    仅使用该对局日期之前、或同赛事轮次更小的有效对局（不含轮空和弃权）更新 TrueSkill；
+    仅使用该对局日期之前、或同赛事轮次更小的有效对局（不含轮空和弃权）更新 Glicko-2；
     若该对局日期之前没有任何可用模型，则返回 (None, None, None) 不显示分析。
     """
     models_root = os.path.join(PREDICT_DIR, "models")
@@ -173,7 +173,7 @@ def compute_match_predictions(games_out, pid_of):
     if PREDICT_DIR not in sys.path:
         sys.path.insert(0, PREDICT_DIR)
     from pathlib import Path
-    from trueskill_tracker import TrueSkillTracker
+    from glicko2 import Glicko2Tracker
     from predict import load_cutoff_bundle, predict_from_ratings
 
     # 加载所有可用模型，按 cutoff_date_exclusive 从新到旧排序
@@ -199,7 +199,7 @@ def compute_match_predictions(games_out, pid_of):
         games_out,
         key=lambda g: (g["date"], g["tournament_id"], g["round"], g["board"], g["game_id"]),
     )
-    tracker = TrueSkillTracker()
+    tracker = Glicko2Tracker()
     preds = {}
 
     i = 0
@@ -222,7 +222,7 @@ def compute_match_predictions(games_out, pid_of):
             else:
                 p1 = tracker.get(fid)
                 p2 = tracker.get(sid)
-                p = predict_from_ratings(booster, metadata, g["rule"], p1.mu, p2.mu, p1.sigma, p2.sigma)
+                p = predict_from_ratings(booster, metadata, g["rule"], p1.rating, p2.rating, p1.rd, p2.rd)
                 preds[g["game_id"]] = (
                     round(p["假先胜率"] * 100, 1),
                     round(p["和棋率"] * 100, 1),
@@ -569,7 +569,7 @@ def build(games, players, tours, members, teams=None, team_matches=None):
         # 只有加赛记录（已被跳过）或根本没上场的棋手不进榜单
         if not mine:
             continue
-        rating, rd = ratings.get(p["name"], (25.0, 25.0 / 3.0))
+        rating, rd = ratings.get(p["name"], (1500.0, 350.0))
         players_out.append({
             "player_id": p["player_id"],
             "rank": 0,

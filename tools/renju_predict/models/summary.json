@@ -7,11 +7,11 @@
     "num_rated_players": 218,
     "features": [
       "rule",
-      "first_mu",
-      "second_mu",
-      "mu_diff",
-      "first_sigma",
-      "second_sigma"
+      "first_rating",
+      "second_rating",
+      "rating_diff",
+      "first_rd",
+      "second_rd"
     ],
     "rule_map": {
       "山口": 0,
@@ -52,8 +52,8 @@
       "塔拉山口-10": 1019,
       "山口": 577
     },
-    "cv_5fold_logloss": 0.98701,
-    "cv_5fold_accuracy": 0.50439
+    "cv_5fold_logloss": 0.9862,
+    "cv_5fold_accuracy": 0.50689
   },
   {
     "cutoff_key": "20260331",
@@ -63,11 +63,11 @@
     "num_rated_players": 218,
     "features": [
       "rule",
-      "first_mu",
-      "second_mu",
-      "mu_diff",
-      "first_sigma",
-      "second_sigma"
+      "first_rating",
+      "second_rating",
+      "rating_diff",
+      "first_rd",
+      "second_rd"
     ],
     "rule_map": {
       "山口": 0,
@@ -108,8 +108,8 @@
       "塔拉山口-10": 1019,
       "山口": 577
     },
-    "cv_5fold_logloss": 0.98701,
-    "cv_5fold_accuracy": 0.50439
+    "cv_5fold_logloss": 0.9862,
+    "cv_5fold_accuracy": 0.50689
   },
   {
     "cutoff_key": "20260630",
@@ -119,11 +119,11 @@
     "num_rated_players": 277,
     "features": [
       "rule",
-      "first_mu",
-      "second_mu",
-      "mu_diff",
-      "first_sigma",
-      "second_sigma"
+      "first_rating",
+      "second_rating",
+      "rating_diff",
+      "first_rd",
+      "second_rd"
     ],
     "rule_map": {
       "山口": 0,
@@ -164,8 +164,8 @@
       "塔拉山口-10": 1656,
       "山口": 577
     },
-    "cv_5fold_logloss": 0.97021,
-    "cv_5fold_accuracy": 0.53381
+    "cv_5fold_logloss": 0.96385,
+    "cv_5fold_accuracy": 0.53202
   },
   {
     "cutoff_key": "20260930",
@@ -175,11 +175,11 @@
     "num_rated_players": 298,
     "features": [
       "rule",
-      "first_mu",
-      "second_mu",
-      "mu_diff",
-      "first_sigma",
-      "second_sigma"
+      "first_rating",
+      "second_rating",
+      "rating_diff",
+      "first_rd",
+      "second_rd"
     ],
     "rule_map": {
       "山口": 0,
@@ -220,8 +220,8 @@
       "塔拉山口-10": 1925,
       "山口": 577
     },
-    "cv_5fold_logloss": 0.94774,
-    "cv_5fold_accuracy": 0.54676
+    "cv_5fold_logloss": 0.94677,
+    "cv_5fold_accuracy": 0.54237
   },
   {
     "cutoff_key": "20261124",
@@ -231,11 +231,11 @@
     "num_rated_players": 308,
     "features": [
       "rule",
-      "first_mu",
-      "second_mu",
-      "mu_diff",
-      "first_sigma",
-      "second_sigma"
+      "first_rating",
+      "second_rating",
+      "rating_diff",
+      "first_rd",
+      "second_rd"
     ],
     "rule_map": {
       "山口": 0,
@@ -276,7 +276,7 @@
       "塔拉山口-10": 2122,
       "山口": 577
     },
-    "cv_5fold_logloss": 0.94712,
-    "cv_5fold_accuracy": 0.53983
+    "cv_5fold_logloss": 0.94911,
+    "cv_5fold_accuracy": 0.54428
   }
 ]

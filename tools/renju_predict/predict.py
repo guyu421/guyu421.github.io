@@ -10,7 +10,7 @@ from typing import Dict, List, Tuple
 import lightgbm as lgb
 import pandas as pd
 
-from trueskill_tracker import DEFAULT_SIGMA, TrueSkillTracker
+from glicko2 import Glicko2Tracker
 
 HERE = Path(__file__).resolve().parent
 WORKSPACE = HERE.parent
@@ -88,7 +88,7 @@ def compute_glicko2_before_match(
         ["date", "tournament_id", "round", "board", "game_id"]
     )
 
-    tracker = TrueSkillTracker()
+    tracker = Glicko2Tracker()
     for _, period_df in prior.groupby(["date", "tournament_id", "round"], sort=True):
         period_games = [
             (r.first_id, r.second_id, RESULT_SCORE[str(r.result)])
@@ -102,10 +102,10 @@ def predict_from_ratings(
     booster: lgb.Booster,
     metadata: Dict,
     rule: str,
-    mu1: float,
-    mu2: float,
-    sigma1: float = DEFAULT_SIGMA,
-    sigma2: float = DEFAULT_SIGMA,
+    r1: float,
+    r2: float,
+    rd1: float = 350.0,
+    rd2: float = 350.0,
 ) -> Dict[str, float]:
     rule_map: Dict[str, int] = metadata["rule_map"]
     if rule not in rule_map:
@@ -113,11 +113,11 @@ def predict_from_ratings(
 
     row = {
         "rule": rule_map[rule],
-        "first_mu": mu1,
-        "second_mu": mu2,
-        "mu_diff": mu1 - mu2,
-        "first_sigma": sigma1,
-        "second_sigma": sigma2,
+        "first_rating": r1,
+        "second_rating": r2,
+        "rating_diff": r1 - r2,
+        "first_rd": rd1,
+        "second_rd": rd2,
     }
     X = pd.DataFrame([row], columns=metadata["features"])
     X["rule"] = X["rule"].astype("category")
@@ -146,15 +146,15 @@ def predict_specific_match(
     tracker = compute_glicko2_before_match(games_df, target_date, target_tid, target_round)
     p1 = tracker.get(first_id)
     p2 = tracker.get(second_id)
-    mu1, mu2 = p1.mu, p2.mu
-    sigma1, sigma2 = p1.sigma, p2.sigma
-    diff = mu1 - mu2
+    r1, r2 = p1.rating, p2.rating
+    rd1, rd2 = p1.rd, p2.rd
+    diff = r1 - r2
 
     results: List[Dict[str, object]] = []
     for cutoff_key in cutoff_keys:
         model_dir = models_dir / cutoff_key
         booster, metadata = load_cutoff_bundle(model_dir)
-        probs = predict_from_ratings(booster, metadata, rule, mu1, mu2, sigma1, sigma2)
+        probs = predict_from_ratings(booster, metadata, rule, r1, r2, rd1, rd2)
         results.append(
             {
                 "cutoff": cutoff_key,
@@ -164,11 +164,11 @@ def predict_specific_match(
                 "rule": rule,
                 "first": f"{id_to_name.get(first_id, first_id)} (ID:{first_id})",
                 "second": f"{id_to_name.get(second_id, second_id)} (ID:{second_id})",
-                "first_mu": round(mu1, 2),
-                "second_mu": round(mu2, 2),
-                "mu_diff": round(diff, 2),
-                "first_sigma": round(sigma1, 2),
-                "second_sigma": round(sigma2, 2),
+                "first_rating": round(r1, 2),
+                "second_rating": round(r2, 2),
+                "rating_diff": round(diff, 2),
+                "first_rd": round(rd1, 2),
+                "second_rd": round(rd2, 2),
                 "假先胜率": round(probs["假先胜率"], 6),
                 "和棋率": round(probs["和棋率"], 6),
                 "假后胜率": round(probs["假后胜率"], 6),
@@ -181,7 +181,7 @@ def format_result(res: Dict[str, object]) -> str:
     return (
         f"[模型 {res['cutoff']}] 对局: {res['date']} 赛事#{res['tournament_id']} 第{res['round']}轮 | 规则: {res['rule']}\n"
         f"  对阵: 假先 {res['first']} vs 假后 {res['second']}\n"
-        f"  赛前TrueSkill: 假先 Mu={res['first_mu']:.2f} (Sigma={res['first_sigma']:.2f}), 假后 Mu={res['second_mu']:.2f} (Sigma={res['second_sigma']:.2f}), Mu差={res['mu_diff']:+.2f}\n"
+        f"  赛前Glicko-2: 假先={res['first_rating']:.2f}, 假后={res['second_rating']:.2f}, 分差={res['rating_diff']:+.2f}\n"
         f"  预测: 假先胜率={res['假先胜率']*100:.1f}% | 和棋率={res['和棋率']*100:.1f}% | 假后胜率={res['假后胜率']*100:.1f}%"
     )
 
