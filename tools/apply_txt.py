@@ -81,12 +81,13 @@ def parse_match_line(line: str, default_rule: str) -> Dict[str, object]:
 
     rule = kv.get("rule", default_rule)
 
-    # Bye line: "<board> <player> + 轮空" or "<board> <player> +- 轮空" or "<board> <player> 轮空"
-    m_bye = re.match(r"^(\d+)\s+(.+?)\s+(?:[+-]+\s+)?轮空(?:\s+.*)?$", rest)
+    # Bye line: "<board> <player> [+-/+] 轮空" (with or without space before + / +-)
+    m_bye = re.match(r"^(\d+)\s+(.+?)\s*(?:[+-]{1,2}\s+)?轮空(?:\s+.*)?$", rest)
     if m_bye:
+        first_nm = re.sub(r"[+-]+$", "", m_bye.group(2).strip()).strip()
         return {
             "board": int(m_bye.group(1)),
-            "first": m_bye.group(2).strip(),
+            "first": first_nm,
             "second": None,
             "result": "+-",
             "rule": rule,
@@ -130,13 +131,16 @@ def parse_match_line(line: str, default_rule: str) -> Dict[str, object]:
             "rule": rule, "swap": kv.get("swap"), "5a": kv.get("5a"), "moves": kv.get("moves"),
         }
 
-    # Format B: "<board> <first> <res_token> <second>"
-    m_tok = re.match(r"^(\d+)\s+(.+?)\s+(\S+)\s+(.+?)$", rest)
-    if m_tok:
-        board = int(m_tok.group(1))
-        first = m_tok.group(2).strip()
-        res = parse_result(m_tok.group(3))
-        second = m_tok.group(4).strip()
+    # Format B: "<board> <first> <res_token> <second>" (handles multi-word names & attached +-/-+/--/1-0/0-1)
+    m_sep = re.match(
+        r"^(\d+)\s+(.+?)\s*(\+-|-\+|--|1-0|0-1|0\.5-0\.5|½-½|1:0|0:1|0\.5:0\.5|\s(?:0\.5|½|\.5|1|0|胜|负|和|平|\+|-))\s+(.+?)$",
+        rest,
+    )
+    if m_sep:
+        board = int(m_sep.group(1))
+        first = m_sep.group(2).strip()
+        res = parse_result(m_sep.group(3))
+        second = m_sep.group(4).strip()
         if second == "轮空":
             return {
                 "board": board, "first": first, "second": None, "result": "+-",

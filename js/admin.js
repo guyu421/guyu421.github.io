@@ -300,11 +300,11 @@
         if (kv.moves) extraParts.push(kv.moves.split(/\s+/).length + "手");
         var extraStr = extraParts.join(" ");
 
-        var mBye = rest.match(/^(\d+)\s+(.+?)\s+(?:\+\s+)?轮空$/);
+        var mBye = rest.match(/^(\d+)\s+(.+?)\s*(?:[+-]{1,2}\s+)?轮空(?:\s+.*)?$/);
         if (mBye) {
           matches.push({
             round: curRound, date: curDate, board: Number(mBye[1]),
-            first: mBye[2].trim(), second: "轮空", result: "+-", extra: ""
+            first: mBye[2].trim().replace(/[+-]+$/, "").trim(), second: "轮空", result: "+-", extra: ""
           });
           return;
         }
@@ -316,11 +316,11 @@
           });
           return;
         }
-        var mTok = rest.match(/^(\d+)\s+(.+?)\s+(\S+)\s+(.+?)$/);
+        var mTok = rest.match(/^(\d+)\s+(.+?)\s*(\+-|-\+|--|1-0|0-1|0\.5-0\.5|½-½|1:0|0:1|0\.5:0\.5|\s(?:0\.5|½|\.5|1|0|胜|负|和|平|\+|-))\s+(.+?)$/);
         if (mTok) {
           matches.push({
             round: curRound, date: curDate, board: Number(mTok[1]),
-            first: mTok[2].trim(), second: mTok[4].trim(), result: mTok[3], extra: extraStr
+            first: mTok[2].trim(), second: mTok[4].trim(), result: mTok[3].trim(), extra: extraStr
           });
           return;
         }
