@@ -22,9 +22,9 @@
 
   function parseMoves(movesStr) {
     if (!movesStr) return [];
-    return String(movesStr)
-      .trim()
-      .split(/\s+/)
+    var tokens = String(movesStr).match(/[a-oA-O]\d{1,2}/g);
+    if (!tokens) return [];
+    return tokens
       .map(parseCoord)
       .filter(function (x) { return x !== null; });
   }
