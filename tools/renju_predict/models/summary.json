@@ -3,8 +3,8 @@
     "cutoff_key": "20250630",
     "cutoff_date_exclusive": "2025-07-01",
     "max_game_date": "2025-05-11",
-    "num_games": 1640,
-    "num_rated_players": 276,
+    "num_games": 1690,
+    "num_rated_players": 289,
     "features": [
       "rule",
       "first_rating",
@@ -44,23 +44,24 @@
       "假先胜"
     ],
     "class_counts": {
-      "假后胜": 646,
-      "和棋": 237,
-      "假先胜": 757
+      "假后胜": 663,
+      "和棋": 243,
+      "假先胜": 784
     },
     "rule_counts": {
       "塔拉山口-10": 1063,
-      "山口": 577
+      "山口": 577,
+      "五手两打": 50
     },
-    "cv_5fold_logloss": 0.91942,
-    "cv_5fold_accuracy": 0.54756
+    "cv_5fold_logloss": 0.91832,
+    "cv_5fold_accuracy": 0.55385
   },
   {
     "cutoff_key": "20250930",
     "cutoff_date_exclusive": "2025-10-01",
     "max_game_date": "2025-09-13",
-    "num_games": 2208,
-    "num_rated_players": 357,
+    "num_games": 2258,
+    "num_rated_players": 369,
     "features": [
       "rule",
       "first_rating",
@@ -100,23 +101,24 @@
       "假先胜"
     ],
     "class_counts": {
-      "假后胜": 908,
-      "和棋": 280,
-      "假先胜": 1020
+      "假后胜": 925,
+      "和棋": 286,
+      "假先胜": 1047
     },
     "rule_counts": {
       "塔拉山口-10": 1631,
-      "山口": 577
+      "山口": 577,
+      "五手两打": 50
     },
-    "cv_5fold_logloss": 0.90004,
-    "cv_5fold_accuracy": 0.55525
+    "cv_5fold_logloss": 0.89955,
+    "cv_5fold_accuracy": 0.55624
   },
   {
     "cutoff_key": "20251231",
     "cutoff_date_exclusive": "2026-01-01",
     "max_game_date": "2025-12-01",
-    "num_games": 2429,
-    "num_rated_players": 382,
+    "num_games": 2479,
+    "num_rated_players": 394,
     "features": [
       "rule",
       "first_rating",
@@ -156,23 +158,24 @@
       "假先胜"
     ],
     "class_counts": {
-      "假后胜": 1004,
-      "和棋": 314,
-      "假先胜": 1111
+      "假后胜": 1021,
+      "和棋": 320,
+      "假先胜": 1138
     },
     "rule_counts": {
       "塔拉山口-10": 1852,
-      "山口": 577
+      "山口": 577,
+      "五手两打": 50
     },
-    "cv_5fold_logloss": 0.90662,
-    "cv_5fold_accuracy": 0.5529
+    "cv_5fold_logloss": 0.90571,
+    "cv_5fold_accuracy": 0.55829
   },
   {
     "cutoff_key": "20260331",
     "cutoff_date_exclusive": "2026-04-01",
     "max_game_date": "2025-12-01",
-    "num_games": 2429,
-    "num_rated_players": 382,
+    "num_games": 2479,
+    "num_rated_players": 394,
     "features": [
       "rule",
       "first_rating",
@@ -212,23 +215,24 @@
       "假先胜"
     ],
     "class_counts": {
-      "假后胜": 1004,
-      "和棋": 314,
-      "假先胜": 1111
+      "假后胜": 1021,
+      "和棋": 320,
+      "假先胜": 1138
     },
     "rule_counts": {
       "塔拉山口-10": 1852,
-      "山口": 577
+      "山口": 577,
+      "五手两打": 50
     },
-    "cv_5fold_logloss": 0.90662,
-    "cv_5fold_accuracy": 0.5529
+    "cv_5fold_logloss": 0.90571,
+    "cv_5fold_accuracy": 0.55829
   },
   {
     "cutoff_key": "20260630",
     "cutoff_date_exclusive": "2026-07-01",
-    "max_game_date": "2026-06-01",
-    "num_games": 3218,
-    "num_rated_players": 469,
+    "max_game_date": "2026-06-21",
+    "num_games": 3309,
+    "num_rated_players": 492,
     "features": [
       "rule",
       "first_rating",
@@ -268,23 +272,24 @@
       "假先胜"
     ],
     "class_counts": {
-      "假后胜": 1337,
-      "和棋": 416,
-      "假先胜": 1465
+      "假后胜": 1376,
+      "和棋": 425,
+      "假先胜": 1508
     },
     "rule_counts": {
       "塔拉山口-10": 2641,
-      "山口": 577
+      "山口": 577,
+      "五手两打": 91
     },
-    "cv_5fold_logloss": 0.90143,
-    "cv_5fold_accuracy": 0.56588
+    "cv_5fold_logloss": 0.90081,
+    "cv_5fold_accuracy": 0.57057
   },
   {
     "cutoff_key": "20260930",
     "cutoff_date_exclusive": "2026-10-01",
     "max_game_date": "2026-09-13",
-    "num_games": 4068,
-    "num_rated_players": 536,
+    "num_games": 4159,
+    "num_rated_players": 554,
     "features": [
       "rule",
       "first_rating",
@@ -324,24 +329,24 @@
       "假先胜"
     ],
     "class_counts": {
-      "假后胜": 1675,
-      "和棋": 521,
-      "假先胜": 1872
+      "假后胜": 1714,
+      "和棋": 530,
+      "假先胜": 1915
     },
     "rule_counts": {
       "塔拉山口-10": 3266,
       "山口": 577,
-      "五手两打": 225
+      "五手两打": 316
     },
-    "cv_5fold_logloss": 0.89516,
-    "cv_5fold_accuracy": 0.5703
+    "cv_5fold_logloss": 0.89399,
+    "cv_5fold_accuracy": 0.57057
   },
   {
     "cutoff_key": "20261124",
     "cutoff_date_exclusive": "2026-11-25",
     "max_game_date": "2026-11-16",
-    "num_games": 4265,
-    "num_rated_players": 546,
+    "num_games": 4356,
+    "num_rated_players": 564,
     "features": [
       "rule",
       "first_rating",
@@ -381,16 +386,16 @@
       "假先胜"
     ],
     "class_counts": {
-      "假后胜": 1771,
-      "和棋": 545,
-      "假先胜": 1949
+      "假后胜": 1810,
+      "和棋": 554,
+      "假先胜": 1992
     },
     "rule_counts": {
       "塔拉山口-10": 3463,
       "山口": 577,
-      "五手两打": 225
+      "五手两打": 316
     },
-    "cv_5fold_logloss": 0.89355,
-    "cv_5fold_accuracy": 0.57069
+    "cv_5fold_logloss": 0.89127,
+    "cv_5fold_accuracy": 0.57231
   }
 ]
