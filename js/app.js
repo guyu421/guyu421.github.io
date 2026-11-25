@@ -429,9 +429,6 @@
     var first = list[0];
     var last = list[list.length - 1];
     if (first === last) return first;
-    if (first.slice(0, 4) === last.slice(0, 4)) {
-      return first + " 至 " + last.slice(5);
-    }
     return first + " 至 " + last;
   }
 
@@ -470,8 +467,8 @@
 
       (group.games || []).forEach(function (game) {
         var tr = el("tr");
-        var day = el("td", "date", short_date(game.date));
-        day.title = game.date;
+        var day = el("td", "date", game.date || "");
+        day.title = game.date || "";
         tr.appendChild(day);
         var rnd = el("td", "rnd");
         // 「第N轮」点进该赛事第 N 轮
