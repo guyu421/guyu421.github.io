@@ -17,6 +17,7 @@
   var previewBtn = document.getElementById("previewBtn");
   var submitGithubBtn = document.getElementById("submitGithubBtn");
   var downloadTxtBtn = document.getElementById("downloadTxtBtn");
+  var downloadDbBtn = document.getElementById("downloadDbBtn");
   var clearBtn = document.getElementById("clearBtn");
   var statusBoxEl = document.getElementById("statusBox");
   var previewBoxEl = document.getElementById("previewBox");
@@ -486,6 +487,117 @@
     a.click();
     URL.revokeObjectURL(a.href);
   });
+
+  function crc32(bytes) {
+    var c = 0xffffffff;
+    for (var i = 0; i < bytes.length; i++) {
+      c ^= bytes[i];
+      for (var k = 0; k < 8; k++) {
+        c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
+      }
+    }
+    return (c ^ 0xffffffff) >>> 0;
+  }
+
+  function buildZip(entries) {
+    var enc = new TextEncoder();
+    var localParts = [];
+    var centralParts = [];
+    var offset = 0;
+
+    entries.forEach(function (ent) {
+      var nameBytes = enc.encode(ent.name);
+      var data = ent.data;
+      var crc = crc32(data);
+      var size = data.length;
+
+      var lh = new Uint8Array(30 + nameBytes.length);
+      var lv = new DataView(lh.buffer);
+      lv.setUint32(0, 0x04034b50, true);
+      lv.setUint16(4, 20, true);
+      lv.setUint16(6, 0x0800, true);
+      lv.setUint16(8, 0, true);
+      lv.setUint16(10, 0, true);
+      lv.setUint16(12, 0, true);
+      lv.setUint32(14, crc, true);
+      lv.setUint32(18, size, true);
+      lv.setUint32(22, size, true);
+      lv.setUint16(26, nameBytes.length, true);
+      lv.setUint16(28, 0, true);
+      lh.set(nameBytes, 30);
+
+      localParts.push(lh, data);
+
+      var ch = new Uint8Array(46 + nameBytes.length);
+      var cv = new DataView(ch.buffer);
+      cv.setUint32(0, 0x02014b50, true);
+      cv.setUint16(4, 20, true);
+      cv.setUint16(6, 20, true);
+      cv.setUint16(8, 0x0800, true);
+      cv.setUint16(10, 0, true);
+      cv.setUint16(12, 0, true);
+      cv.setUint16(14, 0, true);
+      cv.setUint32(16, crc, true);
+      cv.setUint32(20, size, true);
+      cv.setUint32(24, size, true);
+      cv.setUint16(28, nameBytes.length, true);
+      cv.setUint16(30, 0, true);
+      cv.setUint16(32, 0, true);
+      cv.setUint16(34, 0, true);
+      cv.setUint16(36, 0, true);
+      cv.setUint32(38, 0, true);
+      cv.setUint32(42, offset, true);
+      ch.set(nameBytes, 46);
+
+      centralParts.push(ch);
+      offset += lh.length + size;
+    });
+
+    var centralLen = centralParts.reduce(function (s, p) { return s + p.length; }, 0);
+    var eocd = new Uint8Array(22);
+    var ev = new DataView(eocd.buffer);
+    ev.setUint32(0, 0x06054b50, true);
+    ev.setUint16(4, 0, true);
+    ev.setUint16(6, 0, true);
+    ev.setUint16(8, entries.length, true);
+    ev.setUint16(10, entries.length, true);
+    ev.setUint32(12, centralLen, true);
+    ev.setUint32(16, offset, true);
+    ev.setUint16(20, 0, true);
+
+    return new Blob(localParts.concat(centralParts, [eocd]), { type: "application/zip" });
+  }
+
+  if (downloadDbBtn) {
+    downloadDbBtn.addEventListener("click", function () {
+      var files = ["tournament.parquet", "player.parquet", "tournament_player.parquet", "match.parquet"];
+      downloadDbBtn.disabled = true;
+      setStatus("正在打包下载数据库 (" + files.length + " 个 parquet 文件) ...", false);
+      Promise.all(files.map(function (fn) {
+        return fetch("db/" + fn + "?t=" + Date.now()).then(function (r) {
+          if (!r.ok) throw new Error(fn + " HTTP " + r.status);
+          return r.arrayBuffer().then(function (buf) {
+            return { name: "db/" + fn, data: new Uint8Array(buf) };
+          });
+        });
+      }))
+        .then(function (entries) {
+          var blob = buildZip(entries);
+          var a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = "renju_db_" + new Date().toISOString().slice(0, 10) + ".zip";
+          a.click();
+          URL.revokeObjectURL(a.href);
+          setStatus("数据库打包下载完成（共 " + entries.length + " 个文件）。", false);
+        })
+        .catch(function (err) {
+          setStatus("下载数据库失败: " + escHtml(err.message), true);
+        })
+        .finally(function () {
+          downloadDbBtn.disabled = false;
+        });
+    });
+  }
 
   clearBtn.addEventListener("click", function () {
     txtEditorEl.value = "";
