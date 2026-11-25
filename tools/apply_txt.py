@@ -303,67 +303,129 @@ def apply_txt_content(text: str, db_dir: Path) -> List[str]:
 
         logs.append(f"{action_label} ({t_name or ''}): {len(new_tp_rows)} 名棋手, {len(new_m_rows)} 盘对局")
 
-    # Apply line commands
+    # Apply unified line commands across game / tournament / player
+    entity_aliases = {
+        "game": "game", "对局": "game",
+        "tournament": "tournament", "赛事": "tournament",
+        "player": "player", "棋手": "player", "选手": "player",
+    }
+
+    def norm_entity(tok: str) -> str:
+        e = entity_aliases.get(tok.strip().lower())
+        if not e:
+            raise ValueError(f"不支持的对象类型: {tok!r} (支持 game/tournament/player)")
+        return e
+
     for cmd in commands:
-        m_del = re.match(r"^DEL\s+game\s+(\d+)$", cmd, re.IGNORECASE)
+        m_del = re.match(r"^DEL\s+(\S+)\s+(\d+)$", cmd, re.IGNORECASE)
         if m_del:
-            gid = int(m_del.group(1))
-            before = len(m_df)
-            m_df = m_df[m_df["game_id"] != gid].copy()
-            logs.append(f"DEL game {gid}: 删除 {before - len(m_df)} 条")
+            ent = norm_entity(m_del.group(1))
+            eid = int(m_del.group(2))
+            if ent == "game":
+                before = len(m_df)
+                m_df = m_df[m_df["game_id"] != eid].copy()
+                logs.append(f"DEL game {eid}: 删除 {before - len(m_df)} 条")
+            elif ent == "tournament":
+                t_df = t_df[t_df["tournament_id"] != eid].copy()
+                tp_df = tp_df[tp_df["tournament_id"] != eid].copy()
+                before = len(m_df)
+                m_df = m_df[m_df["tournament_id"] != eid].copy()
+                logs.append(f"DEL tournament {eid}: 删除赛事及 {before - len(m_df)} 盘对局")
+            elif ent == "player":
+                p_df = p_df[p_df["player_id"] != eid].copy()
+                tp_df = tp_df[tp_df["player_id"] != eid].copy()
+                before = len(m_df)
+                m_df = m_df[(m_df["first_id"] != eid) & (m_df["second_id"].fillna(-1) != eid)].copy()
+                logs.append(f"DEL player {eid}: 删除棋手及 {before - len(m_df)} 盘对局")
             continue
 
-        m_set = re.match(r"^SET\s+game\s+(\d+)\s+(.+)$", cmd, re.IGNORECASE)
+        m_set = re.match(r"^SET\s+(\S+)\s+(\d+)\s+(.+)$", cmd, re.IGNORECASE)
         if m_set:
-            gid = int(m_set.group(1))
+            ent = norm_entity(m_set.group(1))
+            eid = int(m_set.group(2))
             kv_pat = re.compile(r"(\w+)=(.+?)(?=\s+\w+=|$)")
-            kvs = [(m.group(1), m.group(2).strip()) for m in kv_pat.finditer(m_set.group(2).strip())]
-            mask = m_df["game_id"] == gid
-            if not mask.any():
-                raise ValueError(f"SET game {gid}: 未找到该对局")
-            for k, v in kvs:
-                val = None if v in ("None", "null", "NULL") else v
-                if k in ("round", "board"):
-                    m_df.loc[mask, k] = int(v)
-                elif k == "result":
-                    m_df.loc[mask, k] = parse_result(v)
-                elif k in ("date", "rule", "swap", "5a", "moves"):
-                    m_df.loc[mask, k] = val
-                else:
-                    raise ValueError(f"不支持的字段: {k}")
-            logs.append(f"SET game {gid}: 更新 {kvs}")
+            kvs = [(m.group(1), m.group(2).strip()) for m in kv_pat.finditer(m_set.group(3).strip())]
+            if not kvs:
+                raise ValueError(f"SET 缺少 key=value 参数: {cmd!r}")
+            if ent == "game":
+                mask = m_df["game_id"] == eid
+                if not mask.any():
+                    raise ValueError(f"SET game {eid}: 未找到该对局")
+                for k, v in kvs:
+                    val = None if v in ("None", "null", "NULL") else v
+                    if k in ("round", "board", "first_id", "tournament_id"):
+                        m_df.loc[mask, k] = int(v)
+                    elif k == "second_id":
+                        m_df.loc[mask, k] = pd.NA if val is None else int(v)
+                    elif k == "result":
+                        m_df.loc[mask, k] = parse_result(v)
+                    elif k in ("date", "rule", "swap", "5a", "moves"):
+                        m_df.loc[mask, k] = val
+                    else:
+                        raise ValueError(f"不支持的 game 字段: {k}")
+                logs.append(f"SET game {eid}: 更新 {kvs}")
+            elif ent == "tournament":
+                mask = t_df["tournament_id"] == eid
+                if not mask.any():
+                    raise ValueError(f"SET tournament {eid}: 未找到")
+                for k, v in kvs:
+                    if k == "name":
+                        t_df.loc[mask, "name"] = v
+                    else:
+                        raise ValueError(f"不支持的 tournament 字段: {k}")
+                logs.append(f"SET tournament {eid}: 更新 {kvs}")
+            elif ent == "player":
+                mask = p_df["player_id"] == eid
+                if not mask.any():
+                    raise ValueError(f"SET player {eid}: 未找到")
+                for k, v in kvs:
+                    if k == "name":
+                        p_df.loc[mask, "name"] = v
+                    else:
+                        raise ValueError(f"不支持的 player 字段: {k}")
+                logs.append(f"SET player {eid}: 更新 {kvs}")
             continue
 
-        m_ren = re.match(r"^RENAME\s+player\s+(\d+)\s+(.+)$", cmd, re.IGNORECASE)
+        m_ren = re.match(r"^RENAME\s+(\S+)\s+(\d+)\s+(.+)$", cmd, re.IGNORECASE)
         if m_ren:
-            pid = int(m_ren.group(1))
-            new_nm = m_ren.group(2).strip()
-            if not (p_df["player_id"] == pid).any():
-                raise ValueError(f"RENAME player {pid}: 未找到")
-            p_df.loc[p_df["player_id"] == pid, "name"] = new_nm
-            logs.append(f"RENAME player {pid} -> {new_nm}")
+            ent = norm_entity(m_ren.group(1))
+            eid = int(m_ren.group(2))
+            new_nm = m_ren.group(3).strip()
+            if ent == "player":
+                if not (p_df["player_id"] == eid).any():
+                    raise ValueError(f"RENAME player {eid}: 未找到")
+                p_df.loc[p_df["player_id"] == eid, "name"] = new_nm
+                logs.append(f"RENAME player {eid} -> {new_nm}")
+            elif ent == "tournament":
+                if not (t_df["tournament_id"] == eid).any():
+                    raise ValueError(f"RENAME tournament {eid}: 未找到")
+                t_df.loc[t_df["tournament_id"] == eid, "name"] = new_nm
+                logs.append(f"RENAME tournament {eid} -> {new_nm}")
+            else:
+                raise ValueError(f"RENAME 不支持 {ent}")
             continue
 
-        m_ren_t = re.match(r"^RENAME\s+tournament\s+(\d+)\s+(.+)$", cmd, re.IGNORECASE)
-        if m_ren_t:
-            tid = int(m_ren_t.group(1))
-            new_nm = m_ren_t.group(2).strip()
-            if not (t_df["tournament_id"] == tid).any():
-                raise ValueError(f"RENAME tournament {tid}: 未找到")
-            t_df.loc[t_df["tournament_id"] == tid, "name"] = new_nm
-            logs.append(f"RENAME tournament {tid} -> {new_nm}")
-            continue
-
-        m_mrg = re.match(r"^MERGE\s+player\s+(\d+)\s*->\s*(\d+)$", cmd, re.IGNORECASE)
+        m_mrg = re.match(r"^MERGE\s+(\S+)\s+(\d+)\s*->\s*(\d+)$", cmd, re.IGNORECASE)
         if m_mrg:
-            old_pid, tgt_pid = int(m_mrg.group(1)), int(m_mrg.group(2))
-            if not (p_df["player_id"] == tgt_pid).any():
-                raise ValueError(f"MERGE target player {tgt_pid}: 未找到")
-            m_df.loc[m_df["first_id"] == old_pid, "first_id"] = tgt_pid
-            m_df.loc[m_df["second_id"] == old_pid, "second_id"] = tgt_pid
-            tp_df.loc[tp_df["player_id"] == old_pid, "player_id"] = tgt_pid
-            p_df = p_df[p_df["player_id"] != old_pid].copy()
-            logs.append(f"MERGE player {old_pid} -> {tgt_pid}")
+            ent = norm_entity(m_mrg.group(1))
+            old_id, tgt_id = int(m_mrg.group(2)), int(m_mrg.group(3))
+            if ent == "player":
+                if not (p_df["player_id"] == tgt_id).any():
+                    raise ValueError(f"MERGE target player {tgt_id}: 未找到")
+                m_df.loc[m_df["first_id"] == old_id, "first_id"] = tgt_id
+                m_df.loc[m_df["second_id"] == old_id, "second_id"] = tgt_id
+                tp_df.loc[tp_df["player_id"] == old_id, "player_id"] = tgt_id
+                p_df = p_df[p_df["player_id"] != old_id].copy()
+                logs.append(f"MERGE player {old_id} -> {tgt_id}")
+            elif ent == "tournament":
+                if not (t_df["tournament_id"] == tgt_id).any():
+                    raise ValueError(f"MERGE target tournament {tgt_id}: 未找到")
+                m_df.loc[m_df["tournament_id"] == old_id, "tournament_id"] = tgt_id
+                tp_df.loc[tp_df["tournament_id"] == old_id, "tournament_id"] = tgt_id
+                t_df = t_df[t_df["tournament_id"] != old_id].copy()
+                logs.append(f"MERGE tournament {old_id} -> {tgt_id}")
+            else:
+                raise ValueError(f"MERGE 不支持 {ent}")
             continue
 
         raise ValueError(f"无法识别指令: {cmd!r}")

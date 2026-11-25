@@ -210,12 +210,17 @@
 
   cmdTemplateBtn.addEventListener("click", function () {
     txtEditorEl.value = [
-      "# 单条/批量修改指令示例（取消注释后使用）",
+      "# 共通指令示例（对象均支持 game/tournament/player 或 对局/赛事/选手）",
       "# SET game 4990 result=平 swap=+--+- 5a=8 moves=h8 h9 g10 g8",
-      "# DEL game 4990",
+      "# SET tournament 57 name=新赛事名称",
+      "# SET player 619 name=新姓名",
       "# RENAME tournament 57 新赛事名称",
       "# RENAME player 619 新姓名",
+      "# DEL game 4990",
+      "# DEL tournament 57",
+      "# DEL player 619",
       "# MERGE player 619 -> 579",
+      "# MERGE tournament 58 -> 57",
       "",
     ].join("\n");
     updateLineStats();
