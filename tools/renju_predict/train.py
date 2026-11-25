@@ -130,24 +130,12 @@ def build_all_cutoffs_features(
 
 def featurize_logreg(df: pd.DataFrame) -> pd.DataFrame:
     d = pd.DataFrame(index=df.index)
-    diff = df["rating_diff"].to_numpy(dtype=np.float64)
-    s1 = df["first_std"].to_numpy(dtype=np.float64)
-    s2 = df["second_std"].to_numpy(dtype=np.float64)
-    s_comb = np.sqrt(1.0 + 3.0 * (s1 * s1 + s2 * s2) / (400.0 * 400.0))
-    eff = diff / (400.0 * s_comb)
-    d["elo_diff"] = diff / 400.0
-    d["eff_diff"] = eff
-    d["abs_eff"] = np.abs(eff)
-    d["elo_p"] = 1.0 / (1.0 + np.power(10.0, -eff))
+    d["elo_diff"] = df["rating_diff"].to_numpy(dtype=np.float64) / 400.0
     d["rating_sum"] = (
         df["first_rating"].to_numpy(dtype=np.float64)
         + df["second_rating"].to_numpy(dtype=np.float64)
         - 3800.0
     ) / 400.0
-    d["std_comb"] = np.sqrt(s1 * s1 + s2 * s2) / 350.0
-    rules = df["rule"].to_numpy()
-    for rcode in sorted(RULE_MAP.values()):
-        d[f"rule_{rcode}"] = (rules == rcode).astype(np.float64)
     return d
 
 

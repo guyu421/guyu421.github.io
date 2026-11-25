@@ -112,23 +112,12 @@ def predict_from_ratings(
     if rule not in rule_map:
         raise ValueError(f"Unsupported rule {rule!r}. Choose from: {list(rule_map.keys())}")
 
-    rcode = rule_map[rule]
-    diff = r1 - r2
-    s_comb = math.sqrt(1.0 + 3.0 * (std1 * std1 + std2 * std2) / (400.0 * 400.0))
-    eff = diff / (400.0 * s_comb)
     feat_map = {
-        "elo_diff": diff / 400.0,
-        "eff_diff": eff,
-        "abs_eff": abs(eff),
-        "elo_p": 1.0 / (1.0 + (10.0 ** (-eff))),
+        "elo_diff": (r1 - r2) / 400.0,
         "rating_sum": (r1 + r2 - 3800.0) / 400.0,
-        "std_comb": math.sqrt(std1 * std1 + std2 * std2) / 350.0,
     }
     x = np.array(
-        [
-            1.0 if (c == f"rule_{rcode}") else feat_map.get(c, 0.0)
-            for c in model["feature_cols"]
-        ],
+        [feat_map.get(c, 0.0) for c in model["feature_cols"]],
         dtype=np.float64,
     )
     coef = np.asarray(model["coef"], dtype=np.float64)
