@@ -65,20 +65,17 @@ def parse_result(tok: str) -> str:
 
 
 def parse_match_line(line: str, default_rule: str) -> Dict[str, object]:
-    # Extract optional key=value tail tokens (5a=..., swap=..., rule=..., moves=...)
+    # Extract optional key=value tail tokens in any order:
+    # 5a=..., swap=..., rule=..., moves=... (moves may contain spaces up to next key= or end)
     kv: Dict[str, str] = {}
     rest = line.strip()
-    m_moves = re.search(r"\s+moves=([a-z0-9\s]+)$", rest, re.IGNORECASE)
-    if m_moves:
-        kv["moves"] = m_moves.group(1).strip()
-        rest = rest[: m_moves.start()].strip()
-
-    while True:
-        m_kv = re.search(r"\s+(5a|swap|rule)=([^\s]+)$", rest, re.IGNORECASE)
-        if not m_kv:
-            break
-        kv[m_kv.group(1).lower()] = m_kv.group(2).strip()
-        rest = rest[: m_kv.start()].strip()
+    kv_pattern = re.compile(r"\s+(5a|swap|rule|moves)=(.+?)(?=\s+(?:5a|swap|rule|moves)=|$)", re.IGNORECASE)
+    first_kv = kv_pattern.search(rest)
+    if first_kv:
+        tail = rest[first_kv.start():]
+        rest = rest[:first_kv.start()].strip()
+        for m in kv_pattern.finditer(tail):
+            kv[m.group(1).lower()] = m.group(2).strip()
 
     rule = kv.get("rule", default_rule)
 
@@ -158,15 +155,28 @@ def apply_txt_content(text: str, db_dir: Path) -> List[str]:
     m_df = pd.read_parquet(db_dir / "match.parquet")
 
     name_to_pid: Dict[str, int] = {str(r.name).strip(): int(r.player_id) for r in p_df.itertuples(index=False)}
+    pid_set = set(int(x) for x in p_df["player_id"].tolist())
     next_pid = int(p_df["player_id"].max()) + 1 if not p_df.empty else 1
 
-    def get_or_create_pid(name: str) -> int:
+    def get_or_create_pid(token: str, no_to_pid: Optional[Dict[int, int]] = None) -> int:
         nonlocal next_pid, p_df
-        nm = name.strip()
+        nm = token.strip()
+        if nm.startswith("#") and nm[1:].isdigit():
+            pno = int(nm[1:])
+            if no_to_pid and pno in no_to_pid:
+                return no_to_pid[pno]
+            raise ValueError(f"未在 [棋手] 中找到参赛编号: {nm}")
+        m_id = re.match(r"^(?:id:)?(\d+)$", nm, re.IGNORECASE)
+        if m_id:
+            pid = int(m_id.group(1))
+            if pid not in pid_set:
+                raise ValueError(f"数据库中不存在棋手 player_id={pid}")
+            return pid
         if nm in name_to_pid:
             return name_to_pid[nm]
         pid = next_pid
         next_pid += 1
+        pid_set.add(pid)
         name_to_pid[nm] = pid
         p_df = pd.concat([p_df, pd.DataFrame([{"player_id": pid, "name": nm}])], ignore_index=True)
         return pid
@@ -253,8 +263,10 @@ def apply_txt_content(text: str, db_dir: Path) -> List[str]:
             roster = [(idx + 1, nm) for idx, nm in enumerate(seen_names)]
 
         new_tp_rows = []
+        no_to_pid: Dict[int, int] = {}
         for pno, nm in roster:
             pid = get_or_create_pid(nm)
+            no_to_pid[pno] = pid
             new_tp_rows.append({"tournament_id": t_id, "player_id": pid, "player_no": pno})
         if new_tp_rows:
             tp_df = pd.concat([tp_df, pd.DataFrame(new_tp_rows)], ignore_index=True)
@@ -263,8 +275,8 @@ def apply_txt_content(text: str, db_dir: Path) -> List[str]:
         next_id = int(m_df["id"].max()) + 1 if not m_df.empty else 1
         new_m_rows = []
         for rec in parsed_matches:
-            fid = get_or_create_pid(str(rec["first"]))
-            sid = get_or_create_pid(str(rec["second"])) if rec["second"] else pd.NA
+            fid = get_or_create_pid(str(rec["first"]), no_to_pid)
+            sid = get_or_create_pid(str(rec["second"]), no_to_pid) if rec["second"] else pd.NA
             new_m_rows.append({
                 "id": next_id,
                 "game_id": next_gid,
@@ -304,7 +316,8 @@ def apply_txt_content(text: str, db_dir: Path) -> List[str]:
         m_set = re.match(r"^SET\s+game\s+(\d+)\s+(.+)$", cmd, re.IGNORECASE)
         if m_set:
             gid = int(m_set.group(1))
-            kvs = re.findall(r"(\w+)=([^\s]+)", m_set.group(2))
+            kv_pat = re.compile(r"(\w+)=(.+?)(?=\s+\w+=|$)")
+            kvs = [(m.group(1), m.group(2).strip()) for m in kv_pat.finditer(m_set.group(2).strip())]
             mask = m_df["game_id"] == gid
             if not mask.any():
                 raise ValueError(f"SET game {gid}: 未找到该对局")
@@ -314,7 +327,7 @@ def apply_txt_content(text: str, db_dir: Path) -> List[str]:
                     m_df.loc[mask, k] = int(v)
                 elif k == "result":
                     m_df.loc[mask, k] = parse_result(v)
-                elif k in ("date", "rule", "swap", "5a"):
+                elif k in ("date", "rule", "swap", "5a", "moves"):
                     m_df.loc[mask, k] = val
                 else:
                     raise ValueError(f"不支持的字段: {k}")

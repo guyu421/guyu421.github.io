@@ -22,6 +22,7 @@
   var previewBoxEl = document.getElementById("previewBox");
 
   var playersByName = {};
+  var playersById = {};
   var tournamentsList = [];
 
   function setStatus(msg, isError) {
@@ -74,8 +75,11 @@
       .then(function (r) { return r.json(); })
       .then(function (rows) {
         playersByName = {};
+        playersById = {};
         rows.forEach(function (p) {
-          playersByName[String(p.name).trim()] = p.player_id;
+          var nm = String(p.name).trim();
+          playersByName[nm] = p.player_id;
+          playersById[String(p.player_id)] = nm;
         });
       })
       .catch(function () {});
@@ -185,16 +189,17 @@
   newTemplateBtn.addEventListener("click", function () {
     txtEditorEl.value = [
       "# 新建赛事模板（若填 赛事ID: 则为覆盖更新；留空则自动分配新赛事ID）",
+      "# 棋手可直接写姓名、数据库编号(如 135 或 id:135) 或 #参赛编号(如 #1)",
       "赛事: 2026年示例锦标赛-公开组",
-      "规则: 五手两打",
+      "规则: 塔拉山口-10",
       "",
       "[棋手]",
       "1 张三",
-      "2 李四",
+      "2 135",
       "3 王五",
       "",
       "[第1轮 2026-11-25]",
-      "1 张三 1 - 0 李四 5a=8",
+      "1 张三 1 - 0 #2 swap=+--+- 5a=g9 moves=h8 h9 g10 g8 i10",
       "2 王五 + 轮空",
       "",
     ].join("\n");
@@ -205,7 +210,7 @@
   cmdTemplateBtn.addEventListener("click", function () {
     txtEditorEl.value = [
       "# 单条/批量修改指令示例（取消注释后使用）",
-      "# SET game 4990 result=0.5 5a=8",
+      "# SET game 4990 result=平 swap=+--+- 5a=8 moves=h8 h9 g10 g8",
       "# DEL game 4990",
       "# RENAME player 619 新姓名",
       "# MERGE player 619 -> 579",
@@ -269,15 +274,30 @@
         return;
       }
       if (section === "round") {
-        var rest = line.replace(/\s+moves=[a-z0-9\s]+$/i, "").trim();
-        while (/\s+(5a|swap|rule)=[^\s]+$/i.test(rest)) {
-          rest = rest.replace(/\s+(5a|swap|rule)=[^\s]+$/i, "").trim();
+        var kv = {};
+        var rest = line;
+        var kvRe = /\s+(5a|swap|rule|moves)=(.+?)(?=\s+(?:5a|swap|rule|moves)=|$)/gi;
+        var firstKv = kvRe.exec(rest);
+        if (firstKv) {
+          var tail = rest.slice(firstKv.index);
+          rest = rest.slice(0, firstKv.index).trim();
+          kvRe.lastIndex = 0;
+          var km;
+          while ((km = kvRe.exec(tail)) !== null) {
+            kv[km[1].toLowerCase()] = km[2].trim();
+          }
         }
+        var extraParts = [];
+        if (kv.swap) extraParts.push("交换:" + kv.swap);
+        if (kv["5a"]) extraParts.push("5a:" + kv["5a"]);
+        if (kv.moves) extraParts.push(kv.moves.split(/\s+/).length + "手");
+        var extraStr = extraParts.join(" ");
+
         var mBye = rest.match(/^(\d+)\s+(.+?)\s+(?:\+\s+)?轮空$/);
         if (mBye) {
           matches.push({
             round: curRound, date: curDate, board: Number(mBye[1]),
-            first: mBye[2].trim(), second: "轮空", result: "+-"
+            first: mBye[2].trim(), second: "轮空", result: "+-", extra: ""
           });
           return;
         }
@@ -285,7 +305,7 @@
         if (mDash) {
           matches.push({
             round: curRound, date: curDate, board: Number(mDash[1]),
-            first: mDash[2].trim(), second: mDash[5].trim(), result: mDash[3] + "-" + mDash[4]
+            first: mDash[2].trim(), second: mDash[5].trim(), result: mDash[3] + "-" + mDash[4], extra: extraStr
           });
           return;
         }
@@ -293,7 +313,7 @@
         if (mTok) {
           matches.push({
             round: curRound, date: curDate, board: Number(mTok[1]),
-            first: mTok[2].trim(), second: mTok[4].trim(), result: mTok[3]
+            first: mTok[2].trim(), second: mTok[4].trim(), result: mTok[3], extra: extraStr
           });
           return;
         }
@@ -322,6 +342,31 @@
       );
     }
 
+    var rosterNoToToken = {};
+    parsed.roster.forEach(function (p) {
+      rosterNoToToken[p.no] = p.name;
+    });
+
+    function resolvePreviewPlayer(tok) {
+      if (!tok || tok === "轮空") return { label: "轮空", badge: "" };
+      var s = tok.trim();
+      if (/^#\d+$/.test(s)) {
+        var rno = Number(s.slice(1));
+        if (rosterNoToToken[rno]) return resolvePreviewPlayer(rosterNoToToken[rno]);
+        return { label: s, badge: ' <span class="admin-badge">缺参赛号</span>' };
+      }
+      var mId = s.match(/^(?:id:)?(\d+)$/i);
+      if (mId) {
+        var pid = mId[1];
+        if (playersById[pid]) return { label: playersById[pid] + " (ID:" + pid + ")", badge: "" };
+        return { label: "ID:" + pid, badge: ' <span class="admin-badge">无此ID</span>' };
+      }
+      if (playersByName[s] != null) {
+        return { label: s + " (ID:" + playersByName[s] + ")", badge: "" };
+      }
+      return { label: s, badge: ' <span class="admin-badge">新</span>' };
+    }
+
     var newPlayers = {};
     var seenNames = {};
     parsed.roster.forEach(function (p) { seenNames[p.name] = true; });
@@ -330,6 +375,7 @@
       if (m.second && m.second !== "轮空") seenNames[m.second] = true;
     });
     Object.keys(seenNames).forEach(function (nm) {
+      if (/^#\d+$/.test(nm) || /^(?:id:)?\d+$/i.test(nm)) return;
       if (playersByName[nm] == null) newPlayers[nm] = true;
     });
 
@@ -344,15 +390,15 @@
         "</ul>";
     }
     if (parsed.matches.length) {
-      html += '<div class="table-wrap"><table><tbody><tr><th>轮次</th><th>日期</th><th>台次</th><th>假先/黑</th><th>结果</th><th>假后/白</th></tr>';
+      html += '<div class="table-wrap"><table><tbody><tr><th>轮次</th><th>日期</th><th>台次</th><th>假先/黑</th><th>结果</th><th>假后/白</th><th>附加</th></tr>';
       parsed.matches.slice(0, 80).forEach(function (m) {
-        var fTag = playersByName[m.first] ? "" : ' <span class="admin-badge">新</span>';
-        var sTag = (m.second === "轮空" || playersByName[m.second]) ? "" : ' <span class="admin-badge">新</span>';
+        var fp = resolvePreviewPlayer(m.first);
+        var sp = resolvePreviewPlayer(m.second);
         html += "<tr><td>" + m.round + "</td><td>" + escHtml(m.date) + "</td><td>" + m.board + "</td><td>" +
-          escHtml(m.first) + fTag + "</td><td>" + escHtml(m.result) + "</td><td>" + escHtml(m.second) + sTag + "</td></tr>";
+          escHtml(fp.label) + fp.badge + "</td><td>" + escHtml(m.result) + "</td><td>" + escHtml(sp.label) + sp.badge + "</td><td>" + escHtml(m.extra || "") + "</td></tr>";
       });
       if (parsed.matches.length > 80) {
-        html += '<tr><td colspan="6" class="admin-muted">仅预览前 80 盘（共 ' + parsed.matches.length + " 盘）</td></tr>";
+        html += '<tr><td colspan="7" class="admin-muted">仅预览前 80 盘（共 ' + parsed.matches.length + " 盘）</td></tr>";
       }
       html += "</tbody></table></div>";
     }
