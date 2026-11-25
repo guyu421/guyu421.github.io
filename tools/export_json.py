@@ -255,7 +255,8 @@ def read_parquet(folder):
         })
     players = [{"player_id": int(r.player_id), "name": r.name} for r in p.itertuples(index=False)]
     tours = [{"tournament_id": int(r.tournament_id), "name": r.name} for r in t.itertuples(index=False)]
-    members = [{"tournament_id": int(r.tournament_id), "player_id": int(r.player_id)}
+    members = [{"tournament_id": int(r.tournament_id), "player_id": int(r.player_id),
+                "player_no": None if pd.isna(getattr(r, "player_no", None)) else int(r.player_no)}
                for r in tp.itertuples(index=False)]
     return games, players, tours, members
 
@@ -407,6 +408,8 @@ def build(games, players, tours, members, teams=None, team_matches=None):
 
     # 每个赛事单独一份：赛事页点进去只读自己那一段，不用拉全量对局
     pid_of = {p["name"]: p["player_id"] for p in players}
+    player_no_of = {(m["tournament_id"], m["player_id"]): m["player_no"]
+                    for m in members if m.get("player_no") is not None}
     match_preds = compute_match_predictions(games_out, pid_of)
     tour_details = {}
     for row in tours_out:
@@ -427,8 +430,10 @@ def build(games, players, tours, members, teams=None, team_matches=None):
                 "rule": g["rule"],
                 "first": g["first"],
                 "first_id": pid_of.get(g["first"]),
+                "first_no": player_no_of.get((tid, pid_of.get(g["first"]))),
                 "second": g["second"],
                 "second_id": pid_of.get(g["second"]),
+                "second_no": player_no_of.get((tid, pid_of.get(g["second"]))),
                 "result": g["result"],
                 "p_first": match_preds.get(g["game_id"], (None, None, None))[0],
                 "p_draw": match_preds.get(g["game_id"], (None, None, None))[1],

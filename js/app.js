@@ -542,19 +542,22 @@
 
   /* ---------- 赛事对局页 ---------- */
 
-  function playerCell(name, id) {
+  function playerCell(name, id, no) {
     var td = el("td");
     if (name === "轮空") {
       td.className = "skip";
       td.textContent = name;
       return td;
     }
+    if (no !== null && no !== undefined && no !== "") {
+      td.appendChild(el("span", "player-no", String(no)));
+    }
     if (id) {
       var link = el("a", "", name);
       link.href = "player.html?id=" + encodeURIComponent(id);
       td.appendChild(link);
     } else {
-      td.textContent = name || "";
+      td.appendChild(document.createTextNode(name || ""));
     }
     return td;
   }
@@ -752,7 +755,7 @@
       tr.appendChild(day);
       tr.appendChild(el("td", "rnd", "第" + game.round + "轮 第" + game.board + "台"));
       tr.appendChild(el("td", "rule", game.rule || ""));
-      tr.appendChild(playerCell(game.first, game.first_id));
+      tr.appendChild(playerCell(game.first, game.first_id, game.first_no));
       // 轮空也照库里填的记分显示（一般是 +:-），与其它台次一致
       var scoreTd = el("td", "score");
       var scoreText = RESULT_SCORE[String(game.result)] || String(game.result);
@@ -765,7 +768,7 @@
         scoreTd.textContent = scoreText;
       }
       tr.appendChild(scoreTd);
-      tr.appendChild(playerCell(game.second, game.second_id));
+      tr.appendChild(playerCell(game.second, game.second_id, game.second_no));
       tr.appendChild(el("td", "prob", game.p_first != null ? Number(game.p_first).toFixed(1) + "%" : ""));
       tr.appendChild(el("td", "prob", game.p_draw != null ? Number(game.p_draw).toFixed(1) + "%" : ""));
       tr.appendChild(el("td", "prob", game.p_second != null ? Number(game.p_second).toFixed(1) + "%" : ""));
