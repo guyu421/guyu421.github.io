@@ -781,6 +781,16 @@ a.score-link:hover {
 	margin-bottom: 0.45em;
 }
 
+.model-sublist {
+	margin: 0.35em 0 0.2em 0;
+	padding-left: 1.4em;
+	line-height: 1.6;
+}
+
+.model-sublist li {
+	margin-bottom: 0.2em;
+}
+
 .model-list code {
 	background: #f2f5f8;
 	padding: 0.1em 0.35em;
