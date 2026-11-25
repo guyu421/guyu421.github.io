@@ -182,15 +182,12 @@ def apply_txt_content(text: str, db_dir: Path) -> List[str]:
         if nm.endswith("*"):
             if nm in session_star_pids:
                 return session_star_pids[nm]
-            stored_nm = nm
-            while stored_nm in name_to_pid:
-                stored_nm += "*"
+            clean_nm = nm.rstrip("*").strip()
             pid = next_pid
             next_pid += 1
             pid_set.add(pid)
-            name_to_pid[stored_nm] = pid
             session_star_pids[nm] = pid
-            p_df = pd.concat([p_df, pd.DataFrame([{"player_id": pid, "name": stored_nm}])], ignore_index=True)
+            p_df = pd.concat([p_df, pd.DataFrame([{"player_id": pid, "name": clean_nm}])], ignore_index=True)
             return pid
         if nm in name_to_pid:
             return name_to_pid[nm]

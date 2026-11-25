@@ -99,12 +99,14 @@ def compute_ratings(games_out):
     """
     trainable = []
     for g in games_out:
-        if g["second"] == BYE_NAME or g["first"] == g["second"]:
+        fid = g.get("first_id")
+        sid = g.get("second_id")
+        if g["second"] == BYE_NAME or sid is None or fid == sid:
             continue
         winner = WINNER.get(str(g["result"]))
         if winner is None:
             continue
-        trainable.append([g["first"], g["second"], winner, _day_of(g["date"])])
+        trainable.append([str(fid), str(sid), winner, _day_of(g["date"])])
     trainable.sort(key=lambda r: r[3])
     if not trainable:
         return {}, {}
@@ -115,18 +117,18 @@ def compute_ratings(games_out):
 
     final_day = max(row[3] for row in trainable)
     series = {}
-    for name, rows in base.get_ordered_ratings():
-        series[name] = [
+    for pid_key, rows in base.get_ordered_ratings():
+        series[int(pid_key)] = [
             ((EPOCH + timedelta(days=int(day))).isoformat(), elo + WHR_BIAS, float(std))
             for day, elo, std in rows
         ]
 
     # 榜单上显示的是最后一次比赛的分，偏差则按「距最后一次比赛多少天」放大
     final = {}
-    for name, points in series.items():
+    for pid_key, points in series.items():
         last_date, last_rating, last_rd = points[-1]
         gap = max(final_day - _day_of(last_date), 0)
-        final[name] = (last_rating, math.sqrt(WHR_W2 * gap + last_rd * last_rd))
+        final[pid_key] = (last_rating, math.sqrt(WHR_W2 * gap + last_rd * last_rd))
     return final, series
 
 
@@ -198,8 +200,8 @@ def compute_match_predictions(games_out, pid_of):
         period_updates = []
         period_pairs = []
         for g in ordered[i:j]:
-            fid = pid_of.get(g["first"])
-            sid = pid_of.get(g["second"])
+            fid = g.get("first_id") if g.get("first_id") is not None else pid_of.get(g["first"])
+            sid = g.get("second_id") if g.get("second_id") is not None else pid_of.get(g["second"])
             is_bye = g["first"] == BYE_NAME or g["second"] == BYE_NAME or fid is None or sid is None
             booster, metadata = pick_model(g["date"])
             if is_bye or booster is None or g["rule"] not in metadata["rule_map"]:
@@ -380,7 +382,9 @@ def build(games, players, tours, members, teams=None, team_matches=None):
             "date": g["date"],
             "rule": g["rule"],
             "first": name.get(g["first_id"], ""),
+            "first_id": g["first_id"],
             "second": second,
+            "second_id": None if second == BYE_NAME else g["second_id"],
             "result": result,
             "tournament_id": g["tournament_id"],
             "tournament": tour_name.get(g["tournament_id"], ""),
@@ -441,11 +445,11 @@ def build(games, players, tours, members, teams=None, team_matches=None):
                 "board": g["board"],
                 "rule": g["rule"],
                 "first": g["first"],
-                "first_id": pid_of.get(g["first"]),
-                "first_no": player_no_of.get((tid, pid_of.get(g["first"]))),
+                "first_id": g.get("first_id"),
+                "first_no": player_no_of.get((tid, g.get("first_id"))),
                 "second": g["second"],
-                "second_id": pid_of.get(g["second"]),
-                "second_no": player_no_of.get((tid, pid_of.get(g["second"]))),
+                "second_id": g.get("second_id"),
+                "second_no": player_no_of.get((tid, g.get("second_id"))),
                 "result": g["result"],
                 "p_first": match_preds.get(g["game_id"], (None, None, None))[0],
                 "p_draw": match_preds.get(g["game_id"], (None, None, None))[1],
@@ -542,9 +546,9 @@ def build(games, players, tours, members, teams=None, team_matches=None):
             "board": g["board"],
             "rule": g["rule"],
             "first": g["first"],
-            "first_id": pid_of.get(g["first"]),
+            "first_id": g.get("first_id"),
             "second": g["second"],
-            "second_id": pid_of.get(g["second"]),
+            "second_id": g.get("second_id"),
             "result": g["result"],
             "swap": g.get("swap"),
             "5a": g.get("5a"),
@@ -558,20 +562,24 @@ def build(games, players, tours, members, teams=None, team_matches=None):
 
     games_by_player = {}
     for g in games_out:
-        games_by_player.setdefault(g["first"], []).append(g)
-        if g["second"] != g["first"]:
-            games_by_player.setdefault(g["second"], []).append(g)
+        fid = g.get("first_id")
+        sid = g.get("second_id")
+        if fid is not None:
+            games_by_player.setdefault(fid, []).append(g)
+        if sid is not None and sid != fid:
+            games_by_player.setdefault(sid, []).append(g)
 
     players_out = []
     for p in players:
         if str(p["name"]).strip() in (BYE_NAME, "+"):
             continue
-        mine = games_by_player.get(p["name"], [])
-        tours_of_mine = mine_tours.get(p["player_id"], set())
+        pid = p["player_id"]
+        mine = games_by_player.get(pid, [])
+        tours_of_mine = mine_tours.get(pid, set())
         # 只有加赛记录（已被跳过）或根本没上场的棋手不进榜单
         if not mine:
             continue
-        rating, std = ratings.get(p["name"], (WHR_BIAS, WHR_PRIOR_STD))
+        rating, std = ratings.get(pid, (WHR_BIAS, WHR_PRIOR_STD))
         players_out.append({
             "player_id": p["player_id"],
             "rank": 0,
@@ -635,25 +643,28 @@ def classify_result(is_first, result, opponent):
 
 def build_details(games_out, players_out, series):
     """每位棋手一份详情：基本信息 + 等级分曲线 + 按赛事分组的对局明细。"""
-    player_id = {p["name"]: p["player_id"] for p in players_out}
     games_by_player = {}
     for g in games_out:
-        games_by_player.setdefault(g["first"], []).append(g)
-        if g["second"] != g["first"]:
-            games_by_player.setdefault(g["second"], []).append(g)
+        fid = g.get("first_id")
+        sid = g.get("second_id")
+        if fid is not None:
+            games_by_player.setdefault(fid, []).append(g)
+        if sid is not None and sid != fid:
+            games_by_player.setdefault(sid, []).append(g)
     details = {}
 
     for p in players_out:
         name = p["name"]
         pid = p["player_id"]
-        mine = games_by_player.get(name, [])
+        mine = games_by_player.get(pid, [])
 
         wins = draws = losses = 0
         byes = self_skips = opp_skips = double_skips = 0
         groups = {}
         for g in mine:
-            is_first = g["first"] == name
+            is_first = g.get("first_id") == pid
             opponent = g["second"] if is_first else g["first"]
+            opp_id = g.get("second_id") if is_first else g.get("first_id")
             result = str(g["result"])
 
             kind, label, klass = classify_result(is_first, result, opponent)
@@ -673,8 +684,8 @@ def build_details(games_out, players_out, series):
             else:
                 double_skips += 1
 
-            opp_rating = None if opponent == BYE_NAME else _display(
-                rating_at(series, opponent, g["date"])[0]
+            opp_rating = None if (opponent == BYE_NAME or opp_id is None) else _display(
+                rating_at(series, opp_id, g["date"])[0]
             )
             group = groups.setdefault(g["tournament_id"], {
                 "tournament_id": g["tournament_id"],
@@ -696,14 +707,14 @@ def build_details(games_out, players_out, series):
                 "class": klass,
                 "kind": kind,
                 "opponent": opponent,
-                "opponent_id": player_id.get(opponent),
+                "opponent_id": opp_id,
                 "opponent_rating": opp_rating,
             })
 
         groups = sorted(groups.values(), key=lambda r: r["end_date"], reverse=True)
         for group in groups:
             group["games"].sort(key=lambda r: (r["round"], r["board"]))
-            group["rating"] = _display(rating_at(series, name, group["end_date"])[0])
+            group["rating"] = _display(rating_at(series, pid, group["end_date"])[0])
 
         # 曲线按比赛内每个比赛日记录节点，不再把同个比赛压缩成一天
         curve = []
@@ -712,7 +723,7 @@ def build_details(games_out, players_out, series):
             if not dates:
                 dates = [group["end_date"]]
             for d in dates:
-                value, rd = rating_at(series, name, d)
+                value, rd = rating_at(series, pid, d)
                 curve.append([d, _display(value), _display(rd), group["tournament_id"]])
         curve.sort(key=lambda pt: (pt[0], pt[3]))
 
