@@ -145,7 +145,7 @@
         lines.push("[第" + rnd + "轮 " + dt + "]");
         rGames.forEach(function (g) {
           if (!g.second || g.second === "轮空") {
-            lines.push(g.board + " " + g.first + " + 轮空");
+            lines.push(g.board + " " + g.first + " +- 轮空");
           } else {
             var resStr = g.result;
             if (g.result === "1") resStr = "1 - 0";
@@ -201,7 +201,7 @@
       "",
       "[第1轮 2026-11-25]",
       "1 张三 1 - 0 #2 swap=+--+- 5a=g9 moves=h8 h9 g10 g8 i10",
-      "2 王五 + 轮空",
+      "2 王五 +- 轮空",
       "",
     ].join("\n");
     updateLineStats();
