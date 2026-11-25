@@ -54,7 +54,7 @@ RESULT_TO_CLASS: Dict[str, int] = {
     "1": 2,    # 假先胜
 }
 CLASS_LABELS = ["假后胜", "和棋", "假先胜"]
-FEATURE_NAMES = ["rule", "first_rating", "second_rating", "rating_diff", "first_rd", "second_rd"]
+FEATURE_NAMES = ["rule", "first_mu", "second_mu", "mu_diff", "first_sigma", "second_sigma"]
 RESULT_SCORE = {"1": 1.0, "0.5": 0.5, "0": 0.0}
 
 
@@ -94,11 +94,11 @@ def build_features_and_ratings(
             rows.append(
                 {
                     "rule": rule_code,
-                    "first_rating": p1.rating,
-                    "second_rating": p2.rating,
-                    "rating_diff": p1.rating - p2.rating,
-                    "first_rd": p1.rd,
-                    "second_rd": p2.rd,
+                    "first_mu": p1.mu,
+                    "second_mu": p2.mu,
+                    "mu_diff": p1.mu - p2.mu,
+                    "first_sigma": p1.sigma,
+                    "second_sigma": p2.sigma,
                 }
             )
             targets.append(RESULT_TO_CLASS[str(r.result)])
@@ -168,14 +168,14 @@ def train_cutoff(
 
     ratings_payload = {
         "default": {
-            "rating": round(DEFAULT_MU, 4),
-            "rd": round(DEFAULT_SIGMA, 4),
+            "mu": round(DEFAULT_MU, 4),
+            "sigma": round(DEFAULT_SIGMA, 4),
         },
         "players": {
             str(pid): {
                 "name": player_names.get(pid, str(pid)),
-                "rating": round(pr.rating, 4),
-                "rd": round(pr.rd, 4),
+                "mu": round(pr.mu, 4),
+                "sigma": round(pr.sigma, 4),
             }
             for pid, pr in sorted(tracker.ratings.items())
         },

@@ -6,11 +6,11 @@
   "num_rated_players": 298,
   "features": [
     "rule",
-    "first_rating",
-    "second_rating",
-    "rating_diff",
-    "first_rd",
-    "second_rd"
+    "first_mu",
+    "second_mu",
+    "mu_diff",
+    "first_sigma",
+    "second_sigma"
   ],
   "rule_map": {
     "山口": 0,

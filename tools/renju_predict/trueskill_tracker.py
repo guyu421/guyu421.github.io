@@ -16,11 +16,11 @@ DEFAULT_DRAW_PROBABILITY = trueskill.DRAW_PROBABILITY  # 0.10
 
 @dataclass
 class PlayerRating:
-    rating: float = DEFAULT_MU
-    rd: float = DEFAULT_SIGMA
+    mu: float = DEFAULT_MU
+    sigma: float = DEFAULT_SIGMA
 
     def to_ts(self) -> trueskill.Rating:
-        return trueskill.Rating(mu=self.rating, sigma=self.rd)
+        return trueskill.Rating(mu=self.mu, sigma=self.sigma)
 
 
 class TrueSkillTracker:
@@ -46,7 +46,7 @@ class TrueSkillTracker:
     def get(self, player_id: object) -> PlayerRating:
         pr = self.ratings.get(player_id)
         if pr is None:
-            pr = PlayerRating(rating=self.env.mu, rd=self.env.sigma)
+            pr = PlayerRating(mu=self.env.mu, sigma=self.env.sigma)
             self.ratings[player_id] = pr
         return pr
 
@@ -66,7 +66,6 @@ class TrueSkillTracker:
 
         deltas_mu: Dict[object, float] = {}
         new_sigmas: Dict[object, float] = {}
-        counts: Dict[object, int] = {}
 
         for p1, p2, score in game_list:
             r1 = pre[p1]
@@ -82,12 +81,10 @@ class TrueSkillTracker:
             deltas_mu[p2] = deltas_mu.get(p2, 0.0) + (nr2.mu - r2.mu)
             new_sigmas[p1] = nr1.sigma
             new_sigmas[p2] = nr2.sigma
-            counts[p1] = counts.get(p1, 0) + 1
-            counts[p2] = counts.get(p2, 0) + 1
 
         for pid, dmu in deltas_mu.items():
             base = pre[pid]
             self.ratings[pid] = PlayerRating(
-                rating=base.mu + dmu,
-                rd=new_sigmas[pid],
+                mu=base.mu + dmu,
+                sigma=new_sigmas[pid],
             )

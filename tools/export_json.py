@@ -139,12 +139,12 @@ def compute_ratings(games_out):
             pr = tracker.get(nm)
             lst = series_map.setdefault(nm, [])
             if lst and lst[-1][0] == p_date:
-                lst[-1] = (p_date, pr.rating, pr.rd)
+                lst[-1] = (p_date, pr.mu, pr.sigma)
             else:
-                lst.append((p_date, pr.rating, pr.rd))
+                lst.append((p_date, pr.mu, pr.sigma))
         i = j
 
-    ratings = {nm: (pr.rating, pr.rd) for nm, pr in tracker.ratings.items()}
+    ratings = {nm: (pr.mu, pr.sigma) for nm, pr in tracker.ratings.items()}
     return ratings, series_map
 
 
@@ -222,7 +222,7 @@ def compute_match_predictions(games_out, pid_of):
             else:
                 p1 = tracker.get(fid)
                 p2 = tracker.get(sid)
-                p = predict_from_ratings(booster, metadata, g["rule"], p1.rating, p2.rating, p1.rd, p2.rd)
+                p = predict_from_ratings(booster, metadata, g["rule"], p1.mu, p2.mu, p1.sigma, p2.sigma)
                 preds[g["game_id"]] = (
                     round(p["假先胜率"] * 100, 1),
                     round(p["和棋率"] * 100, 1),
