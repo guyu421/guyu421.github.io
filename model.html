@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>模型</title>
   <link href="css/default.css" rel="stylesheet" type="text/css" />
-  <link href="css/site.css?v=2" rel="stylesheet" type="text/css" />
+  <link href="css/site.css?v=3" rel="stylesheet" type="text/css" />
 </head>
 <body>
   <div id="outer">
@@ -34,8 +34,24 @@
 
           <div class="model-section">
             <h2>预测评估指标</h2>
+            <div class="model-metrics" id="modelMetrics"></div>
             <div class="model-legend" id="modelLegend"></div>
             <div class="model-chart-wrap" id="modelChartWrap"></div>
+          </div>
+
+          <div class="model-section">
+            <h2>概率校准曲线</h2>
+            <div class="model-legend" id="calLegend">
+              <span class="model-legend-item">
+                <span class="model-legend-dash"></span>
+                <span>完美校准 (y=x)</span>
+              </span>
+              <span class="model-legend-item">
+                <span class="model-legend-line" style="background:#2f6fcd;"></span>
+                <span>模型校准曲线</span>
+              </span>
+            </div>
+            <div class="model-chart-wrap" id="calChartWrap"></div>
           </div>
         </div>
       </div>

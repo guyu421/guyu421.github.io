@@ -811,6 +811,40 @@ a.score-link:hover {
 	border-radius: 2px;
 }
 
+.model-legend-dash {
+	display: inline-block;
+	width: 16px;
+	height: 0;
+	border-top: 2px dashed #9aa5b1;
+}
+
+.model-metrics {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	gap: 0.65em;
+	margin-bottom: 0.9em;
+}
+
+.model-metric-card {
+	background: #f6f8fa;
+	border: 1px solid #dce2e8;
+	border-radius: 6px;
+	padding: 0.6em 0.8em;
+}
+
+.model-metric-label {
+	font-size: 0.82em;
+	color: #5a6772;
+	margin-bottom: 0.2em;
+}
+
+.model-metric-value {
+	font-size: 1.2em;
+	font-weight: 700;
+	color: #1f2a33;
+	font-variant-numeric: tabular-nums;
+}
+
 .model-chart-wrap {
 	position: relative;
 	width: 100%;

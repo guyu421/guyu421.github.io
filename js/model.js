@@ -1,6 +1,8 @@
 (function () {
   var legendEl = document.getElementById("modelLegend");
   var wrapEl = document.getElementById("modelChartWrap");
+  var metricsEl = document.getElementById("modelMetrics");
+  var calWrapEl = document.getElementById("calChartWrap");
   if (!legendEl || !wrapEl) return;
 
   var SERIES = [
@@ -148,10 +150,116 @@
     });
   }
 
+  function renderMetrics(data) {
+    if (!metricsEl || !data || !data.metrics) return;
+    var m = data.metrics;
+    var allAcc = data.summary && data.summary.all ? data.summary.all.accuracy : null;
+    var cards = [
+      { label: "对数损失 (Log Loss)", value: m.logloss != null ? m.logloss.toFixed(4) : "-" },
+      { label: "布里尔分数 (Brier Score)", value: m.brier != null ? m.brier.toFixed(4) : "-" },
+      { label: "期望校准误差 (ECE)", value: m.ece != null ? m.ece.toFixed(2) + "%" : "-" },
+      { label: "全部预测准确率", value: allAcc != null ? allAcc.toFixed(2) + "%" : "-" },
+    ];
+    metricsEl.innerHTML = cards.map(function (c) {
+      return (
+        '<div class="model-metric-card">' +
+        '<div class="model-metric-label">' + c.label + "</div>" +
+        '<div class="model-metric-value">' + c.value + "</div>" +
+        "</div>"
+      );
+    }).join("");
+  }
+
+  function renderCalibration(data) {
+    if (!calWrapEl) return;
+    var bins = (data && data.calibration) || [];
+    if (!bins.length) {
+      calWrapEl.textContent = "暂无校准数据";
+      return;
+    }
+
+    var W = 820;
+    var H = 300;
+    var padL = 48;
+    var padR = 24;
+    var padT = 16;
+    var padB = 34;
+    var plotW = W - padL - padR;
+    var plotH = H - padT - padB;
+    var vMin = 30;
+    var vMax = 100;
+    var ticks = [30, 40, 50, 60, 70, 80, 90, 100];
+
+    function xVal(v) {
+      var c = Math.max(vMin, Math.min(vMax, v));
+      return padL + ((c - vMin) / (vMax - vMin)) * plotW;
+    }
+
+    function yVal(v) {
+      var c = Math.max(vMin, Math.min(vMax, v));
+      return padT + ((vMax - c) / (vMax - vMin)) * plotH;
+    }
+
+    var svg = [];
+    svg.push('<svg class="model-svg" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="概率校准曲线图">');
+
+    ticks.forEach(function (tv) {
+      var yy = yVal(tv).toFixed(1);
+      var xx = xVal(tv).toFixed(1);
+      svg.push('<line x1="' + padL + '" y1="' + yy + '" x2="' + (W - padR) + '" y2="' + yy + '" stroke="#e6eaee" stroke-width="1" />');
+      svg.push('<text x="' + (padL - 8) + '" y="' + (Number(yy) + 4) + '" text-anchor="end" fill="#6b7782" font-size="11">' + tv + "%</text>");
+      svg.push('<text x="' + xx + '" y="' + (H - 10) + '" text-anchor="middle" fill="#6b7782" font-size="11">' + tv + "%</text>");
+    });
+
+    // Perfect calibration diagonal y = x
+    svg.push(
+      '<line x1="' + xVal(vMin).toFixed(1) + '" y1="' + yVal(vMin).toFixed(1) +
+      '" x2="' + xVal(vMax).toFixed(1) + '" y2="' + yVal(vMax).toFixed(1) +
+      '" stroke="#9aa5b1" stroke-width="1.5" stroke-dasharray="5,5" />'
+    );
+
+    var pts = bins.map(function (b) {
+      return xVal(b.mean_p).toFixed(1) + "," + yVal(b.actual).toFixed(1);
+    });
+    svg.push('<polyline fill="none" stroke="#2f6fcd" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" points="' + pts.join(" ") + '" />');
+
+    bins.forEach(function (b, idx) {
+      var cx = xVal(b.mean_p).toFixed(1);
+      var cy = yVal(b.actual).toFixed(1);
+      svg.push('<circle class="cal-dot" data-idx="' + idx + '" cx="' + cx + '" cy="' + cy + '" r="4.5" fill="#2f6fcd" stroke="#ffffff" stroke-width="1.5" style="cursor:pointer;" />');
+    });
+
+    svg.push("</svg>");
+    svg.push('<div id="calTooltip" class="model-tooltip" style="display:none;"></div>');
+    calWrapEl.innerHTML = svg.join("");
+
+    var calTip = document.getElementById("calTooltip");
+    var calSvg = calWrapEl.querySelector("svg");
+    calSvg.querySelectorAll(".cal-dot").forEach(function (dot) {
+      dot.addEventListener("mouseenter", function () {
+        var b = bins[Number(dot.getAttribute("data-idx"))];
+        calTip.innerHTML =
+          '<div class="model-tt-date">[' + b.lo + "%, " + b.hi + "%) · " + b.n + " 局</div>" +
+          '<div class="model-tt-row">预测均值: <strong>' + b.mean_p.toFixed(2) + "%</strong></div>" +
+          '<div class="model-tt-row">实际命中: <strong>' + b.actual.toFixed(2) + "%</strong></div>";
+        calTip.style.display = "block";
+        var leftPct = (Number(dot.getAttribute("cx")) / W) * 100;
+        calTip.style.left = (leftPct > 65 ? leftPct - 24 : leftPct + 2) + "%";
+      });
+      dot.addEventListener("mouseleave", function () {
+        calTip.style.display = "none";
+      });
+    });
+  }
+
   renderLegend();
   fetch("data/model_eval.json")
     .then(function (r) { return r.json(); })
-    .then(renderChart)
+    .then(function (data) {
+      renderMetrics(data);
+      renderChart(data);
+      renderCalibration(data);
+    })
     .catch(function () {
       wrapEl.textContent = "加载评估数据失败";
     });
