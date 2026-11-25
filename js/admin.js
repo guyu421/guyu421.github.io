@@ -22,7 +22,7 @@
   var statusBoxEl = document.getElementById("statusBox");
   var previewBoxEl = document.getElementById("previewBox");
 
-  var playersByName = {};
+  var playersListByName = {};
   var playersById = {};
   var tournamentsList = [];
 
@@ -75,11 +75,12 @@
     fetch("data/players.json")
       .then(function (r) { return r.json(); })
       .then(function (rows) {
-        playersByName = {};
+        playersListByName = {};
         playersById = {};
         rows.forEach(function (p) {
           var nm = String(p.name).trim();
-          playersByName[nm] = p.player_id;
+          if (!playersListByName[nm]) playersListByName[nm] = [];
+          playersListByName[nm].push(p);
           playersById[String(p.player_id)] = nm;
         });
       })
@@ -357,6 +358,9 @@
     function resolvePreviewPlayer(tok) {
       if (!tok || tok === "轮空") return { label: "轮空", badge: "" };
       var s = tok.trim();
+      if (/^new:/i.test(s)) {
+        return { label: s.slice(4).trim(), badge: ' <span class="admin-badge">新(同名)</span>' };
+      }
       if (/^#\d+$/.test(s)) {
         var rno = Number(s.slice(1));
         if (rosterNoToToken[rno]) return resolvePreviewPlayer(rosterNoToToken[rno]);
@@ -368,13 +372,18 @@
         if (playersById[pid]) return { label: playersById[pid] + " (ID:" + pid + ")", badge: "" };
         return { label: "ID:" + pid, badge: ' <span class="admin-badge">无此ID</span>' };
       }
-      if (playersByName[s] != null) {
-        return { label: s + " (ID:" + playersByName[s] + ")", badge: "" };
+      var cands = playersListByName[s] || [];
+      if (cands.length > 1) {
+        return { label: s, badge: ' <span class="admin-badge">重名(' + cands.length + '人)</span>' };
+      }
+      if (cands.length === 1) {
+        return { label: s + " (ID:" + cands[0].player_id + ")", badge: "" };
       }
       return { label: s, badge: ' <span class="admin-badge">新</span>' };
     }
 
     var newPlayers = {};
+    var dupNames = {};
     var seenNames = {};
     parsed.roster.forEach(function (p) { seenNames[p.name] = true; });
     parsed.matches.forEach(function (m) {
@@ -382,11 +391,30 @@
       if (m.second && m.second !== "轮空") seenNames[m.second] = true;
     });
     Object.keys(seenNames).forEach(function (nm) {
-      if (/^#\d+$/.test(nm) || /^(?:id:)?\d+$/i.test(nm)) return;
-      if (playersByName[nm] == null) newPlayers[nm] = true;
+      if (/^#\d+$/.test(nm) || /^(?:id:)?\d+$/i.test(nm) || /^new:/i.test(nm)) return;
+      var cands = playersListByName[nm] || [];
+      if (cands.length > 1) dupNames[nm] = cands;
+      else if (cands.length === 0) newPlayers[nm] = true;
     });
 
     var html = "";
+    var dupKeys = Object.keys(dupNames);
+    if (dupKeys.length) {
+      html += '<div class="admin-panel"><strong>发现重名棋手，请选择具体编号后再提交：</strong>';
+      dupKeys.forEach(function (nm, idx) {
+        var opts = dupNames[nm].map(function (c) {
+          var rt = c.rating != null ? ("等级分 " + Math.round(c.rating) + ", " + (c.games || 0) + "局") : "暂无对局";
+          return '<option value="' + c.player_id + '">ID:' + c.player_id + " (" + rt + ")</option>";
+        }).join("");
+        opts += '<option value="new:' + escHtml(nm) + '">新建同名棋手 (new:' + escHtml(nm) + ")</option>";
+        html += '<div class="admin-row" style="margin-top:0.4em;">' +
+          '<span><strong>' + escHtml(nm) + '</strong> →</span>' +
+          '<select class="dup-select" data-name="' + escHtml(nm) + '" id="dupSel_' + idx + '">' + opts + "</select>" +
+          '<button type="button" class="dup-apply-btn" data-idx="' + idx + '">应用到文本框</button>' +
+          "</div>";
+      });
+      html += "</div>";
+    }
     var newList = Object.keys(newPlayers);
     if (newList.length) {
       html += "<p><strong>将新增棋手 (" + newList.length + " 人):</strong> " + newList.map(escHtml).join("、") + "</p>";
@@ -411,6 +439,20 @@
     }
     previewBoxEl.innerHTML = html;
     previewBoxEl.style.display = html ? "block" : "none";
+    previewBoxEl.querySelectorAll(".dup-apply-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var idx = btn.getAttribute("data-idx");
+        var sel = document.getElementById("dupSel_" + idx);
+        if (!sel) return;
+        var origName = sel.getAttribute("data-name");
+        var chosenVal = sel.value;
+        var escRe = origName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        var re = new RegExp("(^|\\s)" + escRe + "(?=\\s|$|[+-])", "g");
+        txtEditorEl.value = txtEditorEl.value.replace(re, "$1" + chosenVal);
+        updateLineStats();
+        previewBtn.click();
+      });
+    });
   });
 
   function toBase64Utf8(str) {
@@ -429,6 +471,22 @@
     var parsed = parseTxtPreview(text);
     if (parsed.errors.length) {
       setStatus("存在语法错误，请先修正后再提交：<br>" + parsed.errors.map(escHtml).join("<br>"), true);
+      return;
+    }
+    var unresolvedDups = [];
+    var checkNames = {};
+    parsed.roster.forEach(function (p) { checkNames[p.name] = true; });
+    parsed.matches.forEach(function (m) {
+      if (m.first && m.first !== "轮空") checkNames[m.first] = true;
+      if (m.second && m.second !== "轮空") checkNames[m.second] = true;
+    });
+    Object.keys(checkNames).forEach(function (nm) {
+      if (/^#\d+$/.test(nm) || /^(?:id:)?\d+$/i.test(nm) || /^new:/i.test(nm)) return;
+      if ((playersListByName[nm] || []).length > 1) unresolvedDups.push(nm);
+    });
+    if (unresolvedDups.length) {
+      previewBtn.click();
+      setStatus("存在重名棋手（" + unresolvedDups.map(escHtml).join("、") + "），请先在下方预览区选择具体编号并点击「应用到文本框」后再提交。", true);
       return;
     }
     var token = ghTokenEl.value.trim() || localStorage.getItem(TOKEN_KEY) || "";

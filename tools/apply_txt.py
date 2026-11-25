@@ -163,10 +163,21 @@ def apply_txt_content(text: str, db_dir: Path) -> List[str]:
     name_to_pid: Dict[str, int] = {str(r.name).strip(): int(r.player_id) for r in p_df.itertuples(index=False)}
     pid_set = set(int(x) for x in p_df["player_id"].tolist())
     next_pid = int(p_df["player_id"].max()) + 1 if not p_df.empty else 1
+    forced_new_pids: Dict[str, int] = {}
 
     def get_or_create_pid(token: str, no_to_pid: Optional[Dict[int, int]] = None) -> int:
         nonlocal next_pid, p_df
         nm = token.strip()
+        if nm.lower().startswith("new:"):
+            raw_nm = nm[4:].strip()
+            if raw_nm in forced_new_pids:
+                return forced_new_pids[raw_nm]
+            pid = next_pid
+            next_pid += 1
+            pid_set.add(pid)
+            forced_new_pids[raw_nm] = pid
+            p_df = pd.concat([p_df, pd.DataFrame([{"player_id": pid, "name": raw_nm}])], ignore_index=True)
+            return pid
         if nm.startswith("#") and nm[1:].isdigit():
             pno = int(nm[1:])
             if no_to_pid and pno in no_to_pid:
