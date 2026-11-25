@@ -344,6 +344,16 @@ def apply_txt_content(text: str, db_dir: Path) -> List[str]:
             logs.append(f"RENAME player {pid} -> {new_nm}")
             continue
 
+        m_ren_t = re.match(r"^RENAME\s+tournament\s+(\d+)\s+(.+)$", cmd, re.IGNORECASE)
+        if m_ren_t:
+            tid = int(m_ren_t.group(1))
+            new_nm = m_ren_t.group(2).strip()
+            if not (t_df["tournament_id"] == tid).any():
+                raise ValueError(f"RENAME tournament {tid}: 未找到")
+            t_df.loc[t_df["tournament_id"] == tid, "name"] = new_nm
+            logs.append(f"RENAME tournament {tid} -> {new_nm}")
+            continue
+
         m_mrg = re.match(r"^MERGE\s+player\s+(\d+)\s*->\s*(\d+)$", cmd, re.IGNORECASE)
         if m_mrg:
             old_pid, tgt_pid = int(m_mrg.group(1)), int(m_mrg.group(2))

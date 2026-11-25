@@ -53,6 +53,6 @@
     "山口": 577,
     "五手两打": 50
   },
-  "cv_5fold_logloss": 0.90927,
-  "cv_5fold_accuracy": 0.55444
+  "cv_5fold_logloss": 0.9092,
+  "cv_5fold_accuracy": 0.55503
 }

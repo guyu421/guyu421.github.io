@@ -212,6 +212,7 @@
       "# 单条/批量修改指令示例（取消注释后使用）",
       "# SET game 4990 result=平 swap=+--+- 5a=8 moves=h8 h9 g10 g8",
       "# DEL game 4990",
+      "# RENAME tournament 57 新赛事名称",
       "# RENAME player 619 新姓名",
       "# MERGE player 619 -> 579",
       "",
