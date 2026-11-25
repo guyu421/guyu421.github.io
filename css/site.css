@@ -855,6 +855,13 @@ a.score-link:hover {
 	font-variant-numeric: tabular-nums;
 }
 
+.model-metric-sub {
+	font-size: 0.78em;
+	color: #5a6772;
+	margin-top: 0.25em;
+	line-height: 1.35;
+}
+
 .model-chart-wrap {
 	position: relative;
 	width: 100%;

@@ -154,10 +154,15 @@
     if (!metricsEl || !data || !data.metrics) return;
     var m = data.metrics;
     var allAcc = data.summary && data.summary.all ? data.summary.all.accuracy : null;
+    var ec = m.ece_by_class || {};
+    var eceSub =
+      "假先胜 " + (ec.first != null ? ec.first.toFixed(2) + "%" : "-") +
+      " · 和棋 " + (ec.draw != null ? ec.draw.toFixed(2) + "%" : "-") +
+      " · 假后胜 " + (ec.second != null ? ec.second.toFixed(2) + "%" : "-");
     var cards = [
       { label: "对数损失 (Log Loss)", value: m.logloss != null ? m.logloss.toFixed(4) : "-" },
       { label: "布里尔分数 (Brier Score)", value: m.brier != null ? m.brier.toFixed(4) : "-" },
-      { label: "期望校准误差 (ECE)", value: m.ece != null ? m.ece.toFixed(2) + "%" : "-" },
+      { label: "期望校准误差 (ECE)", value: m.ece != null ? m.ece.toFixed(2) + "%" : "-", sub: eceSub },
       { label: "全部预测准确率", value: allAcc != null ? allAcc.toFixed(2) + "%" : "-" },
     ];
     metricsEl.innerHTML = cards.map(function (c) {
@@ -165,6 +170,7 @@
         '<div class="model-metric-card">' +
         '<div class="model-metric-label">' + c.label + "</div>" +
         '<div class="model-metric-value">' + c.value + "</div>" +
+        (c.sub ? '<div class="model-metric-sub">' + c.sub + "</div>" : "") +
         "</div>"
       );
     }).join("");
@@ -178,7 +184,6 @@
       { key: "draw", label: "和棋", color: "#2d9d6f" },
       { key: "second", label: "假后胜", color: "#d96b27" },
     ];
-    var eceMap = (data && data.metrics && data.metrics.ece_by_class) || {};
     var hasAny = calSeries.some(function (s) { return (cal[s.key] || []).length > 0; });
     if (!hasAny) {
       calWrapEl.textContent = "暂无校准数据";
@@ -253,9 +258,8 @@
         var meta = dotMeta[Number(dot.getAttribute("data-idx"))];
         var b = meta.bin;
         var s = meta.series;
-        var eceStr = eceMap[s.key] != null ? " (ECE " + eceMap[s.key].toFixed(2) + "%)" : "";
         calTip.innerHTML =
-          '<div class="model-tt-date">' + s.label + eceStr + " · [" + b.lo + "%, " + b.hi + "%) · " + b.n + " 局</div>" +
+          '<div class="model-tt-date">' + s.label + " · [" + b.lo + "%, " + b.hi + "%) · " + b.n + " 局</div>" +
           '<div class="model-tt-row">预测均值: <strong>' + b.mean_p.toFixed(2) + "%</strong></div>" +
           '<div class="model-tt-row">实际占比: <strong>' + b.actual.toFixed(2) + "%</strong></div>";
         calTip.style.display = "block";
