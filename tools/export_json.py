@@ -90,62 +90,44 @@ def _day_of(date_text):
 
 
 def compute_ratings(games_out):
-    """用 Glicko-2 计算全历史等级分，与预测模型使用同一套评级体系。
+    """用 WHR（Whole-History Rating，wind23/whr_renju）算等级分。
 
-    按 (date, tournament_id, round) 时序分组递推更新，返回
-    ({姓名: (分, 偏差)}, {姓名: [(日期, 分, 偏差), ...]})。
+    每局按自己的比赛日参与求解，全历史一次算完（不是逐日递推），
+    参数沿用 rating.renju.net 的连珠评分。返回
+    ({姓名: (分, 偏差)}, {姓名: [(日期, 分, 偏差), ...]})，
+    后者是该棋手每个比赛日的当日快照，供详情页曲线与对手分查询使用。
     """
-    predict_dir = PREDICT_DIR
-    if predict_dir not in sys.path:
-        sys.path.insert(0, predict_dir)
-    from glicko2 import Glicko2Tracker
-
-    score_map = {"1": 1.0, "0": 0.0, "0.5": 0.5}
     trainable = []
     for g in games_out:
         if g["second"] == BYE_NAME or g["first"] == g["second"]:
             continue
-        if str(g["result"]) not in score_map:
+        winner = WINNER.get(str(g["result"]))
+        if winner is None:
             continue
-        trainable.append(g)
-
+        trainable.append([g["first"], g["second"], winner, _day_of(g["date"])])
+    trainable.sort(key=lambda r: r[3])
     if not trainable:
         return {}, {}
 
-    trainable.sort(key=lambda g: (g["date"], g["tournament_id"], g["round"], g["board"], g["game_id"]))
-    tracker = Glicko2Tracker()
-    series_map = {}
+    base = whr.Base(config={"w2": WHR_W2, "virtual_games": WHR_VIRTUAL_GAMES})
+    base.create_games(trainable)
+    base.iterate_until_converge(verbose=False)
 
-    i = 0
-    n = len(trainable)
-    while i < n:
-        p_date = trainable[i]["date"]
-        key = (p_date, trainable[i]["tournament_id"], trainable[i]["round"])
-        j = i
-        period_games = []
-        touched = set()
-        while j < n and (trainable[j]["date"], trainable[j]["tournament_id"], trainable[j]["round"]) == key:
-            g = trainable[j]
-            f_name = g["first"]
-            s_name = g["second"]
-            score = score_map[str(g["result"])]
-            period_games.append((f_name, s_name, score))
-            touched.add(f_name)
-            touched.add(s_name)
-            j += 1
+    final_day = max(row[3] for row in trainable)
+    series = {}
+    for name, rows in base.get_ordered_ratings():
+        series[name] = [
+            ((EPOCH + timedelta(days=int(day))).isoformat(), elo + WHR_BIAS, float(std))
+            for day, elo, std in rows
+        ]
 
-        tracker.apply_period(period_games)
-        for nm in touched:
-            pr = tracker.get(nm)
-            lst = series_map.setdefault(nm, [])
-            if lst and lst[-1][0] == p_date:
-                lst[-1] = (p_date, pr.rating, pr.rd)
-            else:
-                lst.append((p_date, pr.rating, pr.rd))
-        i = j
-
-    ratings = {nm: (pr.rating, pr.rd) for nm, pr in tracker.ratings.items()}
-    return ratings, series_map
+    # 榜单上显示的是最后一次比赛的分，偏差则按「距最后一次比赛多少天」放大
+    final = {}
+    for name, points in series.items():
+        last_date, last_rating, last_rd = points[-1]
+        gap = max(final_day - _day_of(last_date), 0)
+        final[name] = (last_rating, math.sqrt(WHR_W2 * gap + last_rd * last_rd))
+    return final, series
 
 
 def rating_at(series, name, date):
@@ -157,13 +139,13 @@ def rating_at(series, name, date):
             hit = (value, rd)
         else:
             break
-    return hit or (1500.0, 350.0)
+    return hit or (WHR_BIAS, WHR_PRIOR_RD)
 
 
 def compute_match_predictions(games_out, pid_of):
-    """用对局之前最近的现有 LightGBM 模型与赛前 Glicko-2 等级分为每盘对局计算胜平负概率。
+    """用对局之前最近的现有 LightGBM 模型与赛前无泄露 WHR 等级分为每盘对局计算胜平负概率。
 
-    仅使用该对局日期之前、或同赛事轮次更小的有效对局（不含轮空和弃权）更新 Glicko-2；
+    仅使用该对局日期之前、或同赛事轮次更小的有效对局（不含轮空和弃权）重算 WHR；
     若该对局日期之前没有任何可用模型，则返回 (None, None, None) 不显示分析。
     """
     models_root = os.path.join(PREDICT_DIR, "models")
@@ -173,7 +155,7 @@ def compute_match_predictions(games_out, pid_of):
     if PREDICT_DIR not in sys.path:
         sys.path.insert(0, PREDICT_DIR)
     from pathlib import Path
-    from glicko2 import Glicko2Tracker
+    from whr_tracker import WHRTracker, day_of
     from predict import load_cutoff_bundle, predict_from_ratings
 
     # 加载所有可用模型，按 cutoff_date_exclusive 从新到旧排序
@@ -199,18 +181,19 @@ def compute_match_predictions(games_out, pid_of):
         games_out,
         key=lambda g: (g["date"], g["tournament_id"], g["round"], g["board"], g["game_id"]),
     )
-    tracker = Glicko2Tracker()
+    tracker = WHRTracker()
     preds = {}
 
     i = 0
     n = len(ordered)
     while i < n:
         key = (ordered[i]["date"], ordered[i]["tournament_id"], ordered[i]["round"])
+        day_int = day_of(ordered[i]["date"])
         j = i
         while j < n and (ordered[j]["date"], ordered[j]["tournament_id"], ordered[j]["round"]) == key:
             j += 1
 
-        # 先用本轮之前的 Glicko-2 预测本轮所有非轮空对局
+        # 先用本轮之前的无泄露 WHR 预测本轮所有非轮空对局
         period_updates = []
         for g in ordered[i:j]:
             fid = pid_of.get(g["first"])
@@ -220,8 +203,8 @@ def compute_match_predictions(games_out, pid_of):
             if is_bye or booster is None or g["rule"] not in metadata["rule_map"]:
                 preds[g["game_id"]] = (None, None, None)
             else:
-                p1 = tracker.get(fid)
-                p2 = tracker.get(sid)
+                p1 = tracker.get(fid, day_int)
+                p2 = tracker.get(sid, day_int)
                 p = predict_from_ratings(booster, metadata, g["rule"], p1.rating, p2.rating, p1.rd, p2.rd)
                 preds[g["game_id"]] = (
                     round(p["假先胜率"] * 100, 1),
@@ -229,12 +212,12 @@ def compute_match_predictions(games_out, pid_of):
                     round(p["假后胜率"] * 100, 1),
                 )
 
-            # 轮空或弃权不计入 Glicko-2 等级分
+            # 轮空或弃权不计入 WHR 等级分
             if not is_bye and str(g["result"]) in score_map:
                 period_updates.append((fid, sid, score_map[str(g["result"])]))
 
         if period_updates:
-            tracker.apply_period(period_updates)
+            tracker.apply_period(period_updates, day_int)
         i = j
 
     return preds
@@ -569,7 +552,7 @@ def build(games, players, tours, members, teams=None, team_matches=None):
         # 只有加赛记录（已被跳过）或根本没上场的棋手不进榜单
         if not mine:
             continue
-        rating, rd = ratings.get(p["name"], (1500.0, 350.0))
+        rating, rd = ratings.get(p["name"], (WHR_BIAS, WHR_PRIOR_RD))
         players_out.append({
             "player_id": p["player_id"],
             "rank": 0,

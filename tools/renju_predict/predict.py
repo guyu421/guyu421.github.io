@@ -10,7 +10,7 @@ from typing import Dict, List, Tuple
 import lightgbm as lgb
 import pandas as pd
 
-from glicko2 import Glicko2Tracker
+from whr_tracker import WHR_PRIOR_RD, WHRTracker, day_of
 
 HERE = Path(__file__).resolve().parent
 WORKSPACE = HERE.parent
@@ -88,13 +88,13 @@ def compute_glicko2_before_match(
         ["date", "tournament_id", "round", "board", "game_id"]
     )
 
-    tracker = Glicko2Tracker()
-    for _, period_df in prior.groupby(["date", "tournament_id", "round"], sort=True):
+    tracker = WHRTracker()
+    for (p_date, _tid, _rnd), period_df in prior.groupby(["date", "tournament_id", "round"], sort=True):
         period_games = [
             (r.first_id, r.second_id, RESULT_SCORE[str(r.result)])
             for r in period_df.itertuples(index=False)
         ]
-        tracker.apply_period(period_games)
+        tracker.apply_period(period_games, day_of(str(p_date)))
     return tracker
 
 
@@ -104,8 +104,8 @@ def predict_from_ratings(
     rule: str,
     r1: float,
     r2: float,
-    rd1: float = 350.0,
-    rd2: float = 350.0,
+    rd1: float = WHR_PRIOR_RD,
+    rd2: float = WHR_PRIOR_RD,
 ) -> Dict[str, float]:
     rule_map: Dict[str, int] = metadata["rule_map"]
     if rule not in rule_map:
@@ -144,8 +144,8 @@ def predict_specific_match(
     models_dir: Path = DEFAULT_MODELS_DIR,
 ) -> List[Dict[str, object]]:
     tracker = compute_glicko2_before_match(games_df, target_date, target_tid, target_round)
-    p1 = tracker.get(first_id)
-    p2 = tracker.get(second_id)
+    p1 = tracker.get(first_id, day_of(target_date))
+    p2 = tracker.get(second_id, day_of(target_date))
     r1, r2 = p1.rating, p2.rating
     rd1, rd2 = p1.rd, p2.rd
     diff = r1 - r2

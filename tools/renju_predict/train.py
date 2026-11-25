@@ -14,7 +14,7 @@ import pandas as pd
 from sklearn.metrics import accuracy_score, log_loss
 from sklearn.model_selection import StratifiedKFold
 
-from glicko2 import DEFAULT_RD, DEFAULT_RATING, DEFAULT_VOLATILITY, Glicko2Tracker
+from whr_tracker import WHR_BIAS, WHR_PRIOR_RD, WHRTracker, day_of
 
 HERE = Path(__file__).resolve().parent
 WORKSPACE = HERE.parent
@@ -77,20 +77,21 @@ def load_data(db_dir: Path) -> Tuple[pd.DataFrame, Dict[int, str]]:
 
 def build_features_and_ratings(
     df: pd.DataFrame,
-) -> Tuple[pd.DataFrame, np.ndarray, Glicko2Tracker]:
-    """Compute pre-match Glicko-2 features chronologically without leakage."""
-    tracker = Glicko2Tracker()
+) -> Tuple[pd.DataFrame, np.ndarray, WHRTracker]:
+    """Compute pre-match WHR features chronologically without leakage."""
+    tracker = WHRTracker()
     rows: List[Dict[str, float | int]] = []
     targets: List[int] = []
 
-    for _, period_df in df.groupby(["date", "tournament_id", "round"], sort=True):
+    for (p_date, _tid, _rnd), period_df in df.groupby(["date", "tournament_id", "round"], sort=True):
+        day_int = day_of(str(p_date))
         period_games: List[Tuple[int, int, float]] = []
         for r in period_df.itertuples(index=False):
             rule_code = RULE_MAP.get(str(r.rule))
             if rule_code is None:
                 raise ValueError(f"Unknown rule: {r.rule!r}")
-            p1 = tracker.get(r.first_id)
-            p2 = tracker.get(r.second_id)
+            p1 = tracker.get(r.first_id, day_int)
+            p2 = tracker.get(r.second_id, day_int)
             rows.append(
                 {
                     "rule": rule_code,
@@ -104,7 +105,7 @@ def build_features_and_ratings(
             targets.append(RESULT_TO_CLASS[str(r.result)])
             period_games.append((r.first_id, r.second_id, RESULT_SCORE[str(r.result)]))
 
-        tracker.apply_period(period_games)
+        tracker.apply_period(period_games, day_int)
 
     X = pd.DataFrame(rows, columns=FEATURE_NAMES)
     X["rule"] = X["rule"].astype("category")
@@ -168,16 +169,14 @@ def train_cutoff(
 
     ratings_payload = {
         "default": {
-            "rating": DEFAULT_RATING,
-            "rd": DEFAULT_RD,
-            "vol": DEFAULT_VOLATILITY,
+            "rating": WHR_BIAS,
+            "rd": WHR_PRIOR_RD,
         },
         "players": {
             str(pid): {
                 "name": player_names.get(pid, str(pid)),
                 "rating": round(pr.rating, 4),
                 "rd": round(pr.rd, 4),
-                "vol": round(pr.vol, 6),
             }
             for pid, pr in sorted(tracker.ratings.items())
         },
