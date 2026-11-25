@@ -25,10 +25,22 @@
   }
 
   function formatDateLabel(iso) {
-    if (!iso) return "";
-    var parts = iso.split("-");
-    if (parts.length !== 3) return iso;
-    return parts[0].slice(2) + "/" + Number(parts[1]) + "/" + Number(parts[2]);
+    return String(iso || "").slice(0, 10);
+  }
+
+  function placeTooltip(tip, container, px, py) {
+    tip.style.display = "block";
+    var cw = container.clientWidth || 300;
+    var ch = container.clientHeight || 200;
+    var tw = tip.offsetWidth;
+    var th = tip.offsetHeight;
+    var left = px - tw / 2;
+    left = Math.max(2, Math.min(left, cw - tw - 2));
+    var top = py - th - 12;
+    if (top < 2) top = py + 12;
+    top = Math.max(2, Math.min(top, ch - th - 2));
+    tip.style.left = left + "px";
+    tip.style.top = top + "px";
   }
 
   function renderChart(data) {
@@ -139,9 +151,10 @@
         }
       });
       tooltip.innerHTML = lines.join("");
-      tooltip.style.display = "block";
-      var leftPct = (Number(xx) / W) * 100;
-      tooltip.style.left = (leftPct > 65 ? leftPct - 24 : leftPct + 2) + "%";
+      var rect = svgEl.getBoundingClientRect();
+      var px = (Number(xx) / W) * rect.width;
+      var py = (yAt(pt.all != null ? pt.all : 60) / H) * rect.height;
+      placeTooltip(tooltip, wrapEl, px, py);
     });
 
     overlay.addEventListener("mouseleave", function () {
@@ -262,9 +275,10 @@
           '<div class="model-tt-date">' + s.label + " · [" + b.lo + "%, " + b.hi + "%) · " + b.n + " 局</div>" +
           '<div class="model-tt-row">预测均值: <strong>' + b.mean_p.toFixed(2) + "%</strong></div>" +
           '<div class="model-tt-row">实际占比: <strong>' + b.actual.toFixed(2) + "%</strong></div>";
-        calTip.style.display = "block";
-        var leftPct = (Number(meta.cx) / W) * 100;
-        calTip.style.left = (leftPct > 65 ? leftPct - 28 : leftPct + 2) + "%";
+        var rect = calSvg.getBoundingClientRect();
+        var px = (Number(dot.getAttribute("cx")) / W) * rect.width;
+        var py = (Number(dot.getAttribute("cy")) / H) * rect.height;
+        placeTooltip(calTip, calWrapEl, px, py);
       });
       dot.addEventListener("mouseleave", function () {
         calTip.style.display = "none";
