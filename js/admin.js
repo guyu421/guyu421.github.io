@@ -24,8 +24,6 @@
 
   var playersByName = {};
   var playersById = {};
-  var allPlayers = [];
-  var dismissedPartialNames = {};
   var tournamentsList = [];
 
   function setStatus(msg, isError) {
@@ -79,8 +77,7 @@
       .then(function (rows) {
         playersByName = {};
         playersById = {};
-        allPlayers = rows || [];
-        allPlayers.forEach(function (p) {
+        (rows || []).forEach(function (p) {
           var nm = String(p.name).trim();
           if (!playersByName[nm]) playersByName[nm] = [];
           playersByName[nm].push(p);
@@ -340,34 +337,22 @@
     };
   }
 
-  function findMatchingPlayers(name) {
-    var exact = playersByName[name] || [];
-    if (exact.length > 0) return { exact: exact, partial: [] };
-    var partial = allPlayers.filter(function (p) {
-      return p.name && (p.name.indexOf(name) !== -1 || name.indexOf(p.name) !== -1);
-    });
-    return { exact: [], partial: partial };
-  }
-
-  function collectAmbiguousNames(parsedObj) {
+  function collectDuplicateNames(parsedObj) {
     var seen = {};
     parsedObj.roster.forEach(function (p) { if (p.name) seen[p.name.trim()] = true; });
     parsedObj.matches.forEach(function (m) {
       if (m.first && m.first !== "轮空") seen[m.first.trim()] = true;
       if (m.second && m.second !== "轮空") seen[m.second.trim()] = true;
     });
-    var exactAmbiguous = [];
-    var partialAmbiguous = [];
+    var duplicates = [];
     Object.keys(seen).forEach(function (nm) {
       if (!nm || /^#\d+$/.test(nm) || /^(?:id:)?\d+$/i.test(nm) || nm.endsWith("*")) return;
-      var res = findMatchingPlayers(nm);
-      if (res.exact.length > 1) {
-        exactAmbiguous.push({ name: nm, candidates: res.exact });
-      } else if (res.exact.length === 0 && res.partial.length > 1 && !dismissedPartialNames[nm]) {
-        partialAmbiguous.push({ name: nm, candidates: res.partial });
+      var exact = playersByName[nm] || [];
+      if (exact.length > 1) {
+        duplicates.push({ name: nm, candidates: exact });
       }
     });
-    return { exactAmbiguous: exactAmbiguous, partialAmbiguous: partialAmbiguous };
+    return duplicates;
   }
 
   function replacePlayerTokenInEditor(oldName, replacement) {
@@ -398,15 +383,6 @@
       var rep = pickBtn.getAttribute("data-rep");
       if (nm && rep) {
         replacePlayerTokenInEditor(nm, rep);
-        previewBtn.click();
-      }
-      return;
-    }
-    var disBtn = ev.target.closest ? ev.target.closest(".admin-dismiss-btn") : null;
-    if (disBtn) {
-      var dnm = disBtn.getAttribute("data-name");
-      if (dnm) {
-        dismissedPartialNames[dnm] = true;
         previewBtn.click();
       }
     }
@@ -447,15 +423,12 @@
       if (s.endsWith("*")) {
         return { label: s, badge: ' <span class="admin-badge">新·重名</span>' };
       }
-      var matched = findMatchingPlayers(s);
-      if (matched.exact.length > 1) {
-        return { label: s, badge: ' <span class="admin-badge">重名(' + matched.exact.length + '人·待选)</span>' };
+      var exactList = playersByName[s] || [];
+      if (exactList.length > 1) {
+        return { label: s, badge: ' <span class="admin-badge">重名(' + exactList.length + '人·待选)</span>' };
       }
-      if (matched.exact.length === 1) {
-        return { label: s + " (ID:" + matched.exact[0].player_id + ")", badge: "" };
-      }
-      if (matched.partial.length > 1) {
-        return { label: s, badge: ' <span class="admin-badge">新(有' + matched.partial.length + '个相似)</span>' };
+      if (exactList.length === 1) {
+        return { label: s + " (ID:" + exactList[0].player_id + ")", badge: "" };
       }
       return { label: s, badge: ' <span class="admin-badge">新</span>' };
     }
@@ -472,37 +445,20 @@
       if (nm.endsWith("*") || !(playersByName[nm] && playersByName[nm].length)) newPlayers[nm] = true;
     });
 
-    var ambig = collectAmbiguousNames(parsed);
+    var dupNames = collectDuplicateNames(parsed);
     var html = "";
-    if (ambig.exactAmbiguous.length || ambig.partialAmbiguous.length) {
+    if (dupNames.length) {
       html += '<div class="admin-disambig">';
-      if (ambig.exactAmbiguous.length) {
-        html += "<p><strong>⚠ 发现重名棋手，请选择具体 ID（或设为新建重名）：</strong></p>";
-        ambig.exactAmbiguous.forEach(function (item) {
-          html += '<div class="admin-disambig-item"><span><strong>' + escHtml(item.name) + '</strong> 匹配到 ' + item.candidates.length + ' 位棋手：</span>';
-          item.candidates.forEach(function (c) {
-            var info = "ID:" + c.player_id + (c.rating != null ? " | 分:" + Math.round(c.rating) : "") + (c.games != null ? " | " + c.games + "场" : "");
-            html += ' <button type="button" class="admin-pick-btn" data-name="' + escHtml(item.name) + '" data-rep="id:' + c.player_id + '">' + escHtml(c.name) + " (" + escHtml(info) + ")</button>";
-          });
-          html += ' <button type="button" class="admin-pick-btn" data-name="' + escHtml(item.name) + '" data-rep="' + escHtml(item.name + "*") + '">新建重名 (' + escHtml(item.name) + '*)</button>';
-          html += "</div>";
+      html += "<p><strong>⚠ 发现重名棋手，请选择具体 ID（或设为新建重名）：</strong></p>";
+      dupNames.forEach(function (item) {
+        html += '<div class="admin-disambig-item"><span><strong>' + escHtml(item.name) + '</strong> 匹配到 ' + item.candidates.length + ' 位棋手：</span>';
+        item.candidates.forEach(function (c) {
+          var info = "ID:" + c.player_id + (c.rating != null ? " | 分:" + Math.round(c.rating) : "") + (c.games != null ? " | " + c.games + "场" : "");
+          html += ' <button type="button" class="admin-pick-btn" data-name="' + escHtml(item.name) + '" data-rep="id:' + c.player_id + '">' + escHtml(c.name) + " (" + escHtml(info) + ")</button>";
         });
-      }
-      if (ambig.partialAmbiguous.length) {
-        html += "<p><strong>提示：以下姓名未精确匹配，但存在多个相似棋手（如确为新棋手可忽略）：</strong></p>";
-        ambig.partialAmbiguous.forEach(function (item) {
-          html += '<div class="admin-disambig-item"><span><strong>' + escHtml(item.name) + '</strong> 相似棋手：</span>';
-          item.candidates.slice(0, 8).forEach(function (c) {
-            var info = "ID:" + c.player_id + (c.rating != null ? " | 分:" + Math.round(c.rating) : "") + (c.games != null ? " | " + c.games + "场" : "");
-            html += ' <button type="button" class="admin-pick-btn" data-name="' + escHtml(item.name) + '" data-rep="id:' + c.player_id + '">' + escHtml(c.name) + " (" + escHtml(info) + ")</button>";
-          });
-          if (item.candidates.length > 8) {
-            html += ' <span class="admin-muted">等共 ' + item.candidates.length + ' 人</span>';
-          }
-          html += ' <button type="button" class="admin-dismiss-btn" data-name="' + escHtml(item.name) + '">保持为新棋手</button>';
-          html += "</div>";
-        });
-      }
+        html += ' <button type="button" class="admin-pick-btn" data-name="' + escHtml(item.name) + '" data-rep="' + escHtml(item.name + "*") + '">新建重名 (' + escHtml(item.name) + '*)</button>';
+        html += "</div>";
+      });
       html += "</div>";
     }
     var newList = Object.keys(newPlayers);
@@ -549,11 +505,11 @@
       setStatus("存在语法错误，请先修正后再提交：<br>" + parsed.errors.map(escHtml).join("<br>"), true);
       return;
     }
-    var ambigSubmit = collectAmbiguousNames(parsed);
-    if (ambigSubmit.exactAmbiguous.length) {
+    var dupSubmit = collectDuplicateNames(parsed);
+    if (dupSubmit.length) {
       previewBtn.click();
       setStatus(
-        "存在重名棋手（" + ambigSubmit.exactAmbiguous.map(function (x) { return escHtml(x.name); }).join("、") +
+        "存在重名棋手（" + dupSubmit.map(function (x) { return escHtml(x.name); }).join("、") +
         "），请在下方预览区选择具体 ID 或设为新建重名（*）后再提交。",
         true
       );

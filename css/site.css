@@ -775,8 +775,7 @@ a.score-link:hover {
 	line-height: 1.8;
 }
 
-.admin-pick-btn,
-.admin-dismiss-btn {
+.admin-pick-btn {
 	margin: 0.15em 0.25em;
 	padding: 0.2em 0.55em;
 	font-size: 0.85em;
@@ -790,10 +789,6 @@ a.score-link:hover {
 .admin-pick-btn:hover {
 	background: #e9f2fb;
 	border-color: #7eb0e0;
-}
-
-.admin-dismiss-btn {
-	color: #6b7782;
 }
 
 /* 模型页 */
