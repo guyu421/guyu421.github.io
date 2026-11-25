@@ -770,6 +770,19 @@ a.score-link:hover {
 	color: #24303a;
 }
 
+.model-desc {
+	margin: 0 0 0.4em 0;
+	line-height: 1.65;
+	color: #333e48;
+}
+
+.model-desc code {
+	background: #f2f5f8;
+	padding: 0.1em 0.35em;
+	border-radius: 3px;
+	font-size: 0.9em;
+}
+
 .model-list {
 	margin: 0;
 	padding-left: 1.3em;
