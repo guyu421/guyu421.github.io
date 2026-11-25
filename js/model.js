@@ -7,10 +7,10 @@
 
   var SERIES = [
     { key: "all", label: "全部预测", color: "#2f6fcd" },
-    { key: "p50", label: "≥50%", color: "#d96b27" },
-    { key: "p60", label: "≥60%", color: "#2d9d6f" },
-    { key: "p70", label: "≥70%", color: "#dfa61d" },
-    { key: "p80", label: "≥80%", color: "#d4699e" },
+    { key: "p50", label: "置信度≥50%", color: "#d96b27" },
+    { key: "p60", label: "置信度≥60%", color: "#2d9d6f" },
+    { key: "p70", label: "置信度≥70%", color: "#dfa61d" },
+    { key: "p80", label: "置信度≥80%", color: "#d4699e" },
   ];
 
   function renderLegend() {
