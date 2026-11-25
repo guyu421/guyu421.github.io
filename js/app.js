@@ -619,14 +619,22 @@
       tr.appendChild(day);
       tr.appendChild(el("td", "rnd", "第" + tm.round + "轮 第" + tm.match_board + "台"));
       tr.appendChild(el("td", "rule", tm.rule || ""));
-      var ta = el("td", "", tm.team_a_name);
+      var ta = el("td", "");
       ta.style.fontWeight = "600";
+      if (tm.team_a_no !== null && tm.team_a_no !== undefined && tm.team_a_no !== "") {
+        ta.appendChild(el("span", "player-no", String(tm.team_a_no)));
+      }
+      ta.appendChild(document.createTextNode(tm.team_a_name || ""));
       tr.appendChild(ta);
       var sc = el("td", "score", tm.score_a + "-" + tm.score_b);
       sc.style.fontWeight = "700";
       tr.appendChild(sc);
-      var tb = el("td", "", tm.team_b_name);
+      var tb = el("td", "");
       tb.style.fontWeight = "600";
+      if (tm.team_b_no !== null && tm.team_b_no !== undefined && tm.team_b_no !== "") {
+        tb.appendChild(el("span", "player-no", String(tm.team_b_no)));
+      }
+      tb.appendChild(document.createTextNode(tm.team_b_name || ""));
       tr.appendChild(tb);
       tr.appendChild(el("td", "prob", tm.p_win != null ? Number(tm.p_win).toFixed(1) + "%" : ""));
       tr.appendChild(el("td", "prob", tm.p_draw != null ? Number(tm.p_draw).toFixed(1) + "%" : ""));
