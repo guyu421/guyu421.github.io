@@ -765,7 +765,15 @@ def build_model_eval(game_details):
     valid = []
     ll_sum = 0.0
     brier_sum = 0.0
-    cal_bins = [{"lo": i * 10, "hi": (i + 1) * 10, "sum_p": 0.0, "sum_y": 0, "n": 0} for i in range(3, 10)]
+    class_defs = [
+        ("first", "1"),
+        ("draw", "0.5"),
+        ("second", "0"),
+    ]
+    cal_bins = {
+        cname: [{"lo": i * 10, "hi": (i + 1) * 10, "sum_p": 0.0, "sum_y": 0, "n": 0} for i in range(10)]
+        for cname, _ in class_defs
+    }
 
     for g in game_details.values():
         if g.get("p_first") is None or g.get("result") not in ("1", "0", "0.5"):
@@ -784,14 +792,18 @@ def build_model_eval(game_details):
         ll_sum -= math.log(max(1e-12, min(1.0, p_true)))
         brier_sum += (pf - y1) ** 2 + (pd_ - yd) ** 2 + (ps - y0) ** 2
 
+        p_by_cls = {"first": pf, "draw": pd_, "second": ps}
+        for cname, res_val in class_defs:
+            pc = p_by_cls[cname]
+            bi = min(9, max(0, int(pc * 10)))
+            cal_bins[cname][bi]["sum_p"] += pc
+            cal_bins[cname][bi]["sum_y"] += 1 if res == res_val else 0
+            cal_bins[cname][bi]["n"] += 1
+
         probs = {"1": g["p_first"], "0.5": g["p_draw"], "0": g["p_second"]}
         pred_cls = max(probs, key=probs.get)
         conf = probs[pred_cls]
         ok = 1 if pred_cls == res else 0
-        b_idx = min(6, max(0, int((conf / 100.0) * 10) - 3))
-        cal_bins[b_idx]["sum_p"] += conf / 100.0
-        cal_bins[b_idx]["sum_y"] += ok
-        cal_bins[b_idx]["n"] += 1
         valid.append((g["date"], g["tournament_id"], g["round"], g["board"], g["game_id"], conf, ok))
     valid.sort()
 
@@ -833,22 +845,34 @@ def build_model_eval(game_details):
             "total": tot,
         }
     n_valid = len(valid)
-    ece = (sum(abs(b["sum_y"] - b["sum_p"]) for b in cal_bins) / n_valid * 100.0) if n_valid > 0 else None
-    calibration = [
-        {
-            "lo": b["lo"],
-            "hi": b["hi"],
-            "n": b["n"],
-            "mean_p": round(b["sum_p"] / b["n"] * 100.0, 2),
-            "actual": round(b["sum_y"] / b["n"] * 100.0, 2),
-        }
-        for b in cal_bins if b["n"] > 0
-    ]
+    ece_by_class = {}
+    calibration = {}
+    for cname, _ in class_defs:
+        cb = cal_bins[cname]
+        ece_by_class[cname] = (
+            round(sum(abs(b["sum_y"] - b["sum_p"]) for b in cb) / n_valid * 100.0, 2)
+            if n_valid > 0 else None
+        )
+        calibration[cname] = [
+            {
+                "lo": b["lo"],
+                "hi": b["hi"],
+                "n": b["n"],
+                "mean_p": round(b["sum_p"] / b["n"] * 100.0, 2),
+                "actual": round(b["sum_y"] / b["n"] * 100.0, 2),
+            }
+            for b in cb if b["n"] > 0
+        ]
+    ece = (
+        round(sum(ece_by_class.values()) / len(class_defs), 2)
+        if n_valid > 0 else None
+    )
     metrics = {
         "n": n_valid,
         "logloss": round(ll_sum / n_valid, 4) if n_valid > 0 else None,
         "brier": round(brier_sum / n_valid, 4) if n_valid > 0 else None,
-        "ece": round(ece, 2) if ece is not None else None,
+        "ece": ece,
+        "ece_by_class": ece_by_class,
     }
     return {"points": points, "summary": summary, "metrics": metrics, "calibration": calibration}
 

@@ -172,23 +172,30 @@
 
   function renderCalibration(data) {
     if (!calWrapEl) return;
-    var bins = (data && data.calibration) || [];
-    if (!bins.length) {
+    var cal = (data && data.calibration) || {};
+    var calSeries = [
+      { key: "first", label: "假先胜", color: "#2f6fcd" },
+      { key: "draw", label: "和棋", color: "#2d9d6f" },
+      { key: "second", label: "假后胜", color: "#d96b27" },
+    ];
+    var eceMap = (data && data.metrics && data.metrics.ece_by_class) || {};
+    var hasAny = calSeries.some(function (s) { return (cal[s.key] || []).length > 0; });
+    if (!hasAny) {
       calWrapEl.textContent = "暂无校准数据";
       return;
     }
 
     var W = 820;
-    var H = 300;
+    var H = 320;
     var padL = 48;
     var padR = 24;
     var padT = 16;
     var padB = 34;
     var plotW = W - padL - padR;
     var plotH = H - padT - padB;
-    var vMin = 30;
+    var vMin = 0;
     var vMax = 100;
-    var ticks = [30, 40, 50, 60, 70, 80, 90, 100];
+    var ticks = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 
     function xVal(v) {
       var c = Math.max(vMin, Math.min(vMax, v));
@@ -218,15 +225,21 @@
       '" stroke="#9aa5b1" stroke-width="1.5" stroke-dasharray="5,5" />'
     );
 
-    var pts = bins.map(function (b) {
-      return xVal(b.mean_p).toFixed(1) + "," + yVal(b.actual).toFixed(1);
-    });
-    svg.push('<polyline fill="none" stroke="#2f6fcd" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" points="' + pts.join(" ") + '" />');
-
-    bins.forEach(function (b, idx) {
-      var cx = xVal(b.mean_p).toFixed(1);
-      var cy = yVal(b.actual).toFixed(1);
-      svg.push('<circle class="cal-dot" data-idx="' + idx + '" cx="' + cx + '" cy="' + cy + '" r="4.5" fill="#2f6fcd" stroke="#ffffff" stroke-width="1.5" style="cursor:pointer;" />');
+    var dotMeta = [];
+    calSeries.forEach(function (s) {
+      var bins = cal[s.key] || [];
+      if (!bins.length) return;
+      var pts = bins.map(function (b) {
+        return xVal(b.mean_p).toFixed(1) + "," + yVal(b.actual).toFixed(1);
+      });
+      svg.push('<polyline fill="none" stroke="' + s.color + '" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" points="' + pts.join(" ") + '" />');
+      bins.forEach(function (b) {
+        var cx = xVal(b.mean_p).toFixed(1);
+        var cy = yVal(b.actual).toFixed(1);
+        var dIdx = dotMeta.length;
+        dotMeta.push({ series: s, bin: b, cx: cx });
+        svg.push('<circle class="cal-dot" data-idx="' + dIdx + '" cx="' + cx + '" cy="' + cy + '" r="4.2" fill="' + s.color + '" stroke="#ffffff" stroke-width="1.3" style="cursor:pointer;" />');
+      });
     });
 
     svg.push("</svg>");
@@ -237,14 +250,17 @@
     var calSvg = calWrapEl.querySelector("svg");
     calSvg.querySelectorAll(".cal-dot").forEach(function (dot) {
       dot.addEventListener("mouseenter", function () {
-        var b = bins[Number(dot.getAttribute("data-idx"))];
+        var meta = dotMeta[Number(dot.getAttribute("data-idx"))];
+        var b = meta.bin;
+        var s = meta.series;
+        var eceStr = eceMap[s.key] != null ? " (ECE " + eceMap[s.key].toFixed(2) + "%)" : "";
         calTip.innerHTML =
-          '<div class="model-tt-date">[' + b.lo + "%, " + b.hi + "%) · " + b.n + " 局</div>" +
+          '<div class="model-tt-date">' + s.label + eceStr + " · [" + b.lo + "%, " + b.hi + "%) · " + b.n + " 局</div>" +
           '<div class="model-tt-row">预测均值: <strong>' + b.mean_p.toFixed(2) + "%</strong></div>" +
-          '<div class="model-tt-row">实际命中: <strong>' + b.actual.toFixed(2) + "%</strong></div>";
+          '<div class="model-tt-row">实际占比: <strong>' + b.actual.toFixed(2) + "%</strong></div>";
         calTip.style.display = "block";
-        var leftPct = (Number(dot.getAttribute("cx")) / W) * 100;
-        calTip.style.left = (leftPct > 65 ? leftPct - 24 : leftPct + 2) + "%";
+        var leftPct = (Number(meta.cx) / W) * 100;
+        calTip.style.left = (leftPct > 65 ? leftPct - 28 : leftPct + 2) + "%";
       });
       dot.addEventListener("mouseleave", function () {
         calTip.style.display = "none";
