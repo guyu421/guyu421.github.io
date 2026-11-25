@@ -8,7 +8,7 @@ import math
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-import lightgbm as lgb
+import numpy as np
 import pandas as pd
 
 from whr_tracker import WHR_PRIOR_STD, WHRTracker, day_of
@@ -38,8 +38,8 @@ CUTOFF_ORDER = [
 RESULT_SCORE = {"1": 1.0, "0.5": 0.5, "0": 0.0}
 
 
-def load_cutoff_bundle(model_dir: Path) -> Tuple[lgb.Booster, Dict]:
-    model = lgb.Booster(model_file=str(model_dir / "model.txt"))
+def load_cutoff_bundle(model_dir: Path) -> Tuple[Dict, Dict]:
+    model = json.loads((model_dir / "model.json").read_text(encoding="utf-8"))
     metadata = json.loads((model_dir / "metadata.json").read_text(encoding="utf-8"))
     return model, metadata
 
@@ -100,7 +100,7 @@ def compute_glicko2_before_match(
 
 
 def predict_from_ratings(
-    model: lgb.Booster,
+    model: Dict,
     metadata: Dict,
     rule: str,
     r1: float,
@@ -112,17 +112,31 @@ def predict_from_ratings(
     if rule not in rule_map:
         raise ValueError(f"Unsupported rule {rule!r}. Choose from: {list(rule_map.keys())}")
 
-    row = {
-        "rule": rule_map[rule],
-        "first_rating": r1,
-        "second_rating": r2,
-        "rating_diff": r1 - r2,
-        "first_std": std1,
-        "second_std": std2,
+    rcode = rule_map[rule]
+    diff = r1 - r2
+    s_comb = math.sqrt(1.0 + 3.0 * (std1 * std1 + std2 * std2) / (400.0 * 400.0))
+    eff = diff / (400.0 * s_comb)
+    feat_map = {
+        "elo_diff": diff / 400.0,
+        "eff_diff": eff,
+        "abs_eff": abs(eff),
+        "elo_p": 1.0 / (1.0 + (10.0 ** (-eff))),
+        "rating_sum": (r1 + r2 - 3800.0) / 400.0,
+        "std_comb": math.sqrt(std1 * std1 + std2 * std2) / 350.0,
     }
-    X = pd.DataFrame([row], columns=metadata["features"])
-    X["rule"] = X["rule"].astype(int)
-    probs = model.predict(X)[0]
+    x = np.array(
+        [
+            1.0 if (c == f"rule_{rcode}") else feat_map.get(c, 0.0)
+            for c in model["feature_cols"]
+        ],
+        dtype=np.float64,
+    )
+    coef = np.asarray(model["coef"], dtype=np.float64)
+    intercept = np.asarray(model["intercept"], dtype=np.float64)
+    logits = coef @ x + intercept
+    logits -= np.max(logits)
+    exp_l = np.exp(logits)
+    probs = exp_l / np.sum(exp_l)
     labels = metadata["class_labels"]
     prob_map = {labels[i]: float(probs[i]) for i in range(len(labels))}
     return {

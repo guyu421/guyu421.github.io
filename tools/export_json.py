@@ -162,7 +162,7 @@ def compute_match_predictions(games_out, pid_of):
     available_models = []
     for entry in os.listdir(models_root):
         mdir = os.path.join(models_root, entry)
-        if os.path.isdir(mdir) and os.path.isfile(os.path.join(mdir, "model.txt")):
+        if os.path.isdir(mdir) and os.path.isfile(os.path.join(mdir, "model.json")):
             booster, metadata = load_cutoff_bundle(Path(mdir))
             available_models.append((metadata["cutoff_date_exclusive"], entry, booster, metadata))
     available_models.sort(key=lambda item: item[0], reverse=True)

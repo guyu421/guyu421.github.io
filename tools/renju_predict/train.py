@@ -1,4 +1,4 @@
-"""Train basic LightGBM match-outcome models for multiple date cutoffs using WHR features."""
+"""Train Elo-baseline Multinomial Logistic Regression models for multiple date cutoffs using WHR features."""
 
 from __future__ import annotations
 
@@ -8,9 +8,9 @@ from datetime import date as _date
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-import lightgbm as lgb
 import numpy as np
 import pandas as pd
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, log_loss
 from sklearn.model_selection import StratifiedKFold
 
@@ -128,19 +128,31 @@ def build_all_cutoffs_features(
     return X, y, pd.Series(dates), snapshots
 
 
-def make_model(n_estimators: int = 500) -> lgb.LGBMClassifier:
-    return lgb.LGBMClassifier(
-        objective="multiclass",
-        num_class=3,
-        n_estimators=n_estimators,
-        learning_rate=0.03,
-        num_leaves=15,
-        linear_tree=True,
-        reg_lambda=5.0,
-        random_state=42,
-        n_jobs=-1,
-        verbose=-1,
-    )
+def featurize_logreg(df: pd.DataFrame) -> pd.DataFrame:
+    d = pd.DataFrame(index=df.index)
+    diff = df["rating_diff"].to_numpy(dtype=np.float64)
+    s1 = df["first_std"].to_numpy(dtype=np.float64)
+    s2 = df["second_std"].to_numpy(dtype=np.float64)
+    s_comb = np.sqrt(1.0 + 3.0 * (s1 * s1 + s2 * s2) / (400.0 * 400.0))
+    eff = diff / (400.0 * s_comb)
+    d["elo_diff"] = diff / 400.0
+    d["eff_diff"] = eff
+    d["abs_eff"] = np.abs(eff)
+    d["elo_p"] = 1.0 / (1.0 + np.power(10.0, -eff))
+    d["rating_sum"] = (
+        df["first_rating"].to_numpy(dtype=np.float64)
+        + df["second_rating"].to_numpy(dtype=np.float64)
+        - 3800.0
+    ) / 400.0
+    d["std_comb"] = np.sqrt(s1 * s1 + s2 * s2) / 350.0
+    rules = df["rule"].to_numpy()
+    for rcode in sorted(RULE_MAP.values()):
+        d[f"rule_{rcode}"] = (rules == rcode).astype(np.float64)
+    return d
+
+
+def make_model() -> LogisticRegression:
+    return LogisticRegression(C=1.0, max_iter=1000)
 
 
 def train_cutoff(
@@ -163,36 +175,37 @@ def train_cutoff(
     X = X_all[mask_x].reset_index(drop=True)
     y = y_all[mask_x.to_numpy()]
 
+    X_lr = featurize_logreg(X)
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     oof_probs = np.zeros((len(y), 3), dtype=np.float64)
-    best_iters: List[int] = []
-    for train_idx, val_idx in skf.split(X, y):
-        clf = make_model(n_estimators=500)
-        clf.fit(
-            X.iloc[train_idx],
-            y[train_idx],
-            categorical_feature=["rule"],
-            eval_set=[(X.iloc[val_idx], y[val_idx])],
-            callbacks=[lgb.early_stopping(40, verbose=False)],
-        )
-        best_it = clf.best_iteration_
-        if best_it is not None and best_it > 0:
-            best_iters.append(int(best_it))
-        oof_probs[val_idx] = clf.predict_proba(X.iloc[val_idx])
+    for train_idx, val_idx in skf.split(X_lr, y):
+        clf = make_model()
+        clf.fit(X_lr.iloc[train_idx], y[train_idx])
+        oof_probs[val_idx] = clf.predict_proba(X_lr.iloc[val_idx])
 
     cv_logloss = float(log_loss(y, oof_probs, labels=[0, 1, 2]))
     cv_acc = float(accuracy_score(y, np.argmax(oof_probs, axis=1)))
 
-    final_iters = max(80, min(500, int(np.median(best_iters) * 1.1))) if best_iters else 150
-    final_clf = make_model(n_estimators=final_iters)
-    final_clf.fit(X, y, categorical_feature=["rule"])
+    final_clf = make_model()
+    final_clf.fit(X_lr, y)
 
     out_dir = models_dir / cutoff_key
     out_dir.mkdir(parents=True, exist_ok=True)
-    stale_cbm = out_dir / "model.cbm"
-    if stale_cbm.exists():
-        stale_cbm.unlink()
-    final_clf.booster_.save_model(str(out_dir / "model.txt"))
+    for stale_name in ("model.cbm", "model.txt"):
+        stale = out_dir / stale_name
+        if stale.exists():
+            stale.unlink()
+    model_payload = {
+        "type": "elo_logistic_regression",
+        "feature_cols": list(X_lr.columns),
+        "classes": [int(c) for c in final_clf.classes_],
+        "coef": final_clf.coef_.tolist(),
+        "intercept": final_clf.intercept_.tolist(),
+    }
+    (out_dir / "model.json").write_text(
+        json.dumps(model_payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
 
     ratings_payload = {
         "default": {
