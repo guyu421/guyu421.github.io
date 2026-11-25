@@ -9,6 +9,7 @@
     "first_rating",
     "second_rating",
     "rating_diff",
+    "eff_diff",
     "first_std",
     "second_std"
   ],
@@ -52,6 +53,6 @@
     "山口": 577,
     "五手两打": 225
   },
-  "cv_5fold_logloss": 0.88736,
-  "cv_5fold_accuracy": 0.57562
+  "cv_5fold_logloss": 0.89354,
+  "cv_5fold_accuracy": 0.57515
 }

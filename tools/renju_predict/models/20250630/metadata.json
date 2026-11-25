@@ -9,6 +9,7 @@
     "first_rating",
     "second_rating",
     "rating_diff",
+    "eff_diff",
     "first_std",
     "second_std"
   ],
@@ -51,6 +52,6 @@
     "塔拉山口-10": 1063,
     "山口": 577
   },
-  "cv_5fold_logloss": 0.91682,
-  "cv_5fold_accuracy": 0.55305
+  "cv_5fold_logloss": 0.93045,
+  "cv_5fold_accuracy": 0.5378
 }

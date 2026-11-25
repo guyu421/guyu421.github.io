@@ -1,14 +1,15 @@
-"""Train LightGBM match-outcome models for multiple date cutoffs using Glicko-2 features."""
+"""Train LightGBM (linear_tree=True) match-outcome models for multiple date cutoffs using WHR features."""
 
 from __future__ import annotations
 
 import argparse
 import json
+import math
 from datetime import date as _date
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-from catboost import CatBoostClassifier
+import lightgbm as lgb
 import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score, log_loss
@@ -54,7 +55,7 @@ RESULT_TO_CLASS: Dict[str, int] = {
     "1": 2,    # 假先胜
 }
 CLASS_LABELS = ["假后胜", "和棋", "假先胜"]
-FEATURE_NAMES = ["rule", "first_rating", "second_rating", "rating_diff", "first_std", "second_std"]
+FEATURE_NAMES = ["rule", "first_rating", "second_rating", "rating_diff", "eff_diff", "first_std", "second_std"]
 RESULT_SCORE = {"1": 1.0, "0.5": 0.5, "0": 0.0}
 
 
@@ -102,12 +103,15 @@ def build_all_cutoffs_features(
                 raise ValueError(f"Unknown rule: {r.rule!r}")
             p1 = tracker.get(r.first_id, day_int)
             p2 = tracker.get(r.second_id, day_int)
+            diff = p1.rating - p2.rating
+            s_comb = math.sqrt(1.0 + 3.0 * (p1.std * p1.std + p2.std * p2.std) / (400.0 * 400.0))
             rows.append(
                 {
                     "rule": rule_code,
                     "first_rating": p1.rating,
                     "second_rating": p2.rating,
-                    "rating_diff": p1.rating - p2.rating,
+                    "rating_diff": diff,
+                    "eff_diff": diff / s_comb,
                     "first_std": p1.std,
                     "second_std": p2.std,
                 }
@@ -128,33 +132,19 @@ def build_all_cutoffs_features(
     return X, y, pd.Series(dates), snapshots
 
 
-def _has_cuda_gpu() -> bool:
-    try:
-        import torch
-        return bool(torch.cuda.is_available())
-    except Exception:
-        return False
-
-
-_USE_GPU = _has_cuda_gpu()
-
-
-def make_model(iterations: int = 500) -> CatBoostClassifier:
-    kwargs = dict(
-        loss_function="MultiClass",
-        iterations=iterations,
-        learning_rate=0.04,
-        depth=5,
-        l2_leaf_reg=5.0,
-        border_count=64,
-        random_seed=42,
-        verbose=0,
+def make_model(n_estimators: int = 500) -> lgb.LGBMClassifier:
+    return lgb.LGBMClassifier(
+        objective="multiclass",
+        num_class=3,
+        n_estimators=n_estimators,
+        learning_rate=0.03,
+        num_leaves=15,
+        linear_tree=True,
+        reg_lambda=5.0,
+        random_state=42,
+        n_jobs=-1,
+        verbose=-1,
     )
-    if _USE_GPU:
-        kwargs["task_type"] = "GPU"
-    else:
-        kwargs["thread_count"] = -1
-    return CatBoostClassifier(**kwargs)
 
 
 def train_cutoff(
@@ -181,15 +171,15 @@ def train_cutoff(
     oof_probs = np.zeros((len(y), 3), dtype=np.float64)
     best_iters: List[int] = []
     for train_idx, val_idx in skf.split(X, y):
-        clf = make_model(iterations=500)
+        clf = make_model(n_estimators=500)
         clf.fit(
             X.iloc[train_idx],
             y[train_idx],
-            cat_features=["rule"],
-            eval_set=(X.iloc[val_idx], y[val_idx]),
-            early_stopping_rounds=40,
+            categorical_feature=["rule"],
+            eval_set=[(X.iloc[val_idx], y[val_idx])],
+            callbacks=[lgb.early_stopping(40, verbose=False)],
         )
-        best_it = clf.get_best_iteration()
+        best_it = clf.best_iteration_
         if best_it is not None and best_it > 0:
             best_iters.append(int(best_it))
         oof_probs[val_idx] = clf.predict_proba(X.iloc[val_idx])
@@ -197,16 +187,16 @@ def train_cutoff(
     cv_logloss = float(log_loss(y, oof_probs, labels=[0, 1, 2]))
     cv_acc = float(accuracy_score(y, np.argmax(oof_probs, axis=1)))
 
-    final_iters = max(150, min(500, int(np.median(best_iters) * 1.1))) if best_iters else 300
-    final_clf = make_model(iterations=final_iters)
-    final_clf.fit(X, y, cat_features=["rule"])
+    final_iters = max(80, min(500, int(np.median(best_iters) * 1.1))) if best_iters else 150
+    final_clf = make_model(n_estimators=final_iters)
+    final_clf.fit(X, y, categorical_feature=["rule"])
 
     out_dir = models_dir / cutoff_key
     out_dir.mkdir(parents=True, exist_ok=True)
-    stale_lgb = out_dir / "model.txt"
-    if stale_lgb.exists():
-        stale_lgb.unlink()
-    final_clf.save_model(str(out_dir / "model.cbm"))
+    stale_cbm = out_dir / "model.cbm"
+    if stale_cbm.exists():
+        stale_cbm.unlink()
+    final_clf.booster_.save_model(str(out_dir / "model.txt"))
 
     ratings_payload = {
         "default": {

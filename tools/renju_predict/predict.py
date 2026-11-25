@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-from catboost import CatBoostClassifier
+import lightgbm as lgb
 import pandas as pd
 
 from whr_tracker import WHR_PRIOR_STD, WHRTracker, day_of
@@ -37,9 +38,8 @@ CUTOFF_ORDER = [
 RESULT_SCORE = {"1": 1.0, "0.5": 0.5, "0": 0.0}
 
 
-def load_cutoff_bundle(model_dir: Path) -> Tuple[CatBoostClassifier, Dict]:
-    model = CatBoostClassifier()
-    model.load_model(str(model_dir / "model.cbm"))
+def load_cutoff_bundle(model_dir: Path) -> Tuple[lgb.Booster, Dict]:
+    model = lgb.Booster(model_file=str(model_dir / "model.txt"))
     metadata = json.loads((model_dir / "metadata.json").read_text(encoding="utf-8"))
     return model, metadata
 
@@ -100,7 +100,7 @@ def compute_glicko2_before_match(
 
 
 def predict_from_ratings(
-    model: CatBoostClassifier,
+    model: lgb.Booster,
     metadata: Dict,
     rule: str,
     r1: float,
@@ -112,17 +112,20 @@ def predict_from_ratings(
     if rule not in rule_map:
         raise ValueError(f"Unsupported rule {rule!r}. Choose from: {list(rule_map.keys())}")
 
+    diff = r1 - r2
+    s_comb = math.sqrt(1.0 + 3.0 * (std1 * std1 + std2 * std2) / (400.0 * 400.0))
     row = {
         "rule": rule_map[rule],
         "first_rating": r1,
         "second_rating": r2,
-        "rating_diff": r1 - r2,
+        "rating_diff": diff,
+        "eff_diff": diff / s_comb,
         "first_std": std1,
         "second_std": std2,
     }
     X = pd.DataFrame([row], columns=metadata["features"])
     X["rule"] = X["rule"].astype(int)
-    probs = model.predict_proba(X)[0]
+    probs = model.predict(X)[0]
     labels = metadata["class_labels"]
     prob_map = {labels[i]: float(probs[i]) for i in range(len(labels))}
     return {
