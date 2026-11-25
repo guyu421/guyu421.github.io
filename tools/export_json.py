@@ -156,7 +156,7 @@ def compute_match_predictions(games_out, pid_of):
         sys.path.insert(0, PREDICT_DIR)
     from pathlib import Path
     from whr_tracker import WHRTracker, day_of
-    from predict import load_cutoff_bundle, predict_from_ratings
+    from predict import load_cutoff_bundle, predict_from_ratings, compute_h2h_draw_delta
 
     # 加载所有可用模型，按 cutoff_date_exclusive 从新到旧排序
     available_models = []
@@ -182,6 +182,7 @@ def compute_match_predictions(games_out, pid_of):
         key=lambda g: (g["date"], g["tournament_id"], g["round"], g["board"], g["game_id"]),
     )
     tracker = WHRTracker()
+    pair_stats = {}
     preds = {}
 
     i = 0
@@ -193,8 +194,9 @@ def compute_match_predictions(games_out, pid_of):
         while j < n and (ordered[j]["date"], ordered[j]["tournament_id"], ordered[j]["round"]) == key:
             j += 1
 
-        # 先用本轮之前的无泄露 WHR 预测本轮所有非轮空对局
+        # 先用本轮之前的无泄露 WHR 与历史交锋和棋偏移预测本轮所有非轮空对局
         period_updates = []
+        period_pairs = []
         for g in ordered[i:j]:
             fid = pid_of.get(g["first"])
             sid = pid_of.get(g["second"])
@@ -205,19 +207,29 @@ def compute_match_predictions(games_out, pid_of):
             else:
                 p1 = tracker.get(fid, day_int)
                 p2 = tracker.get(sid, day_int)
-                p = predict_from_ratings(booster, metadata, g["rule"], p1.rating, p2.rating, p1.std, p2.std)
+                pk = (fid, sid) if fid < sid else (sid, fid)
+                n_h2h, d_h2h = pair_stats.get(pk, (0, 0))
+                h2h_dd = compute_h2h_draw_delta(n_h2h, d_h2h)
+                p = predict_from_ratings(booster, metadata, g["rule"], p1.rating, p2.rating, p1.std, p2.std, h2h_dd)
                 preds[g["game_id"]] = (
                     round(p["假先胜率"] * 100, 1),
                     round(p["和棋率"] * 100, 1),
                     round(p["假后胜率"] * 100, 1),
                 )
 
-            # 轮空或弃权不计入 WHR 等级分
+            # 轮空或弃权不计入 WHR 等级分与历史交锋统计
             if not is_bye and str(g["result"]) in score_map:
                 period_updates.append((fid, sid, score_map[str(g["result"])]))
+                pk = (fid, sid) if fid < sid else (sid, fid)
+                period_pairs.append((pk, str(g["result"]) == "0.5"))
 
         if period_updates:
             tracker.apply_period(period_updates, day_int)
+        for pk, is_d in period_pairs:
+            st = pair_stats.setdefault(pk, [0, 0])
+            st[0] += 1
+            if is_d:
+                st[1] += 1
         i = j
 
     return preds

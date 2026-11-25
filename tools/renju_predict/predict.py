@@ -36,6 +36,42 @@ CUTOFF_ORDER = [
     "20261123",
 ]
 RESULT_SCORE = {"1": 1.0, "0.5": 0.5, "0": 0.0}
+H2H_DRAW_PRIOR_P0 = 0.125
+H2H_DRAW_SMOOTH_K = 2.0
+
+
+def compute_h2h_draw_delta(n_games: int, n_draws: int) -> float:
+    if n_games <= 0:
+        return 0.0
+    return (n_draws - n_games * H2H_DRAW_PRIOR_P0) / (H2H_DRAW_SMOOTH_K + n_games)
+
+
+def compute_h2h_draw_delta_before_match(
+    games_df: pd.DataFrame,
+    target_date: str,
+    target_tid: int,
+    target_round: int,
+    first_id: int,
+    second_id: int,
+) -> float:
+    valid = games_df[
+        games_df["result"].isin(["1", "0", "0.5"]) & games_df["second_id"].notna()
+    ].copy()
+    valid["first_id"] = valid["first_id"].astype(int)
+    valid["second_id"] = valid["second_id"].astype(int)
+    mask_prior = (valid["date"] < target_date) | (
+        (valid["date"] == target_date)
+        & (valid["tournament_id"] == target_tid)
+        & (valid["round"] < target_round)
+    )
+    pair_mask = (
+        ((valid["first_id"] == first_id) & (valid["second_id"] == second_id))
+        | ((valid["first_id"] == second_id) & (valid["second_id"] == first_id))
+    )
+    sub = valid[mask_prior & pair_mask]
+    if sub.empty:
+        return 0.0
+    return compute_h2h_draw_delta(len(sub), int((sub["result"] == "0.5").sum()))
 
 
 def load_cutoff_bundle(model_dir: Path) -> Tuple[Dict, Dict]:
@@ -107,6 +143,7 @@ def predict_from_ratings(
     r2: float,
     std1: float = WHR_PRIOR_STD,
     std2: float = WHR_PRIOR_STD,
+    h2h_draw_delta: float = 0.0,
 ) -> Dict[str, float]:
     rule_map: Dict[str, int] = metadata["rule_map"]
     if rule not in rule_map:
@@ -116,6 +153,7 @@ def predict_from_ratings(
     feat_map = {
         "elo_diff": (r1 - r2) / 400.0,
         "rating_sum": (r1 + r2 - 3800.0) / 400.0,
+        "h2h_draw_delta": float(h2h_draw_delta),
     }
     x = np.array(
         [
@@ -157,12 +195,15 @@ def predict_specific_match(
     r1, r2 = p1.rating, p2.rating
     std1, std2 = p1.std, p2.std
     diff = r1 - r2
+    h2h_draw_delta = compute_h2h_draw_delta_before_match(
+        games_df, target_date, target_tid, target_round, first_id, second_id
+    )
 
     results: List[Dict[str, object]] = []
     for cutoff_key in cutoff_keys:
         model_dir = models_dir / cutoff_key
         booster, metadata = load_cutoff_bundle(model_dir)
-        probs = predict_from_ratings(booster, metadata, rule, r1, r2, std1, std2)
+        probs = predict_from_ratings(booster, metadata, rule, r1, r2, std1, std2, h2h_draw_delta)
         results.append(
             {
                 "cutoff": cutoff_key,

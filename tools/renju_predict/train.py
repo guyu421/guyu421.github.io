@@ -54,8 +54,16 @@ RESULT_TO_CLASS: Dict[str, int] = {
     "1": 2,    # 假先胜
 }
 CLASS_LABELS = ["假后胜", "和棋", "假先胜"]
-FEATURE_NAMES = ["rule", "first_rating", "second_rating", "rating_diff", "first_std", "second_std"]
+FEATURE_NAMES = ["rule", "first_rating", "second_rating", "rating_diff", "first_std", "second_std", "h2h_draw_delta"]
 RESULT_SCORE = {"1": 1.0, "0.5": 0.5, "0": 0.0}
+H2H_DRAW_PRIOR_P0 = 0.125
+H2H_DRAW_SMOOTH_K = 2.0
+
+
+def compute_h2h_draw_delta(n_games: int, n_draws: int) -> float:
+    if n_games <= 0:
+        return 0.0
+    return (n_draws - n_games * H2H_DRAW_PRIOR_P0) / (H2H_DRAW_SMOOTH_K + n_games)
 
 
 def load_data(db_dir: Path) -> Tuple[pd.DataFrame, Dict[int, str]]:
@@ -81,6 +89,7 @@ def build_all_cutoffs_features(
 ) -> Tuple[pd.DataFrame, np.ndarray, pd.Series, Dict[str, Dict[int, object]]]:
     """Compute pre-match WHR features once chronologically and snapshot ratings at each cutoff."""
     tracker = WHRTracker()
+    pair_stats: Dict[Tuple[int, int], List[int]] = {}
     rows: List[Dict[str, float | int]] = []
     targets: List[int] = []
     dates: List[str] = []
@@ -96,12 +105,15 @@ def build_all_cutoffs_features(
 
         day_int = day_of(p_date_str)
         period_games: List[Tuple[int, int, float]] = []
+        period_pairs: List[Tuple[Tuple[int, int], bool]] = []
         for r in period_df.itertuples(index=False):
             rule_code = RULE_MAP.get(str(r.rule))
             if rule_code is None:
                 raise ValueError(f"Unknown rule: {r.rule!r}")
             p1 = tracker.get(r.first_id, day_int)
             p2 = tracker.get(r.second_id, day_int)
+            pair_key = (r.first_id, r.second_id) if r.first_id < r.second_id else (r.second_id, r.first_id)
+            n_h2h, d_h2h = pair_stats.get(pair_key, (0, 0))
             rows.append(
                 {
                     "rule": rule_code,
@@ -110,13 +122,20 @@ def build_all_cutoffs_features(
                     "rating_diff": p1.rating - p2.rating,
                     "first_std": p1.std,
                     "second_std": p2.std,
+                    "h2h_draw_delta": compute_h2h_draw_delta(n_h2h, d_h2h),
                 }
             )
             targets.append(RESULT_TO_CLASS[str(r.result)])
             dates.append(p_date_str)
             period_games.append((r.first_id, r.second_id, RESULT_SCORE[str(r.result)]))
+            period_pairs.append((pair_key, str(r.result) == "0.5"))
 
         tracker.apply_period(period_games, day_int)
+        for pk, is_d in period_pairs:
+            st = pair_stats.setdefault(pk, [0, 0])
+            st[0] += 1
+            if is_d:
+                st[1] += 1
 
     while c_idx < len(sorted_cutoffs):
         snapshots[sorted_cutoffs[c_idx][0]] = dict(tracker.ratings)
@@ -139,6 +158,7 @@ def featurize_logreg(df: pd.DataFrame) -> pd.DataFrame:
     rules = df["rule"].to_numpy()
     for rcode in sorted(RULE_MAP.values()):
         d[f"rule_{rcode}"] = (rules == rcode).astype(np.float64)
+    d["h2h_draw_delta"] = df["h2h_draw_delta"].to_numpy(dtype=np.float64)
     return d
 
 
