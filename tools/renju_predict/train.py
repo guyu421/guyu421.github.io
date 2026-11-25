@@ -155,6 +155,10 @@ def featurize_logreg(df: pd.DataFrame) -> pd.DataFrame:
         + df["second_rating"].to_numpy(dtype=np.float64)
         - 3800.0
     ) / 400.0
+    s1 = df["first_std"].to_numpy(dtype=np.float64)
+    s2 = df["second_std"].to_numpy(dtype=np.float64)
+    d["std_sum"] = (s1 + s2) / 100.0
+    d["std_diff"] = (s1 - s2) / 100.0
     rules = df["rule"].to_numpy()
     for rcode in sorted(RULE_MAP.values()):
         d[f"rule_{rcode}"] = (rules == rcode).astype(np.float64)

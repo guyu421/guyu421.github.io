@@ -153,6 +153,8 @@ def predict_from_ratings(
     feat_map = {
         "elo_diff": (r1 - r2) / 400.0,
         "rating_sum": (r1 + r2 - 3800.0) / 400.0,
+        "std_sum": (std1 + std2) / 100.0,
+        "std_diff": (std1 - std2) / 100.0,
         "h2h_draw_delta": float(h2h_draw_delta),
     }
     x = np.array(
