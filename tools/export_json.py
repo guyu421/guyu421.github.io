@@ -569,7 +569,7 @@ def build(games, players, tours, members, teams=None, team_matches=None):
         # 只有加赛记录（已被跳过）或根本没上场的棋手不进榜单
         if not mine:
             continue
-        rating, rd = ratings.get(p["name"], (1500.0, 350.0))
+        rating, rd = ratings.get(p["name"], (25.0, 25.0 / 3.0))
         players_out.append({
             "player_id": p["player_id"],
             "rank": 0,
