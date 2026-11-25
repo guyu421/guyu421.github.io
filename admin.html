@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>后台管理</title>
+  <link href="css/default.css" rel="stylesheet" type="text/css" />
+  <link href="css/site.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+  <div id="outer">
+    <div id="header"></div>
+    <div id="menu">
+      <ul>
+        <li class="first"><a href="index.html">赛事</a></li>
+        <li><a href="players.html">棋手</a></li>
+      </ul>
+    </div>
+    <div id="content">
+      <div id="primaryContentContainer">
+        <div id="primaryContent">
+          <h1>数据库后台管理</h1>
+
+          <div class="admin-panel">
+            <div class="admin-row">
+              <label for="ghRepo">GitHub 仓库:</label>
+              <input id="ghRepo" type="text" value="guyu421/guyu421.github.io" />
+              <label for="ghBranch">分支:</label>
+              <input id="ghBranch" type="text" value="main" class="admin-short" />
+              <label for="ghToken">GitHub Token (PAT):</label>
+              <input id="ghToken" type="password" placeholder="ghp_...（仅保存在本地浏览器）" />
+              <button type="button" id="saveTokenBtn">保存 Token</button>
+              <span id="tokenStatus" class="admin-muted"></span>
+            </div>
+          </div>
+
+          <div class="admin-panel">
+            <div class="admin-row">
+              <label for="tournamentSelect">加载已有赛事:</label>
+              <select id="tournamentSelect">
+                <option value="">-- 选择赛事 --</option>
+              </select>
+              <button type="button" id="loadTournamentBtn">加载到文本框</button>
+              <button type="button" id="newTemplateBtn">新建赛事模板</button>
+              <button type="button" id="cmdTemplateBtn">单条修改指令模板</button>
+            </div>
+          </div>
+
+          <div class="admin-editor-wrap">
+            <div class="admin-editor-head">
+              <span>编辑区（纯文本 `.txt`，支持新建/覆盖赛事或 `SET / DEL / RENAME / MERGE` 指令）</span>
+              <span id="lineStats" class="admin-muted">0 行</span>
+            </div>
+            <textarea id="txtEditor" spellcheck="false" placeholder="在此输入或粘贴赛事/对局文本..."></textarea>
+          </div>
+
+          <div class="admin-actions">
+            <button type="button" id="previewBtn" class="admin-btn-primary">解析预览</button>
+            <button type="button" id="submitGithubBtn" class="admin-btn-success">提交到 GitHub 并自动同步</button>
+            <button type="button" id="downloadTxtBtn">下载 .txt</button>
+            <button type="button" id="clearBtn">清空</button>
+          </div>
+
+          <div id="statusBox" class="admin-status" style="display:none;"></div>
+          <div id="previewBox" class="admin-preview" style="display:none;"></div>
+        </div>
+      </div>
+      <div class="clear"></div>
+    </div>
+  </div>
+  <script src="js/admin.js"></script>
+</body>
+</html>

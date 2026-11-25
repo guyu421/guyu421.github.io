@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - "db/**.parquet"
+      - "db/edits/**.txt"
+      - "tools/apply_txt.py"
       - "tools/export_json.py"
       - "tools/renju_predict/**"
       - ".github/workflows/sync-data.yml"
@@ -32,6 +34,9 @@ jobs:
       - name: 编译 WHR C 内核
         run: gcc -O3 -shared -fPIC tools/renju_predict/whr_kernel.c -o tools/renju_predict/whr_kernel.so -lm
 
+      - name: 应用 db/edits 文本编辑
+        run: python tools/apply_txt.py --dir db/edits --archive-dir db/edits_done --db-dir db
+
       - name: 重新训练预测模型
         run: python tools/renju_predict/train.py --db-dir db --models-dir tools/renju_predict/models
 
@@ -44,7 +49,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data tools/renju_predict/models
+          git add db data tools/renju_predict/models
           if git diff --cached --quiet; then
             echo "数据没有变化"
             exit 0
