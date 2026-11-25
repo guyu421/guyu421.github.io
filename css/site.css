@@ -861,15 +861,14 @@ a.score-link:hover {
 	position: absolute;
 	top: 12px;
 	z-index: 20;
-	background: #ffffff;
-	border: 1px solid #d0d8e0;
-	border-radius: 6px;
+	background: rgba(38, 42, 46, 0.78);
+	border-radius: 5px;
 	padding: 0.45em 0.65em;
-	font-size: 0.82em;
-	line-height: 1.45;
-	color: #24303a;
+	font-size: 12px;
+	line-height: 1.5;
+	color: #ffffff;
 	pointer-events: none;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
 	white-space: nowrap;
 }
 
