@@ -128,17 +128,33 @@ def build_all_cutoffs_features(
     return X, y, pd.Series(dates), snapshots
 
 
-def make_model() -> CatBoostClassifier:
-    return CatBoostClassifier(
+def _has_cuda_gpu() -> bool:
+    try:
+        import torch
+        return bool(torch.cuda.is_available())
+    except Exception:
+        return False
+
+
+_USE_GPU = _has_cuda_gpu()
+
+
+def make_model(iterations: int = 500) -> CatBoostClassifier:
+    kwargs = dict(
         loss_function="MultiClass",
-        iterations=500,
-        learning_rate=0.03,
+        iterations=iterations,
+        learning_rate=0.04,
         depth=5,
         l2_leaf_reg=5.0,
+        border_count=64,
         random_seed=42,
-        thread_count=-1,
         verbose=0,
     )
+    if _USE_GPU:
+        kwargs["task_type"] = "GPU"
+    else:
+        kwargs["thread_count"] = -1
+    return CatBoostClassifier(**kwargs)
 
 
 def train_cutoff(
@@ -163,19 +179,26 @@ def train_cutoff(
 
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     oof_probs = np.zeros((len(y), 3), dtype=np.float64)
+    best_iters: List[int] = []
     for train_idx, val_idx in skf.split(X, y):
-        clf = make_model()
+        clf = make_model(iterations=500)
         clf.fit(
             X.iloc[train_idx],
             y[train_idx],
             cat_features=["rule"],
+            eval_set=(X.iloc[val_idx], y[val_idx]),
+            early_stopping_rounds=40,
         )
+        best_it = clf.get_best_iteration()
+        if best_it is not None and best_it > 0:
+            best_iters.append(int(best_it))
         oof_probs[val_idx] = clf.predict_proba(X.iloc[val_idx])
 
     cv_logloss = float(log_loss(y, oof_probs, labels=[0, 1, 2]))
     cv_acc = float(accuracy_score(y, np.argmax(oof_probs, axis=1)))
 
-    final_clf = make_model()
+    final_iters = max(150, min(500, int(np.median(best_iters) * 1.1))) if best_iters else 300
+    final_clf = make_model(iterations=final_iters)
     final_clf.fit(X, y, cat_features=["rule"])
 
     out_dir = models_dir / cutoff_key
@@ -248,6 +271,7 @@ def main() -> None:
 
     all_games, player_names = load_data(args.db_dir)
     cutoffs = [
+        ("20250630", "2025-07-01"),
         ("20250930", "2025-10-01"),
         ("20251231", "2026-01-01"),
         ("20260331", "2026-04-01"),
