@@ -758,6 +758,44 @@ a.score-link:hover {
 	border: 1px solid #ebd184;
 }
 
+.admin-disambig {
+	margin-bottom: 0.8em;
+	padding: 0.7em 0.9em;
+	background: #fff8e6;
+	border: 1px solid #ebd184;
+	border-radius: 4px;
+}
+
+.admin-disambig p {
+	margin: 0 0 0.45em 0;
+}
+
+.admin-disambig-item {
+	margin: 0.35em 0;
+	line-height: 1.8;
+}
+
+.admin-pick-btn,
+.admin-dismiss-btn {
+	margin: 0.15em 0.25em;
+	padding: 0.2em 0.55em;
+	font-size: 0.85em;
+	border-radius: 3px;
+	cursor: pointer;
+	border: 1px solid #c5cfd8;
+	background: #ffffff;
+	color: #24303a;
+}
+
+.admin-pick-btn:hover {
+	background: #e9f2fb;
+	border-color: #7eb0e0;
+}
+
+.admin-dismiss-btn {
+	color: #6b7782;
+}
+
 /* 模型页 */
 
 .model-section {

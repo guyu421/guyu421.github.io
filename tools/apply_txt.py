@@ -160,7 +160,10 @@ def apply_txt_content(text: str, db_dir: Path) -> List[str]:
     tp_df = pd.read_parquet(db_dir / "tournament_player.parquet")
     m_df = pd.read_parquet(db_dir / "match.parquet")
 
-    name_to_pid: Dict[str, int] = {str(r.name).strip(): int(r.player_id) for r in p_df.itertuples(index=False)}
+    name_to_pids: Dict[str, List[int]] = {}
+    for r in p_df.itertuples(index=False):
+        rnm = str(r.name).strip()
+        name_to_pids.setdefault(rnm, []).append(int(r.player_id))
     pid_set = set(int(x) for x in p_df["player_id"].tolist())
     next_pid = int(p_df["player_id"].max()) + 1 if not p_df.empty else 1
     session_star_pids: Dict[str, int] = {}
@@ -189,12 +192,15 @@ def apply_txt_content(text: str, db_dir: Path) -> List[str]:
             session_star_pids[nm] = pid
             p_df = pd.concat([p_df, pd.DataFrame([{"player_id": pid, "name": clean_nm}])], ignore_index=True)
             return pid
-        if nm in name_to_pid:
-            return name_to_pid[nm]
+        pids = name_to_pids.get(nm, [])
+        if len(pids) > 1:
+            raise ValueError(f"棋手姓名 {nm!r} 存在多个重名 ID {pids}，请使用 id:<player_id> 指定或加 * 新建")
+        if len(pids) == 1:
+            return pids[0]
         pid = next_pid
         next_pid += 1
         pid_set.add(pid)
-        name_to_pid[nm] = pid
+        name_to_pids[nm] = [pid]
         p_df = pd.concat([p_df, pd.DataFrame([{"player_id": pid, "name": nm}])], ignore_index=True)
         return pid
 
