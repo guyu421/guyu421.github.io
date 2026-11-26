@@ -55,6 +55,10 @@
     if (!start && !end) return String(row.period || row.date_range || "");
     start = String(start).slice(0, 10);
     end = String(end).slice(0, 10);
+    var noGames = row.game_count === 0 || row.games === 0 || (Array.isArray(row.games) && row.games.length === 0) || (start && !end);
+    if (start && noGames) {
+      return "开赛于 " + start;
+    }
     if (start && end && start !== end) {
       // 同一年只写一次年份：2026-05-16 至 05-20
       var tail = start.slice(0, 4) === end.slice(0, 4) ? end.slice(5) : end;
@@ -114,10 +118,13 @@
     var list = rows.slice();
     if (feed === "tournaments") {
       list.sort(function (a, b) {
-        var pa = formatPeriod(a || {});
-        var pb = formatPeriod(b || {});
-        if (pa !== pb) return pa < pb ? 1 : -1;
-        return 0;
+        var sa = String((a && (a.start_date || a.startDate || a.end_date || a.endDate || a.period)) || "").slice(0, 10);
+        var sb = String((b && (b.start_date || b.startDate || b.end_date || b.endDate || b.period)) || "").slice(0, 10);
+        if (sa !== sb) return sa < sb ? 1 : -1;
+        var ea = String((a && (a.end_date || a.endDate)) || "").slice(0, 10);
+        var eb = String((b && (b.end_date || b.endDate)) || "").slice(0, 10);
+        if (ea !== eb) return ea < eb ? 1 : -1;
+        return ((b && b.tournament_id) || 0) - ((a && a.tournament_id) || 0);
       });
     }
     return list;
