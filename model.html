@@ -24,6 +24,12 @@
           <h1>预测模型</h1>
 
           <div class="model-section">
+            <h2>夺冠概率计算</h2>
+            <p class="model-desc">仅针对有参赛编号的赛事，在赛前、抽签后、每轮结束后结合赛前预测模型胜平负概率进行 <code>1,000,000</code> 次蒙特卡洛模拟：</p>
+            <p class="model-desc">积分编排赛使用云蛇v3.998编排引擎，首轮采用 <code>1-2, 4-3, 5-6</code> 型；后续轮次采用拦腰编排，启用FIDE调整及轮空补对手分；单循环赛使用贝格尔编排法。</p>
+          </div>
+
+          <div class="model-section">
             <h2>模型原理</h2>
             <p class="model-desc">严格不引入未来信息，利用 LightGBM 模型直接输出<code>假先胜</code>、<code>和棋</code>、<code>假后胜</code>三分类概率。</p>
             <p class="model-desc">所用 5 个特征如下：</p>
@@ -63,15 +69,6 @@
               </span>
             </div>
             <div class="model-chart-wrap" id="calChartWrap"></div>
-          </div>
-
-          <div class="model-section">
-            <h2>夺冠概率计算</h2>
-            <p class="model-desc">仅针对有参赛编号的赛事，在每轮结束后结合赛前预测模型胜平负概率进行 <code>1,000,000</code> 次蒙特卡洛模拟：</p>
-            <ul class="model-list">
-              <li><b>积分编排赛（云蛇 v3.998 拦腰编排）</b>：首轮采用 <code>1-2, 4-3, 5-6</code> 型；后续轮次按积分段自高到低拦腰配对并平衡假先/假后与防重碰。小分规则：<code>虚拟积分 = 积分 + 0.5 × (弃权次数 + 退赛轮数 - 对手弃权次数 - 轮空次数)</code>；轮空算作虚拟积分 <code>0.5 × 总轮数</code> 的对手，退赛轮算作对手分为 <code>0</code> 的对手（不可省略）；<code>对手分</code> 为所有对手虚拟积分和；<code>中间对手分</code> 为去掉最高和最低对手分（不足 3 轮为 <code>0</code>）；<code>胜局数</code> 不计弃权与轮空局。</li>
-              <li><b>单循环赛（贝格尔编排法）</b>：按贝格尔表剩余对阵模拟。<code>积分</code> 中轮空不加分；<code>小分</code>（SB 分）为所胜对手积分和 + <code>0.5 ×</code> 所和对手积分和（含对方弃权获胜局）；<code>胜局数</code> 不算弃权局。</li>
-            </ul>
           </div>
         </div>
       </div>
