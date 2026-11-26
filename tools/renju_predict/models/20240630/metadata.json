@@ -72,5 +72,5 @@
     "索索夫-7": 20
   },
   "cv_5fold_logloss": 0.76637,
-  "cv_5fold_accuracy": 0.65303
+  "cv_5fold_accuracy": 0.65294
 }
