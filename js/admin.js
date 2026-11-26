@@ -2,18 +2,10 @@
   var DATA_BASE = (location.hostname === "66-42-93-24.sslip.io" || location.hostname === "66.42.93.24" || location.hostname === "localhost" || location.hostname === "127.0.0.1") ? "data/" : "https://66-42-93-24.sslip.io/data/";
   var API_BASE = (location.hostname === "66-42-93-24.sslip.io" || location.hostname === "66.42.93.24" || location.hostname === "localhost" || location.hostname === "127.0.0.1") ? "api/" : "https://66-42-93-24.sslip.io/api/";
   var API_TOKEN_KEY = "renju_admin_api_token";
-  var TOKEN_KEY = "renju_admin_gh_token";
-  var REPO_KEY = "renju_admin_gh_repo";
-  var BRANCH_KEY = "renju_admin_gh_branch";
 
   var apiTokenEl = document.getElementById("apiToken");
   var saveApiTokenBtn = document.getElementById("saveApiTokenBtn");
   var apiTokenStatusEl = document.getElementById("apiTokenStatus");
-  var ghRepoEl = document.getElementById("ghRepo");
-  var ghBranchEl = document.getElementById("ghBranch");
-  var ghTokenEl = document.getElementById("ghToken");
-  var saveTokenBtn = document.getElementById("saveTokenBtn");
-  var tokenStatusEl = document.getElementById("tokenStatus");
   var tournamentSelectEl = document.getElementById("tournamentSelect");
   var loadTournamentBtn = document.getElementById("loadTournamentBtn");
   var newTemplateBtn = document.getElementById("newTemplateBtn");
@@ -22,7 +14,6 @@
   var lineStatsEl = document.getElementById("lineStats");
   var previewBtn = document.getElementById("previewBtn");
   var submitServerBtn = document.getElementById("submitServerBtn");
-  var submitGithubBtn = document.getElementById("submitGithubBtn");
   var downloadTxtBtn = document.getElementById("downloadTxtBtn");
   var downloadDbBtn = document.getElementById("downloadDbBtn");
   var clearBtn = document.getElementById("clearBtn");
@@ -54,16 +45,7 @@
   }
 
   function initConfig() {
-    var savedRepo = localStorage.getItem(REPO_KEY);
-    var savedBranch = localStorage.getItem(BRANCH_KEY);
-    var savedToken = localStorage.getItem(TOKEN_KEY);
     var savedApiToken = localStorage.getItem(API_TOKEN_KEY);
-    if (savedRepo) ghRepoEl.value = savedRepo;
-    if (savedBranch) ghBranchEl.value = savedBranch;
-    if (savedToken) {
-      ghTokenEl.value = savedToken;
-      tokenStatusEl.textContent = "已保存本地 Token";
-    }
     if (savedApiToken && apiTokenEl) {
       apiTokenEl.value = savedApiToken;
       if (apiTokenStatusEl) apiTokenStatusEl.textContent = "已保存服务器 Token";
@@ -82,19 +64,6 @@
       }
     });
   }
-
-  saveTokenBtn.addEventListener("click", function () {
-    localStorage.setItem(REPO_KEY, ghRepoEl.value.trim());
-    localStorage.setItem(BRANCH_KEY, ghBranchEl.value.trim() || "main");
-    var tok = ghTokenEl.value.trim();
-    if (tok) {
-      localStorage.setItem(TOKEN_KEY, tok);
-      tokenStatusEl.textContent = "已保存";
-    } else {
-      localStorage.removeItem(TOKEN_KEY);
-      tokenStatusEl.textContent = "已清除";
-    }
-  });
 
   function loadCatalogs() {
     fetch(DATA_BASE + "players.json")
@@ -512,13 +481,6 @@
     previewBoxEl.style.display = html ? "block" : "none";
   });
 
-  function toBase64Utf8(str) {
-    var bytes = new TextEncoder().encode(str);
-    var bin = "";
-    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-    return btoa(bin);
-  }
-
   if (submitServerBtn) {
     submitServerBtn.addEventListener("click", function () {
       var text = (txtEditorEl.value || "").trim();
@@ -575,79 +537,6 @@
         });
     });
   }
-
-  submitGithubBtn.addEventListener("click", function () {
-    var text = (txtEditorEl.value || "").trim();
-    if (!text) {
-      setStatus("编辑框为空。", true);
-      return;
-    }
-    var parsed = parseTxtPreview(text);
-    if (parsed.errors.length) {
-      setStatus("存在语法错误，请先修正后再提交：<br>" + parsed.errors.map(escHtml).join("<br>"), true);
-      return;
-    }
-    var dupSubmit = collectDuplicateNames(parsed);
-    if (dupSubmit.length) {
-      previewBtn.click();
-      setStatus(
-        "存在重名棋手（" + dupSubmit.map(function (x) { return escHtml(x.name); }).join("、") +
-        "），请在下方预览区选择具体 ID 或设为新建重名（*）后再提交。",
-        true
-      );
-      return;
-    }
-    var token = ghTokenEl.value.trim() || localStorage.getItem(TOKEN_KEY) || "";
-    var repo = ghRepoEl.value.trim() || "guyu421/guyu421.github.io";
-    var branch = ghBranchEl.value.trim() || "main";
-    if (!token) {
-      setStatus("请先填写并保存 GitHub Token (需要 repo contents write 权限)，或点击「下载 .txt」在本地运行 <code>python tools/apply_txt.py</code>。", true);
-      return;
-    }
-
-    var ts = new Date().toISOString().replace(/[:.]/g, "-");
-    var filePath = "db/edits/edit_" + ts + ".txt";
-    var apiUrl = "https://api.github.com/repos/" + repo + "/contents/" + filePath;
-
-    submitGithubBtn.disabled = true;
-    setStatus("正在提交到 GitHub (" + escHtml(filePath) + ") ...", false);
-
-    fetch(apiUrl, {
-      method: "PUT",
-      headers: {
-        "Authorization": "Bearer " + token,
-        "Accept": "application/vnd.github+json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        message: "Admin txt edit: " + (parsed.tName || ts),
-        content: toBase64Utf8(text + "\n"),
-        branch: branch
-      })
-    })
-      .then(function (resp) {
-        return resp.json().then(function (data) {
-          if (!resp.ok) throw new Error(data.message || ("HTTP " + resp.status));
-          return data;
-        });
-      })
-      .then(function (data) {
-        var commitUrl = (data.commit && data.commit.html_url) || ("https://github.com/" + repo);
-        var actionsUrl = "https://github.com/" + repo + "/actions";
-        setStatus(
-          '提交成功！GitHub Actions 将自动更新数据库、重训模型并导出页面。<br>' +
-          '<a href="' + escHtml(commitUrl) + '" target="_blank" rel="noopener">查看本次 Commit</a> | ' +
-          '<a href="' + escHtml(actionsUrl) + '" target="_blank" rel="noopener">查看 Actions 同步进度</a>',
-          false
-        );
-      })
-      .catch(function (err) {
-        setStatus("提交失败: " + escHtml(err.message), true);
-      })
-      .finally(function () {
-        submitGithubBtn.disabled = false;
-      });
-  });
 
   downloadTxtBtn.addEventListener("click", function () {
     var text = txtEditorEl.value || "";

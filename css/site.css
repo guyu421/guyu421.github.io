@@ -618,10 +618,6 @@ a.score-link:hover {
 	background: #ffffff;
 }
 
-.admin-row input.admin-short {
-	width: 5.5em;
-}
-
 .admin-row select {
 	max-width: 24em;
 }
