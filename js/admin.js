@@ -526,7 +526,13 @@
         })
         .then(function (data) {
           var logs = (data && data.logs) || [];
-          setStatus("写入服务器数据库成功！<br>" + logs.map(escHtml).join("<br>"), false);
+          var recalcMsg = "";
+          if (data && data.recalc === "started") {
+            recalcMsg = "<br>服务器已在后台自动开始重算 WHR 等级分与模型评估（约 1~2 分钟完成）。";
+          } else if (data && data.recalc === "already_running") {
+            recalcMsg = "<br>服务器已有重算任务正在后台运行。";
+          }
+          setStatus("写入服务器数据库成功！<br>" + logs.map(escHtml).join("<br>") + recalcMsg, false);
           loadCatalogs();
         })
         .catch(function (err) {
