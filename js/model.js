@@ -176,14 +176,19 @@
       " · ≥70% " + fmtPct(sum.p70) +
       " · ≥80% " + fmtPct(sum.p80);
     var ec = m.ece_by_class || {};
+    var eceFirst = ec.first != null ? ec.first : m.ece_first;
+    var eceDraw = ec.draw != null ? ec.draw : m.ece_draw;
+    var eceSecond = ec.second != null ? ec.second : m.ece_second;
+    var eceMean = m.ece != null ? m.ece : (eceFirst != null && eceDraw != null && eceSecond != null ? (eceFirst + eceDraw + eceSecond) / 3 : null);
+    var logLossVal = m.log_loss != null ? m.log_loss : m.logloss;
     var eceSub =
-      "假先胜 " + (ec.first != null ? ec.first.toFixed(2) + "%" : "-") +
-      " · 和棋 " + (ec.draw != null ? ec.draw.toFixed(2) + "%" : "-") +
-      " · 假后胜 " + (ec.second != null ? ec.second.toFixed(2) + "%" : "-");
+      "假先胜 " + (eceFirst != null ? eceFirst.toFixed(2) + "%" : "-") +
+      " · 和棋 " + (eceDraw != null ? eceDraw.toFixed(2) + "%" : "-") +
+      " · 假后胜 " + (eceSecond != null ? eceSecond.toFixed(2) + "%" : "-");
     var cards = [
-      { label: "对数损失", value: m.logloss != null ? m.logloss.toFixed(4) : "-" },
+      { label: "对数损失", value: logLossVal != null ? logLossVal.toFixed(4) : "-" },
       { label: "布里尔分数", value: m.brier != null ? m.brier.toFixed(4) : "-" },
-      { label: "期望校准误差", value: m.ece != null ? m.ece.toFixed(2) + "%" : "-", sub: eceSub },
+      { label: "期望校准误差", value: eceMean != null ? eceMean.toFixed(2) + "%" : "-", sub: eceSub },
       { label: "全部预测准确率", value: allAcc != null ? allAcc.toFixed(2) + "%" : "-", sub: accSub },
     ];
     metricsEl.innerHTML = cards.map(function (c) {
