@@ -129,13 +129,12 @@
     };
     var titleEl = document.getElementById("standingsTitle");
     if (titleEl) {
-      var modeLabel = isRR ? "贝格尔单循环" : "云蛇 v3.998 拦腰编排";
       if (round === "pre") {
-        titleEl.textContent = "抽签前预测（" + modeLabel + "）";
+        titleEl.textContent = "抽签前预测";
       } else if (round === "draw") {
-        titleEl.textContent = "首轮前预测（" + modeLabel + "）";
+        titleEl.textContent = "首轮前预测";
       } else {
-        titleEl.textContent = "第" + round + "轮后积分与夺冠概率（" + modeLabel + "）";
+        titleEl.textContent = "第" + round + "轮后积分与夺冠概率";
       }
     }
     var table = wrap.querySelector("table.tour-standings");
@@ -912,13 +911,12 @@
     };
     var titleEl = document.getElementById("standingsTitle");
     if (titleEl) {
-      var modeLabel = isRR ? "贝格尔单循环" : "云蛇 v3.998 拦腰编排";
       if (round === "pre") {
-        titleEl.textContent = "抽签前预测（" + modeLabel + "）";
+        titleEl.textContent = "抽签前预测";
       } else if (round === "draw") {
-        titleEl.textContent = "首轮前预测（" + modeLabel + "）";
+        titleEl.textContent = "首轮前预测";
       } else {
-        titleEl.textContent = "第" + round + "轮后积分与夺冠概率（" + modeLabel + "）";
+        titleEl.textContent = "第" + round + "轮后积分与夺冠概率";
       }
     }
     var table = wrap.querySelector("table.tour-standings");
