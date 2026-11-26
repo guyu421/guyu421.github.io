@@ -455,9 +455,18 @@ def apply_txt_content(text: str, db_dir: Path) -> List[str]:
 
     # Re-index match game_id consecutively 1..N sorted by (tournament_id, round, board, game_id)
     m_df = m_df.sort_values(["tournament_id", "round", "board", "game_id"]).reset_index(drop=True)
+    old_to_new_gid = {int(old): new for new, old in enumerate(m_df["game_id"].tolist(), start=1)}
     m_df["game_id"] = range(1, len(m_df) + 1)
     m_df["second_id"] = m_df["second_id"].astype("Int64")
     tp_df["player_no"] = tp_df["player_no"].astype("Int64")
+
+    tm_path = db_dir / "team_match.parquet"
+    if tm_path.is_file():
+        tm_df = pd.read_parquet(tm_path)
+        for col in ("game_id_1", "game_id_2", "game_id_3"):
+            if col in tm_df.columns:
+                tm_df[col] = tm_df[col].map(lambda x: old_to_new_gid.get(int(x), x) if pd.notna(x) else x)
+        tm_df.to_parquet(tm_path, index=False)
 
     t_df.to_parquet(db_dir / "tournament.parquet", index=False)
     p_df.to_parquet(db_dir / "player.parquet", index=False)

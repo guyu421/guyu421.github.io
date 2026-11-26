@@ -472,9 +472,18 @@ def run_import(rif_path: Path, db_dir: Path, min_start_date: str = "2023-03-18")
 
     # Re-index match game_id consecutively 1..N sorted by (tournament_id, round, board, game_id)
     db_m = db_m.sort_values(["tournament_id", "round", "board", "game_id"]).reset_index(drop=True)
+    old_to_new_gid = {int(old): new for new, old in enumerate(db_m["game_id"].tolist(), start=1)}
     db_m["game_id"] = range(1, len(db_m) + 1)
     db_m["id"] = range(1, len(db_m) + 1)
     db_tp["player_no"] = db_tp["player_no"].astype("Int64")
+
+    tm_path = db_dir / "team_match.parquet"
+    if tm_path.is_file():
+        tm_df = pd.read_parquet(tm_path)
+        for col in ("game_id_1", "game_id_2", "game_id_3"):
+            if col in tm_df.columns:
+                tm_df[col] = tm_df[col].map(lambda x: old_to_new_gid.get(int(x), x) if pd.notna(x) else x)
+        tm_df.to_parquet(tm_path, index=False)
 
     db_t.to_parquet(db_dir / "tournament.parquet", index=False)
     db_p.to_parquet(db_dir / "player.parquet", index=False)
