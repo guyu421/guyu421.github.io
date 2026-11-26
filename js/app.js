@@ -102,6 +102,43 @@
       });
       tbody.appendChild(tr);
     });
+    renderRoundStandings(data, round);
+  }
+
+  function renderRoundStandings(data, round) {
+    var wrap = document.getElementById("roundStandingsWrap");
+    if (!wrap) return;
+    var rs = data && data.round_standings;
+    var rows = (rs && round !== null && rs[String(round)]) ? rs[String(round)] : null;
+    if (!rows || !rows.length) {
+      wrap.style.display = "none";
+      return;
+    }
+    var titleEl = document.getElementById("standingsTitle");
+    if (titleEl) {
+      titleEl.textContent = "第" + round + "轮后积分与夺冠概率（模拟 1,000,000 次）";
+    }
+    var table = wrap.querySelector("table.tour-standings");
+    if (!table || !table.tBodies[0]) return;
+    var tbody = table.tBodies[0];
+    while (tbody.rows.length > 1) tbody.deleteRow(tbody.rows.length - 1);
+
+    rows.forEach(function (r) {
+      var tr = el("tr");
+      tr.appendChild(el("td", "num", String(r.rank)));
+      var nameTd = el("td", "player");
+      var link = el("a", null, r.name || "");
+      link.href = "player.html?id=" + encodeURIComponent(r.player_id);
+      nameTd.appendChild(link);
+      tr.appendChild(nameTd);
+      tr.appendChild(el("td", "num", String(r.pts)));
+      tr.appendChild(el("td", "num", String(r.bh)));
+      tr.appendChild(el("td", "num", String(r.mbh)));
+      tr.appendChild(el("td", "num", String(r.wins)));
+      tr.appendChild(el("td", "prob", Number(r.champ_prob).toFixed(2) + "%"));
+      tbody.appendChild(tr);
+    });
+    wrap.style.display = "block";
   }
 
   function number(value) {
@@ -807,6 +844,43 @@
       tr.appendChild(el("td", "prob", game.p_second != null ? Number(game.p_second).toFixed(1) + "%" : ""));
       tbody.appendChild(tr);
     });
+    renderRoundStandings(data, round);
+  }
+
+  function renderRoundStandings(data, round) {
+    var wrap = document.getElementById("roundStandingsWrap");
+    if (!wrap) return;
+    var rs = data && data.round_standings;
+    var rows = (rs && round !== null && rs[String(round)]) ? rs[String(round)] : null;
+    if (!rows || !rows.length) {
+      wrap.style.display = "none";
+      return;
+    }
+    var titleEl = document.getElementById("standingsTitle");
+    if (titleEl) {
+      titleEl.textContent = "第" + round + "轮后积分与夺冠概率（模拟 1,000,000 次）";
+    }
+    var table = wrap.querySelector("table.tour-standings");
+    if (!table || !table.tBodies[0]) return;
+    var tbody = table.tBodies[0];
+    while (tbody.rows.length > 1) tbody.deleteRow(tbody.rows.length - 1);
+
+    rows.forEach(function (r) {
+      var tr = el("tr");
+      tr.appendChild(el("td", "num", String(r.rank)));
+      var nameTd = el("td", "player");
+      var link = el("a", null, r.name || "");
+      link.href = "player.html?id=" + encodeURIComponent(r.player_id);
+      nameTd.appendChild(link);
+      tr.appendChild(nameTd);
+      tr.appendChild(el("td", "num", String(r.pts)));
+      tr.appendChild(el("td", "num", String(r.bh)));
+      tr.appendChild(el("td", "num", String(r.mbh)));
+      tr.appendChild(el("td", "num", String(r.wins)));
+      tr.appendChild(el("td", "prob", Number(r.champ_prob).toFixed(2) + "%"));
+      tbody.appendChild(tr);
+    });
+    wrap.style.display = "block";
   }
 
   // 轮次选择：< [第N轮 ▾] / 共 X 轮 >，没有「全部」
