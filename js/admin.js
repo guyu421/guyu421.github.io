@@ -105,6 +105,7 @@
       ? tData.tiebreak_rules
       : (tData.is_round_robin ? ["sb", "wins"] : ["bh", "mbh", "wins"]);
     lines.push("破同分: " + tb.join(","));
+    lines.push("夺冠概率: " + (tData.calc_champ_prob ? "是" : "否"));
     lines.push("");
 
     // Collect roster sorted by player_no
@@ -197,6 +198,7 @@
       "规则: 塔拉山口-10",
       "单循环: 否",
       "破同分: bh,mbh,wins",
+      "夺冠概率: 否",
       "",
       "[棋手]",
       "1 张三",
@@ -216,7 +218,7 @@
     txtEditorEl.value = [
       "# 共通指令示例（对象均支持 game/tournament/player 或 对局/赛事/选手）",
       "# SET game 4990 result=平 swap=+--+- 5a=8 moves=h8 h9 g10 g8",
-      "# SET tournament 57 name=新赛事名称 is_round_robin=false tiebreak_rules=bh,mbh,wins",
+      "# SET tournament 57 name=新赛事名称 is_round_robin=false tiebreak_rules=bh,mbh,wins calc_champ_prob=true",
       "# SET player 619 name=新姓名",
       "# RENAME tournament 57 新赛事名称",
       "# RENAME player 619 新姓名",
@@ -264,7 +266,7 @@
         defaultRule = line.replace(/^规则[:：]\s*/, "").trim();
         return;
       }
-      if (/^(单循环|破同分)[:：]/.test(line)) {
+      if (/^(单循环|破同分|夺冠概率)[:：]/.test(line)) {
         return;
       }
       if (line === "[棋手]") {
