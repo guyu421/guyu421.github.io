@@ -24,12 +24,6 @@
           <h1>预测模型</h1>
 
           <div class="model-section">
-            <h2>夺冠概率计算</h2>
-            <p class="model-desc">仅针对有参赛编号的赛事，在赛前、抽签后、每轮结束后结合赛前预测模型胜平负概率进行 <code>1,000,000</code> 次蒙特卡洛模拟：</p>
-            <p class="model-desc">积分编排赛使用云蛇v3.998编排引擎，首轮采用 <code>1-2, 4-3, 5-6</code> 型；后续轮次采用拦腰编排，启用FIDE调整及轮空补对手分；单循环赛使用贝格尔编排法。</p>
-          </div>
-
-          <div class="model-section">
             <h2>模型原理</h2>
             <p class="model-desc">严格不引入未来信息，利用 LightGBM 模型直接输出<code>假先胜</code>、<code>和棋</code>、<code>假后胜</code>三分类概率。</p>
             <p class="model-desc">所用 5 个特征如下：</p>
@@ -40,6 +34,12 @@
               <li>假先方 WHR 标准差：<code>first_std</code></li>
               <li>假后方 WHR 标准差：<code>second_std</code></li>
             </ul>
+          </div>
+
+          <div class="model-section">
+            <h2>夺冠概率计算</h2>
+            <p class="model-desc">仅针对有参赛编号的赛事，在赛前、抽签后、每轮结束后结合赛前预测模型胜平负概率进行 <code>1,000,000</code> 次蒙特卡洛模拟：</p>
+            <p class="model-desc">积分编排赛使用云蛇v3.998编排引擎，采用拦腰编排，首轮采用 <code>1-2, 4-3, 5-6</code> 型，启用FIDE调整及轮空补对手分；单循环赛使用贝格尔编排法。</p>
           </div>
 
           <div class="model-section">
