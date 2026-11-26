@@ -832,8 +832,8 @@
       "索索夫-8(含让步)": 29,
       "索索夫-7": 20
     },
-    "cv_5fold_logloss": 0.75069,
-    "cv_5fold_accuracy": 0.66116
+    "cv_5fold_logloss": 0.75054,
+    "cv_5fold_accuracy": 0.66214
   },
   {
     "cutoff_key": "20260930",
@@ -908,8 +908,8 @@
       "索索夫-8(含让步)": 29,
       "索索夫-7": 20
     },
-    "cv_5fold_logloss": 0.75628,
-    "cv_5fold_accuracy": 0.65916
+    "cv_5fold_logloss": 0.75602,
+    "cv_5fold_accuracy": 0.65909
   },
   {
     "cutoff_key": "20261125",
@@ -984,7 +984,7 @@
       "索索夫-8(含让步)": 29,
       "索索夫-7": 20
     },
-    "cv_5fold_logloss": 0.75718,
-    "cv_5fold_accuracy": 0.65867
+    "cv_5fold_logloss": 0.75708,
+    "cv_5fold_accuracy": 0.65914
   }
 ]
