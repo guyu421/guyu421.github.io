@@ -25,12 +25,11 @@
 
           <div class="model-section">
             <h2>模型原理</h2>
-            <p class="model-desc">严格不引入未来信息，利用 LightGBM（<code>linear_tree=True</code>）模型直接输出<code>假先胜</code>、<code>和棋</code>、<code>假后胜</code>三分类概率。</p>
-            <p class="model-desc">所用 6 个特征如下：</p>
+            <p class="model-desc">严格不引入未来信息，利用 LightGBM 模型直接输出<code>假先胜</code>、<code>和棋</code>、<code>假后胜</code>三分类概率。</p>
+            <p class="model-desc">所用 5 个特征如下：</p>
             <ul class="model-list">
               <li>比赛规则：<code>rule</code></li>
-              <li>假先方 WHR 等级分：<code>first_rating</code></li>
-              <li>假后方 WHR 等级分：<code>second_rating</code></li>
+              <li>双方平均 WHR 等级分：<code>mean_rating</code>（<code>(first_rating + second_rating) / 2</code>）</li>
               <li>双方等级分差：<code>rating_diff</code>（<code>first_rating - second_rating</code>）</li>
               <li>假先方 WHR 标准差：<code>first_std</code></li>
               <li>假后方 WHR 标准差：<code>second_std</code></li>

@@ -6,8 +6,7 @@
   "num_rated_players": 5856,
   "features": [
     "rule",
-    "first_rating",
-    "second_rating",
+    "mean_rating",
     "rating_diff",
     "first_std",
     "second_std"
@@ -72,6 +71,6 @@
     "索索夫-8(含让步)": 29,
     "索索夫-7": 20
   },
-  "cv_5fold_logloss": 0.75074,
-  "cv_5fold_accuracy": 0.66202
+  "cv_5fold_logloss": 0.75067,
+  "cv_5fold_accuracy": 0.66116
 }

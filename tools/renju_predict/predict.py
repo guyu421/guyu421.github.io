@@ -154,7 +154,11 @@ def predict_from_ratings(
 
     rcode = rule_map[rule]
     if model.get("type") == "lightgbm":
-        x_arr = np.array([[rcode, r1, r2, r1 - r2, std1, std2]], dtype=np.float64)
+        fcols = model.get("feature_cols") or []
+        if "mean_rating" in fcols:
+            x_arr = np.array([[rcode, (r1 + r2) / 2.0, r1 - r2, std1, std2]], dtype=np.float64)
+        else:
+            x_arr = np.array([[rcode, r1, r2, r1 - r2, std1, std2]], dtype=np.float64)
         probs = model["_booster"].predict(x_arr)[0]
     else:
         feat_map = {

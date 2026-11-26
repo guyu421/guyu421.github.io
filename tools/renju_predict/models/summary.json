@@ -7,8 +7,7 @@
     "num_rated_players": 5455,
     "features": [
       "rule",
-      "first_rating",
-      "second_rating",
+      "mean_rating",
       "rating_diff",
       "first_std",
       "second_std"
@@ -73,8 +72,8 @@
       "索索夫-8(含让步)": 29,
       "索索夫-7": 20
     },
-    "cv_5fold_logloss": 0.75674,
-    "cv_5fold_accuracy": 0.6543
+    "cv_5fold_logloss": 0.75648,
+    "cv_5fold_accuracy": 0.65603
   },
   {
     "cutoff_key": "20250331",
@@ -84,8 +83,7 @@
     "num_rated_players": 5515,
     "features": [
       "rule",
-      "first_rating",
-      "second_rating",
+      "mean_rating",
       "rating_diff",
       "first_std",
       "second_std"
@@ -150,8 +148,8 @@
       "索索夫-8(含让步)": 29,
       "索索夫-7": 20
     },
-    "cv_5fold_logloss": 0.74953,
-    "cv_5fold_accuracy": 0.65966
+    "cv_5fold_logloss": 0.75,
+    "cv_5fold_accuracy": 0.65717
   },
   {
     "cutoff_key": "20250630",
@@ -161,8 +159,7 @@
     "num_rated_players": 5562,
     "features": [
       "rule",
-      "first_rating",
-      "second_rating",
+      "mean_rating",
       "rating_diff",
       "first_std",
       "second_std"
@@ -227,8 +224,8 @@
       "索索夫-8(含让步)": 29,
       "索索夫-7": 20
     },
-    "cv_5fold_logloss": 0.74976,
-    "cv_5fold_accuracy": 0.6592
+    "cv_5fold_logloss": 0.74992,
+    "cv_5fold_accuracy": 0.65813
   },
   {
     "cutoff_key": "20250930",
@@ -238,8 +235,7 @@
     "num_rated_players": 5708,
     "features": [
       "rule",
-      "first_rating",
-      "second_rating",
+      "mean_rating",
       "rating_diff",
       "first_std",
       "second_std"
@@ -304,8 +300,8 @@
       "索索夫-8(含让步)": 29,
       "索索夫-7": 20
     },
-    "cv_5fold_logloss": 0.75389,
-    "cv_5fold_accuracy": 0.65643
+    "cv_5fold_logloss": 0.75413,
+    "cv_5fold_accuracy": 0.65683
   },
   {
     "cutoff_key": "20251231",
@@ -315,8 +311,7 @@
     "num_rated_players": 5746,
     "features": [
       "rule",
-      "first_rating",
-      "second_rating",
+      "mean_rating",
       "rating_diff",
       "first_std",
       "second_std"
@@ -381,8 +376,8 @@
       "索索夫-8(含让步)": 29,
       "索索夫-7": 20
     },
-    "cv_5fold_logloss": 0.75069,
-    "cv_5fold_accuracy": 0.66148
+    "cv_5fold_logloss": 0.75125,
+    "cv_5fold_accuracy": 0.66079
   },
   {
     "cutoff_key": "20260331",
@@ -392,8 +387,7 @@
     "num_rated_players": 5781,
     "features": [
       "rule",
-      "first_rating",
-      "second_rating",
+      "mean_rating",
       "rating_diff",
       "first_std",
       "second_std"
@@ -458,8 +452,8 @@
       "索索夫-8(含让步)": 29,
       "索索夫-7": 20
     },
-    "cv_5fold_logloss": 0.75059,
-    "cv_5fold_accuracy": 0.66017
+    "cv_5fold_logloss": 0.75062,
+    "cv_5fold_accuracy": 0.66096
   },
   {
     "cutoff_key": "20260630",
@@ -469,8 +463,7 @@
     "num_rated_players": 5856,
     "features": [
       "rule",
-      "first_rating",
-      "second_rating",
+      "mean_rating",
       "rating_diff",
       "first_std",
       "second_std"
@@ -535,8 +528,8 @@
       "索索夫-8(含让步)": 29,
       "索索夫-7": 20
     },
-    "cv_5fold_logloss": 0.75074,
-    "cv_5fold_accuracy": 0.66202
+    "cv_5fold_logloss": 0.75067,
+    "cv_5fold_accuracy": 0.66116
   },
   {
     "cutoff_key": "20260930",
@@ -546,8 +539,7 @@
     "num_rated_players": 5990,
     "features": [
       "rule",
-      "first_rating",
-      "second_rating",
+      "mean_rating",
       "rating_diff",
       "first_std",
       "second_std"
@@ -612,8 +604,8 @@
       "索索夫-8(含让步)": 29,
       "索索夫-7": 20
     },
-    "cv_5fold_logloss": 0.75626,
-    "cv_5fold_accuracy": 0.65837
+    "cv_5fold_logloss": 0.75609,
+    "cv_5fold_accuracy": 0.66003
   },
   {
     "cutoff_key": "20261125",
@@ -623,8 +615,7 @@
     "num_rated_players": 6004,
     "features": [
       "rule",
-      "first_rating",
-      "second_rating",
+      "mean_rating",
       "rating_diff",
       "first_std",
       "second_std"
@@ -689,7 +680,7 @@
       "索索夫-8(含让步)": 29,
       "索索夫-7": 20
     },
-    "cv_5fold_logloss": 0.7567,
-    "cv_5fold_accuracy": 0.65944
+    "cv_5fold_logloss": 0.7565,
+    "cv_5fold_accuracy": 0.66035
   }
 ]
