@@ -60,8 +60,6 @@ LGB_PARAMS = {
     "objective": "multiclass",
     "num_class": 3,
     "metric": "multi_logloss",
-    "linear_tree": True,
-    "linear_lambda": 10.0,
     "learning_rate": 0.05,
     "max_depth": 3,
     "num_leaves": 7,
@@ -106,39 +104,54 @@ def build_all_cutoffs_features(
     snapshots: Dict[str, Dict[int, object]] = {}
     sorted_cutoffs = sorted(cutoffs, key=lambda x: x[1])
     c_idx = 0
+    pre_cutoff = "2023-03-18"
+    in_post = False
+    cur_date = None
 
     for (p_date, _tid, _rnd), period_df in df.groupby(["date", "tournament_id", "round"], sort=True):
         p_date_str = str(p_date)
+        if not in_post and p_date_str >= pre_cutoff:
+            tracker.iterate_and_sync(min_iters=10, max_iters=50, tol_elo=0.05)
+            in_post = True
         while c_idx < len(sorted_cutoffs) and p_date_str >= sorted_cutoffs[c_idx][1]:
-            snapshots[sorted_cutoffs[c_idx][0]] = dict(tracker.ratings)
+            snapshots[sorted_cutoffs[c_idx][0]] = tracker.snapshot_ratings()
             c_idx += 1
 
         day_int = day_of(p_date_str)
         period_games: List[Tuple[int, int, float]] = []
-        for r in period_df.itertuples(index=False):
-            rule_code = RULE_MAP.get(str(r.rule))
-            if rule_code is None:
-                raise ValueError(f"Unknown rule: {r.rule!r}")
-            p1 = tracker.get(r.first_id, day_int)
-            p2 = tracker.get(r.second_id, day_int)
-            rows.append(
-                {
-                    "rule": rule_code,
-                    "first_rating": p1.rating,
-                    "second_rating": p2.rating,
-                    "rating_diff": p1.rating - p2.rating,
-                    "first_std": p1.std,
-                    "second_std": p2.std,
-                }
-            )
-            targets.append(RESULT_TO_CLASS[str(r.result)])
-            dates.append(p_date_str)
-            period_games.append((r.first_id, r.second_id, RESULT_SCORE[str(r.result)]))
+        if in_post:
+            for r in period_df.itertuples(index=False):
+                rule_code = RULE_MAP.get(str(r.rule))
+                if rule_code is None:
+                    raise ValueError(f"Unknown rule: {r.rule!r}")
+                p1 = tracker.get(r.first_id, day_int)
+                p2 = tracker.get(r.second_id, day_int)
+                rows.append(
+                    {
+                        "rule": rule_code,
+                        "first_rating": p1.rating,
+                        "second_rating": p2.rating,
+                        "rating_diff": p1.rating - p2.rating,
+                        "first_std": p1.std,
+                        "second_std": p2.std,
+                    }
+                )
+                targets.append(RESULT_TO_CLASS[str(r.result)])
+                dates.append(p_date_str)
+                period_games.append((r.first_id, r.second_id, RESULT_SCORE[str(r.result)]))
+            tracker.add_games_only(period_games, day_int)
+            if p_date_str != cur_date:
+                cur_date = p_date_str
+                tracker.iterate_and_sync(min_iters=1, max_iters=3, tol_elo=0.2)
+        else:
+            for r in period_df.itertuples(index=False):
+                period_games.append((r.first_id, r.second_id, RESULT_SCORE[str(r.result)]))
+            tracker.add_games_only(period_games, day_int)
 
-        tracker.apply_period(period_games, day_int)
-
+    if not in_post:
+        tracker.iterate_and_sync(min_iters=5, max_iters=20, tol_elo=0.05)
     while c_idx < len(sorted_cutoffs):
-        snapshots[sorted_cutoffs[c_idx][0]] = dict(tracker.ratings)
+        snapshots[sorted_cutoffs[c_idx][0]] = tracker.snapshot_ratings()
         c_idx += 1
 
     X = pd.DataFrame(rows, columns=FEATURE_NAMES)
@@ -270,15 +283,8 @@ def main() -> None:
 
     all_games, player_names = load_data(args.db_dir)
     cutoffs = [
-        ("20241231", "2025-01-01"),
-        ("20250331", "2025-04-01"),
-        ("20250630", "2025-07-01"),
-        ("20250930", "2025-10-01"),
-        ("20251231", "2026-01-01"),
-        ("20260331", "2026-04-01"),
-        ("20260630", "2026-07-01"),
         ("20260930", "2026-10-01"),
-        ("20261124", "2026-11-25"),
+        ("20261125", "2026-11-26"),
     ]
     target_keys = {k.strip() for k in args.cutoffs.split(",") if k.strip()} if args.cutoffs else {k for k, _ in cutoffs}
 

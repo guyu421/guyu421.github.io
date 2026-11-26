@@ -134,52 +134,66 @@ class WHRTracker:
             self._idx_to_pid.append(pid)
         return idx
 
+    def add_games_only(self, games: Iterable[Tuple[object, object, float]], day_int: int) -> int:
+        if not self._use_c:
+            self.apply_period(games, day_int)
+            return 0
+        p1_list: List[int] = []
+        p2_list: List[int] = []
+        sc_list: List[float] = []
+        for p1, p2, score in games:
+            if p1 == p2 or score not in (1.0, 0.5, 0.0):
+                continue
+            p1_list.append(self._c_idx(p1))
+            p2_list.append(self._c_idx(p2))
+            sc_list.append(float(score))
+        n = len(p1_list)
+        if n == 0:
+            return 0
+        arr_p1 = (ctypes.c_int * n)(*p1_list)
+        arr_p2 = (ctypes.c_int * n)(*p2_list)
+        arr_sc = (ctypes.c_double * n)(*sc_list)
+        _C_LIB.whr_add_games(self._c_state, n, arr_p1, arr_p2, arr_sc, int(day_int))
+        return n
+
+    def iterate_and_sync(self, min_iters: int = 1, max_iters: int = 8, tol_elo: float = 0.05) -> None:
+        if not self._use_c:
+            return
+        _C_LIB.whr_iterate(self._c_state, int(min_iters), int(max_iters), float(tol_elo))
+        n_players = len(self._idx_to_pid)
+        if n_players > self._cap:
+            self._cap = max(self._cap * 2, n_players)
+            self._out_pids = (ctypes.c_int * self._cap)()
+            self._out_days = (ctypes.c_int * self._cap)()
+            self._out_elos = (ctypes.c_double * self._cap)()
+            self._out_stds = (ctypes.c_double * self._cap)()
+        _C_LIB.whr_get_latest(
+            self._c_state,
+            self._out_pids,
+            self._out_days,
+            self._out_elos,
+            self._out_stds,
+            ctypes.byref(self._out_cnt),
+        )
+        cnt = self._out_cnt.value
+        bias = self.bias
+        latest = self.latest
+        idx_to_pid = self._idx_to_pid
+        for k in range(cnt):
+            pid = idx_to_pid[self._out_pids[k]]
+            latest[pid] = (self._out_elos[k] + bias, self._out_stds[k], self._out_days[k])
+
+    def snapshot_ratings(self) -> Dict[object, PlayerRating]:
+        return {
+            pid: PlayerRating(rating=r, std=std)
+            for pid, (r, std, _d) in self.latest.items()
+        }
+
     def apply_period(self, games: Iterable[Tuple[object, object, float]], day_int: int) -> None:
         if self._use_c:
-            p1_list: List[int] = []
-            p2_list: List[int] = []
-            sc_list: List[float] = []
-            for p1, p2, score in games:
-                if p1 == p2 or score not in (1.0, 0.5, 0.0):
-                    continue
-                p1_list.append(self._c_idx(p1))
-                p2_list.append(self._c_idx(p2))
-                sc_list.append(float(score))
-            n = len(p1_list)
-            if n == 0:
+            if self.add_games_only(games, day_int) == 0:
                 return
-            arr_p1 = (ctypes.c_int * n)(*p1_list)
-            arr_p2 = (ctypes.c_int * n)(*p2_list)
-            arr_sc = (ctypes.c_double * n)(*sc_list)
-            _C_LIB.whr_add_games(self._c_state, n, arr_p1, arr_p2, arr_sc, int(day_int))
-            _C_LIB.whr_iterate(self._c_state, 10, 80, 1e-3)
-
-            n_players = len(self._idx_to_pid)
-            if n_players > self._cap:
-                self._cap = max(self._cap * 2, n_players)
-                self._out_pids = (ctypes.c_int * self._cap)()
-                self._out_days = (ctypes.c_int * self._cap)()
-                self._out_elos = (ctypes.c_double * self._cap)()
-                self._out_stds = (ctypes.c_double * self._cap)()
-            _C_LIB.whr_get_latest(
-                self._c_state,
-                self._out_pids,
-                self._out_days,
-                self._out_elos,
-                self._out_stds,
-                ctypes.byref(self._out_cnt),
-            )
-            cnt = self._out_cnt.value
-            bias = self.bias
-            latest = self.latest
-            ratings = self.ratings
-            idx_to_pid = self._idx_to_pid
-            for k in range(cnt):
-                pid = idx_to_pid[self._out_pids[k]]
-                r = self._out_elos[k] + bias
-                std = self._out_stds[k]
-                latest[pid] = (r, std, self._out_days[k])
-                ratings[pid] = PlayerRating(rating=r, std=std)
+            self.iterate_and_sync(min_iters=1, max_iters=8, tol_elo=0.05)
             return
 
         new_games: List[List[object]] = []

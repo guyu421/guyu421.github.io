@@ -187,11 +187,17 @@ def compute_match_predictions(games_out, pid_of):
     pair_stats = {}
     preds = {}
 
+    earliest_cutoff = min(c for c, _, _, _ in available_models)
     i = 0
     n = len(ordered)
+    in_eval = False
     while i < n:
         key = (ordered[i]["date"], ordered[i]["tournament_id"], ordered[i]["round"])
-        day_int = day_of(ordered[i]["date"])
+        p_date_str = ordered[i]["date"]
+        if not in_eval and p_date_str >= earliest_cutoff:
+            tracker.iterate_and_sync(min_iters=10, max_iters=50, tol_elo=0.05)
+            in_eval = True
+        day_int = day_of(p_date_str)
         j = i
         while j < n and (ordered[j]["date"], ordered[j]["tournament_id"], ordered[j]["round"]) == key:
             j += 1
@@ -226,7 +232,10 @@ def compute_match_predictions(games_out, pid_of):
                 period_pairs.append((pk, str(g["result"]) == "0.5"))
 
         if period_updates:
-            tracker.apply_period(period_updates, day_int)
+            if in_eval:
+                tracker.apply_period(period_updates, day_int)
+            else:
+                tracker.add_games_only(period_updates, day_int)
         for pk, is_d in period_pairs:
             st = pair_stats.setdefault(pk, [0, 0])
             st[0] += 1
