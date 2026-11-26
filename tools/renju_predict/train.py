@@ -60,6 +60,8 @@ LGB_PARAMS = {
     "objective": "multiclass",
     "num_class": 3,
     "metric": "multi_logloss",
+    "linear_tree": True,
+    "linear_lambda": 10.0,
     "learning_rate": 0.05,
     "max_depth": 3,
     "num_leaves": 7,
