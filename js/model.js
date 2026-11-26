@@ -253,17 +253,22 @@
 
     var dotMeta = [];
     calSeries.forEach(function (s) {
-      var bins = cal[s.key] || [];
+      var bins = (cal[s.key] || []).filter(function (b) {
+        var mp = b.mean_p != null ? b.mean_p : b.pred;
+        return b && b.n > 0 && mp != null && b.actual != null;
+      });
       if (!bins.length) return;
       var pts = bins.map(function (b) {
-        return xVal(b.mean_p).toFixed(1) + "," + yVal(b.actual).toFixed(1);
+        var mp = b.mean_p != null ? b.mean_p : b.pred;
+        return xVal(mp).toFixed(1) + "," + yVal(b.actual).toFixed(1);
       });
       svg.push('<polyline fill="none" stroke="' + s.color + '" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" points="' + pts.join(" ") + '" />');
       bins.forEach(function (b) {
-        var cx = xVal(b.mean_p).toFixed(1);
+        var mp = b.mean_p != null ? b.mean_p : b.pred;
+        var cx = xVal(mp).toFixed(1);
         var cy = yVal(b.actual).toFixed(1);
         var dIdx = dotMeta.length;
-        dotMeta.push({ series: s, bin: b, cx: cx });
+        dotMeta.push({ series: s, bin: b, mean_p: mp, cx: cx });
         svg.push('<circle class="cal-dot" data-idx="' + dIdx + '" cx="' + cx + '" cy="' + cy + '" r="4.2" fill="' + s.color + '" stroke="#ffffff" stroke-width="1.3" style="cursor:pointer;" />');
       });
     });
@@ -281,8 +286,8 @@
         var s = meta.series;
         calTip.innerHTML =
           '<div class="model-tt-date">' + s.label + " · [" + b.lo + "%, " + b.hi + "%) · " + b.n + " 局</div>" +
-          '<div class="model-tt-row">预测均值: <strong>' + b.mean_p.toFixed(2) + "%</strong></div>" +
-          '<div class="model-tt-row">实际占比: <strong>' + b.actual.toFixed(2) + "%</strong></div>";
+          '<div class="model-tt-row">预测均值: <strong>' + Number(meta.mean_p).toFixed(2) + "%</strong></div>" +
+          '<div class="model-tt-row">实际占比: <strong>' + Number(b.actual).toFixed(2) + "%</strong></div>";
         var rect = calSvg.getBoundingClientRect();
         var px = (Number(dot.getAttribute("cx")) / W) * rect.width;
         var py = (Number(dot.getAttribute("cy")) / H) * rect.height;
