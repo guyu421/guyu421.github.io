@@ -25,12 +25,18 @@
 
           <div class="admin-panel">
             <div class="admin-row">
+              <label for="apiToken">服务器 API 密钥:</label>
+              <input id="apiToken" type="password" placeholder="服务器管理密钥（仅保存在本地浏览器）" />
+              <button type="button" id="saveApiTokenBtn">保存密钥</button>
+              <span id="apiTokenStatus" class="admin-muted"></span>
+            </div>
+            <div class="admin-row" style="margin-top:0.5em;">
               <label for="ghRepo">GitHub 仓库:</label>
               <input id="ghRepo" type="text" value="guyu421/guyu421.github.io" />
               <label for="ghBranch">分支:</label>
               <input id="ghBranch" type="text" value="main" class="admin-short" />
               <label for="ghToken">GitHub Token (PAT):</label>
-              <input id="ghToken" type="password" placeholder="ghp_...（仅保存在本地浏览器）" />
+              <input id="ghToken" type="password" placeholder="ghp_...（可选，用于备份到 GitHub）" />
               <button type="button" id="saveTokenBtn">保存 Token</button>
               <span id="tokenStatus" class="admin-muted"></span>
             </div>
@@ -58,7 +64,8 @@
 
           <div class="admin-actions">
             <button type="button" id="previewBtn" class="admin-btn-primary">解析预览</button>
-            <button type="button" id="submitGithubBtn" class="admin-btn-success">提交到 GitHub 并自动同步</button>
+            <button type="button" id="submitServerBtn" class="admin-btn-success">直接写入服务器数据库</button>
+            <button type="button" id="submitGithubBtn">提交到 GitHub</button>
             <button type="button" id="downloadTxtBtn">下载 .txt</button>
             <button type="button" id="downloadDbBtn">下载数据库 (.zip)</button>
             <button type="button" id="clearBtn">清空</button>

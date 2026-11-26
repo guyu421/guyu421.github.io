@@ -1,9 +1,14 @@
 (function () {
   var DATA_BASE = (location.hostname === "66-42-93-24.sslip.io" || location.hostname === "66.42.93.24" || location.hostname === "localhost" || location.hostname === "127.0.0.1") ? "data/" : "https://66-42-93-24.sslip.io/data/";
+  var API_BASE = (location.hostname === "66-42-93-24.sslip.io" || location.hostname === "66.42.93.24" || location.hostname === "localhost" || location.hostname === "127.0.0.1") ? "api/" : "https://66-42-93-24.sslip.io/api/";
+  var API_TOKEN_KEY = "renju_admin_api_token";
   var TOKEN_KEY = "renju_admin_gh_token";
   var REPO_KEY = "renju_admin_gh_repo";
   var BRANCH_KEY = "renju_admin_gh_branch";
 
+  var apiTokenEl = document.getElementById("apiToken");
+  var saveApiTokenBtn = document.getElementById("saveApiTokenBtn");
+  var apiTokenStatusEl = document.getElementById("apiTokenStatus");
   var ghRepoEl = document.getElementById("ghRepo");
   var ghBranchEl = document.getElementById("ghBranch");
   var ghTokenEl = document.getElementById("ghToken");
@@ -16,6 +21,7 @@
   var txtEditorEl = document.getElementById("txtEditor");
   var lineStatsEl = document.getElementById("lineStats");
   var previewBtn = document.getElementById("previewBtn");
+  var submitServerBtn = document.getElementById("submitServerBtn");
   var submitGithubBtn = document.getElementById("submitGithubBtn");
   var downloadTxtBtn = document.getElementById("downloadTxtBtn");
   var downloadDbBtn = document.getElementById("downloadDbBtn");
@@ -51,12 +57,30 @@
     var savedRepo = localStorage.getItem(REPO_KEY);
     var savedBranch = localStorage.getItem(BRANCH_KEY);
     var savedToken = localStorage.getItem(TOKEN_KEY);
+    var savedApiToken = localStorage.getItem(API_TOKEN_KEY);
     if (savedRepo) ghRepoEl.value = savedRepo;
     if (savedBranch) ghBranchEl.value = savedBranch;
     if (savedToken) {
       ghTokenEl.value = savedToken;
       tokenStatusEl.textContent = "已保存本地 Token";
     }
+    if (savedApiToken && apiTokenEl) {
+      apiTokenEl.value = savedApiToken;
+      if (apiTokenStatusEl) apiTokenStatusEl.textContent = "已保存服务器 Token";
+    }
+  }
+
+  if (saveApiTokenBtn && apiTokenEl) {
+    saveApiTokenBtn.addEventListener("click", function () {
+      var val = apiTokenEl.value.trim();
+      if (val) {
+        localStorage.setItem(API_TOKEN_KEY, val);
+        if (apiTokenStatusEl) apiTokenStatusEl.textContent = "已保存服务器 Token";
+      } else {
+        localStorage.removeItem(API_TOKEN_KEY);
+        if (apiTokenStatusEl) apiTokenStatusEl.textContent = "已清除服务器 Token";
+      }
+    });
   }
 
   saveTokenBtn.addEventListener("click", function () {
@@ -495,6 +519,63 @@
     return btoa(bin);
   }
 
+  if (submitServerBtn) {
+    submitServerBtn.addEventListener("click", function () {
+      var text = (txtEditorEl.value || "").trim();
+      if (!text) {
+        setStatus("编辑框为空。", true);
+        return;
+      }
+      var parsed = parseTxtPreview(text);
+      if (parsed.errors.length) {
+        setStatus("存在语法错误，请先修正后再提交：<br>" + parsed.errors.map(escHtml).join("<br>"), true);
+        return;
+      }
+      var dupSubmit = collectDuplicateNames(parsed);
+      if (dupSubmit.length) {
+        previewBtn.click();
+        setStatus(
+          "存在重名棋手（" + dupSubmit.map(function (x) { return escHtml(x.name); }).join("、") +
+          "），请在下方预览区选择具体 ID 或设为新建重名（*）后再提交。",
+          true
+        );
+        return;
+      }
+      var apiTok = (apiTokenEl && apiTokenEl.value.trim()) || localStorage.getItem(API_TOKEN_KEY) || "";
+      if (!apiTok) {
+        setStatus("请先填写并保存「服务器 API 密钥」。", true);
+        return;
+      }
+      submitServerBtn.disabled = true;
+      setStatus("正在写入服务器 PostgreSQL 数据库 ...", false);
+      fetch(API_BASE + "admin/apply", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + apiTok,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ text: text })
+      })
+        .then(function (resp) {
+          return resp.json().then(function (data) {
+            if (!resp.ok) throw new Error(data.detail || ("HTTP " + resp.status));
+            return data;
+          });
+        })
+        .then(function (data) {
+          var logs = (data && data.logs) || [];
+          setStatus("写入服务器数据库成功！<br>" + logs.map(escHtml).join("<br>"), false);
+          loadCatalogs();
+        })
+        .catch(function (err) {
+          setStatus("写入服务器数据库失败: " + escHtml(err.message), true);
+        })
+        .finally(function () {
+          submitServerBtn.disabled = false;
+        });
+    });
+  }
+
   submitGithubBtn.addEventListener("click", function () {
     var text = (txtEditorEl.value || "").trim();
     if (!text) {
@@ -660,25 +741,20 @@
 
   if (downloadDbBtn) {
     downloadDbBtn.addEventListener("click", function () {
-      var files = ["tournament.parquet", "player.parquet", "tournament_player.parquet", "match.parquet"];
       downloadDbBtn.disabled = true;
-      setStatus("正在打包下载数据库 (" + files.length + " 个 parquet 文件) ...", false);
-      Promise.all(files.map(function (fn) {
-        return fetch("db/" + fn + "?t=" + Date.now()).then(function (r) {
-          if (!r.ok) throw new Error(fn + " HTTP " + r.status);
-          return r.arrayBuffer().then(function (buf) {
-            return { name: "db/" + fn, data: new Uint8Array(buf) };
-          });
-        });
-      }))
-        .then(function (entries) {
-          var blob = buildZip(entries);
+      setStatus("正在从服务器打包下载数据库 (CSV .zip) ...", false);
+      fetch(API_BASE + "admin/db.zip?t=" + Date.now())
+        .then(function (r) {
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          return r.blob();
+        })
+        .then(function (blob) {
           var a = document.createElement("a");
           a.href = URL.createObjectURL(blob);
           a.download = "renju_db_" + new Date().toISOString().slice(0, 10) + ".zip";
           a.click();
           URL.revokeObjectURL(a.href);
-          setStatus("数据库打包下载完成（共 " + entries.length + " 个文件）。", false);
+          setStatus("数据库打包下载完成。", false);
         })
         .catch(function (err) {
           setStatus("下载数据库失败: " + escHtml(err.message), true);
