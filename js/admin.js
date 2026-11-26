@@ -14,6 +14,8 @@
   var lineStatsEl = document.getElementById("lineStats");
   var previewBtn = document.getElementById("previewBtn");
   var submitServerBtn = document.getElementById("submitServerBtn");
+  var champTourSelectEl = document.getElementById("champTourSelect");
+  var champStageSelectEl = document.getElementById("champStageSelect");
   var calcChampBtn = document.getElementById("calcChampBtn");
   var downloadTxtBtn = document.getElementById("downloadTxtBtn");
   var downloadDbBtn = document.getElementById("downloadDbBtn");
@@ -90,6 +92,15 @@
           html += '<option value="' + t.tournament_id + '">#' + t.tournament_id + " " + escHtml(t.name) + " (" + (t.start_date || "") + ")</option>";
         });
         tournamentSelectEl.innerHTML = html;
+        if (champTourSelectEl) {
+          var numbered = tournamentsList.filter(function (t) { return !!t.numbered; });
+          var listForChamp = numbered.length ? numbered : tournamentsList;
+          var chHtml = '<option value="0">全部有编号赛事 (' + listForChamp.length + '项)</option>';
+          listForChamp.forEach(function (t) {
+            chHtml += '<option value="' + t.tournament_id + '">#' + t.tournament_id + " " + escHtml(t.name) + " (" + (t.start_date || "") + ")</option>";
+          });
+          champTourSelectEl.innerHTML = chHtml;
+        }
       })
       .catch(function () {});
   }
@@ -562,11 +573,17 @@
         setStatus("请先填写并保存「服务器 API 密钥」。", true);
         return;
       }
+      var tid = champTourSelectEl ? Number(champTourSelectEl.value || 0) : 0;
+      var stages = champStageSelectEl ? (champStageSelectEl.value || "all") : "all";
       calcChampBtn.disabled = true;
-      setStatus("正在清空旧夺冠概率并在后台启动计算 ...", false);
+      setStatus("正在后台启动夺冠概率计算 ...", false);
       fetch(API_BASE + "admin/calc-champ-probs", {
         method: "POST",
-        headers: { "Authorization": "Bearer " + apiTok }
+        headers: {
+          "Authorization": "Bearer " + apiTok,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ tournament_id: tid, stages: stages })
       })
         .then(function (resp) {
           return resp.json().then(function (data) {
@@ -578,7 +595,8 @@
           if (data && data.status === "already_running") {
             setStatus("服务器已有夺冠概率计算任务正在后台运行。", false);
           } else {
-            setStatus("已清空旧数据并在后台开始计算所有有编号赛事的夺冠概率（1,000,000 次蒙特卡洛模拟，每算完一个赛事即刻生效）。", false);
+            var scopeTxt = (tid ? ("赛事 #" + tid) : "全部有编号赛事") + " · 阶段 " + escHtml(stages);
+            setStatus("已启动夺冠概率计算（" + scopeTxt + "，1,000,000 次蒙特卡洛模拟，算完即刻生效）。", false);
           }
         })
         .catch(function (err) {
