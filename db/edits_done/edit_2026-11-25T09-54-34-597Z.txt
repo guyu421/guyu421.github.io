@@ -1,5 +1,0 @@
-DEL tournament 60
-DEL tournament 61
-DEL tournament 62
-DEL tournament 63
-DEL tournament 64
