@@ -1,6 +1,8 @@
 (function () {
   "use strict";
 
+  var DATA_BASE = (location.hostname === "66-42-93-24.sslip.io" || location.hostname === "66.42.93.24" || location.hostname === "localhost" || location.hostname === "127.0.0.1") ? "data/" : "https://66-42-93-24.sslip.io/data/";
+
   var COLUMNS = {
     tournaments: ["period", "name", "players", "games"],
     players: ["rank", "name", "rating", "std", "tournaments", "games"]
@@ -38,7 +40,7 @@
   }
 
   function load(feed) {
-    return fetch("data/" + feed + ".json")
+    return fetch(DATA_BASE + feed + ".json")
       .then(function (res) {
         if (!res.ok) throw new Error("HTTP " + res.status);
         return res.json();
@@ -533,7 +535,7 @@
       if (heading) heading.textContent = "未找到棋手";
       return Promise.resolve();
     }
-    return fetch("data/player/" + id + ".json")
+    return fetch(DATA_BASE + "player/" + id + ".json")
       .then(function (res) {
         if (!res.ok) throw new Error("HTTP " + res.status);
         return res.json();
@@ -883,7 +885,7 @@
       if (heading) heading.textContent = "未找到赛事";
       return Promise.resolve();
     }
-    return fetch("data/tournament/" + id + ".json")
+    return fetch(DATA_BASE + "tournament/" + id + ".json")
       .then(function (res) {
         if (!res.ok) throw new Error("HTTP " + res.status);
         return res.json();

@@ -1,4 +1,5 @@
 (function () {
+  var DATA_BASE = (location.hostname === "66-42-93-24.sslip.io" || location.hostname === "66.42.93.24" || location.hostname === "localhost" || location.hostname === "127.0.0.1") ? "data/" : "https://66-42-93-24.sslip.io/data/";
   var legendEl = document.getElementById("modelLegend");
   var wrapEl = document.getElementById("modelChartWrap");
   var metricsEl = document.getElementById("modelMetrics");
@@ -294,7 +295,7 @@
   }
 
   renderLegend();
-  fetch("data/model_eval.json")
+  fetch(DATA_BASE + "model_eval.json")
     .then(function (r) { return r.json(); })
     .then(function (data) {
       renderMetrics(data);

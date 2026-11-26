@@ -1,4 +1,5 @@
 (function () {
+  var DATA_BASE = (location.hostname === "66-42-93-24.sslip.io" || location.hostname === "66.42.93.24" || location.hostname === "localhost" || location.hostname === "127.0.0.1") ? "data/" : "https://66-42-93-24.sslip.io/data/";
   var TOKEN_KEY = "renju_admin_gh_token";
   var REPO_KEY = "renju_admin_gh_repo";
   var BRANCH_KEY = "renju_admin_gh_branch";
@@ -72,7 +73,7 @@
   });
 
   function loadCatalogs() {
-    fetch("data/players.json")
+    fetch(DATA_BASE + "players.json")
       .then(function (r) { return r.json(); })
       .then(function (rows) {
         playersByName = {};
@@ -86,7 +87,7 @@
       })
       .catch(function () {});
 
-    fetch("data/tournaments.json")
+    fetch(DATA_BASE + "tournaments.json")
       .then(function (r) { return r.json(); })
       .then(function (rows) {
         tournamentsList = rows || [];
@@ -173,7 +174,7 @@
       setStatus("请先选择一个赛事。", true);
       return;
     }
-    fetch("data/tournament/" + tid + ".json")
+    fetch(DATA_BASE + "tournament/" + tid + ".json")
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();

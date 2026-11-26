@@ -1,6 +1,8 @@
 (function () {
   "use strict";
 
+  var DATA_BASE = (location.hostname === "66-42-93-24.sslip.io" || location.hostname === "66.42.93.24" || location.hostname === "localhost" || location.hostname === "127.0.0.1") ? "data/" : "https://66-42-93-24.sslip.io/data/";
+
   var RESULT_SCORE = {
     "1": "1:0",
     "0": "0:1",
@@ -214,7 +216,7 @@
       return;
     }
 
-    fetch("data/game/" + encodeURIComponent(id) + ".json")
+    fetch(DATA_BASE + "game/" + encodeURIComponent(id) + ".json")
       .then(function (res) {
         if (!res.ok) throw new Error("HTTP " + res.status);
         return res.json();
