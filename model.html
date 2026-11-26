@@ -25,15 +25,13 @@
 
           <div class="model-section">
             <h2>模型原理</h2>
-            <p class="model-desc">严格不引入未来信息，利用逻辑回归模型直接输出<code>假先胜</code>、<code>和棋</code>、<code>假后胜</code>三分类概率。</p>
-            <p class="model-desc">所用特征如下：</p>
+            <p class="model-desc">严格不引入未来信息，利用 LightGBM 模型直接输出<code>假先胜</code>、<code>和棋</code>、<code>假后胜</code>三分类概率。</p>
+            <p class="model-desc">所用 4 个特征如下：</p>
             <ul class="model-list">
-              <li>等级分差：<code>(r1 - r2) / 400</code></li>
-              <li>双方等级分均值偏移：<code>(r1 + r2 - 3800) / 400</code></li>
-              <li>标准差之和：<code>(std1 + std2) / 100</code></li>
-              <li>标准差之差：<code>(std1 - std2) / 100</code></li>
-              <li>历史交锋和棋偏移：<code>h2h_draw_delta</code></li>
-              <li>比赛规则：<code>rule_*</code></li>
+              <li>比赛规则：<code>rule</code></li>
+              <li>假先方 WHR 等级分：<code>first_rating</code></li>
+              <li>假后方 WHR 等级分：<code>second_rating</code></li>
+              <li>双方等级分差：<code>rating_diff</code>（<code>first_rating - second_rating</code>）</li>
             </ul>
           </div>
 

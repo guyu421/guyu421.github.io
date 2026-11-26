@@ -1,4 +1,4 @@
-"""Train Elo-baseline Multinomial Logistic Regression models for multiple date cutoffs using WHR features."""
+"""Train LightGBM models for multiple date cutoffs using WHR rating features."""
 
 from __future__ import annotations
 
@@ -8,9 +8,9 @@ from datetime import date as _date
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+import lightgbm as lgb
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, log_loss
 from sklearn.model_selection import StratifiedKFold
 
@@ -54,16 +54,25 @@ RESULT_TO_CLASS: Dict[str, int] = {
     "1": 2,    # 假先胜
 }
 CLASS_LABELS = ["假后胜", "和棋", "假先胜"]
-FEATURE_NAMES = ["rule", "first_rating", "second_rating", "rating_diff", "first_std", "second_std", "h2h_draw_delta"]
+FEATURE_NAMES = ["rule", "first_rating", "second_rating", "rating_diff"]
 RESULT_SCORE = {"1": 1.0, "0.5": 0.5, "0": 0.0}
-H2H_DRAW_PRIOR_P0 = 0.125
-H2H_DRAW_SMOOTH_K = 2.0
-
-
-def compute_h2h_draw_delta(n_games: int, n_draws: int) -> float:
-    if n_games <= 0:
-        return 0.0
-    return (n_draws - n_games * H2H_DRAW_PRIOR_P0) / (H2H_DRAW_SMOOTH_K + n_games)
+LGB_PARAMS = {
+    "objective": "multiclass",
+    "num_class": 3,
+    "metric": "multi_logloss",
+    "learning_rate": 0.05,
+    "max_depth": 3,
+    "num_leaves": 7,
+    "min_child_samples": 60,
+    "subsample": 0.8,
+    "subsample_freq": 1,
+    "colsample_bytree": 1.0,
+    "reg_alpha": 2.0,
+    "reg_lambda": 10.0,
+    "seed": 42,
+    "n_jobs": 4,
+    "verbose": -1,
+}
 
 
 def load_data(db_dir: Path) -> Tuple[pd.DataFrame, Dict[int, str]]:
@@ -89,7 +98,6 @@ def build_all_cutoffs_features(
 ) -> Tuple[pd.DataFrame, np.ndarray, pd.Series, Dict[str, Dict[int, object]]]:
     """Compute pre-match WHR features once chronologically and snapshot ratings at each cutoff."""
     tracker = WHRTracker()
-    pair_stats: Dict[Tuple[int, int], List[int]] = {}
     rows: List[Dict[str, float | int]] = []
     targets: List[int] = []
     dates: List[str] = []
@@ -105,37 +113,25 @@ def build_all_cutoffs_features(
 
         day_int = day_of(p_date_str)
         period_games: List[Tuple[int, int, float]] = []
-        period_pairs: List[Tuple[Tuple[int, int], bool]] = []
         for r in period_df.itertuples(index=False):
             rule_code = RULE_MAP.get(str(r.rule))
             if rule_code is None:
                 raise ValueError(f"Unknown rule: {r.rule!r}")
             p1 = tracker.get(r.first_id, day_int)
             p2 = tracker.get(r.second_id, day_int)
-            pair_key = (r.first_id, r.second_id) if r.first_id < r.second_id else (r.second_id, r.first_id)
-            n_h2h, d_h2h = pair_stats.get(pair_key, (0, 0))
             rows.append(
                 {
                     "rule": rule_code,
                     "first_rating": p1.rating,
                     "second_rating": p2.rating,
                     "rating_diff": p1.rating - p2.rating,
-                    "first_std": p1.std,
-                    "second_std": p2.std,
-                    "h2h_draw_delta": compute_h2h_draw_delta(n_h2h, d_h2h),
                 }
             )
             targets.append(RESULT_TO_CLASS[str(r.result)])
             dates.append(p_date_str)
             period_games.append((r.first_id, r.second_id, RESULT_SCORE[str(r.result)]))
-            period_pairs.append((pair_key, str(r.result) == "0.5"))
 
         tracker.apply_period(period_games, day_int)
-        for pk, is_d in period_pairs:
-            st = pair_stats.setdefault(pk, [0, 0])
-            st[0] += 1
-            if is_d:
-                st[1] += 1
 
     while c_idx < len(sorted_cutoffs):
         snapshots[sorted_cutoffs[c_idx][0]] = dict(tracker.ratings)
@@ -145,29 +141,6 @@ def build_all_cutoffs_features(
     X["rule"] = X["rule"].astype(int)
     y = np.array(targets, dtype=np.int64)
     return X, y, pd.Series(dates), snapshots
-
-
-def featurize_logreg(df: pd.DataFrame) -> pd.DataFrame:
-    d = pd.DataFrame(index=df.index)
-    d["elo_diff"] = df["rating_diff"].to_numpy(dtype=np.float64) / 400.0
-    d["rating_sum"] = (
-        df["first_rating"].to_numpy(dtype=np.float64)
-        + df["second_rating"].to_numpy(dtype=np.float64)
-        - 3800.0
-    ) / 400.0
-    s1 = df["first_std"].to_numpy(dtype=np.float64)
-    s2 = df["second_std"].to_numpy(dtype=np.float64)
-    d["std_sum"] = (s1 + s2) / 100.0
-    d["std_diff"] = (s1 - s2) / 100.0
-    rules = df["rule"].to_numpy()
-    for rcode in sorted(RULE_MAP.values()):
-        d[f"rule_{rcode}"] = (rules == rcode).astype(np.float64)
-    d["h2h_draw_delta"] = df["h2h_draw_delta"].to_numpy(dtype=np.float64)
-    return d
-
-
-def make_model() -> LogisticRegression:
-    return LogisticRegression(C=1.0, max_iter=1000)
 
 
 def train_cutoff(
@@ -190,19 +163,28 @@ def train_cutoff(
     X = X_all[mask_x].reset_index(drop=True)
     y = y_all[mask_x.to_numpy()]
 
-    X_lr = featurize_logreg(X)
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     oof_probs = np.zeros((len(y), 3), dtype=np.float64)
-    for train_idx, val_idx in skf.split(X_lr, y):
-        clf = make_model()
-        clf.fit(X_lr.iloc[train_idx], y[train_idx])
-        oof_probs[val_idx] = clf.predict_proba(X_lr.iloc[val_idx])
+    best_iters: List[int] = []
+    for train_idx, val_idx in skf.split(X, y):
+        dtrain = lgb.Dataset(X.iloc[train_idx], label=y[train_idx], categorical_feature=["rule"], free_raw_data=False)
+        dval = lgb.Dataset(X.iloc[val_idx], label=y[val_idx], categorical_feature=["rule"], reference=dtrain, free_raw_data=False)
+        booster = lgb.train(
+            LGB_PARAMS,
+            dtrain,
+            num_boost_round=1000,
+            valid_sets=[dval],
+            callbacks=[lgb.early_stopping(50, verbose=False)],
+        )
+        oof_probs[val_idx] = booster.predict(X.iloc[val_idx])
+        best_iters.append(booster.best_iteration if booster.best_iteration > 0 else 50)
 
     cv_logloss = float(log_loss(y, oof_probs, labels=[0, 1, 2]))
     cv_acc = float(accuracy_score(y, np.argmax(oof_probs, axis=1)))
 
-    final_clf = make_model()
-    final_clf.fit(X_lr, y)
+    num_boost_round = max(20, int(round(float(np.mean(best_iters)))))
+    dfull = lgb.Dataset(X, label=y, categorical_feature=["rule"], free_raw_data=False)
+    final_booster = lgb.train(LGB_PARAMS, dfull, num_boost_round=num_boost_round)
 
     out_dir = models_dir / cutoff_key
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -211,11 +193,10 @@ def train_cutoff(
         if stale.exists():
             stale.unlink()
     model_payload = {
-        "type": "elo_logistic_regression",
-        "feature_cols": list(X_lr.columns),
-        "classes": [int(c) for c in final_clf.classes_],
-        "coef": final_clf.coef_.tolist(),
-        "intercept": final_clf.intercept_.tolist(),
+        "type": "lightgbm",
+        "feature_cols": list(FEATURE_NAMES),
+        "num_boost_round": num_boost_round,
+        "model_str": final_booster.model_to_string(),
     }
     (out_dir / "model.json").write_text(
         json.dumps(model_payload, ensure_ascii=False, indent=2),

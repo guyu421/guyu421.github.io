@@ -8,6 +8,7 @@ import math
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+import lightgbm as lgb
 import numpy as np
 import pandas as pd
 
@@ -76,6 +77,8 @@ def compute_h2h_draw_delta_before_match(
 
 def load_cutoff_bundle(model_dir: Path) -> Tuple[Dict, Dict]:
     model = json.loads((model_dir / "model.json").read_text(encoding="utf-8"))
+    if model.get("type") == "lightgbm":
+        model["_booster"] = lgb.Booster(model_str=model["model_str"])
     metadata = json.loads((model_dir / "metadata.json").read_text(encoding="utf-8"))
     return model, metadata
 
@@ -150,26 +153,30 @@ def predict_from_ratings(
         raise ValueError(f"Unsupported rule {rule!r}. Choose from: {list(rule_map.keys())}")
 
     rcode = rule_map[rule]
-    feat_map = {
-        "elo_diff": (r1 - r2) / 400.0,
-        "rating_sum": (r1 + r2 - 3800.0) / 400.0,
-        "std_sum": (std1 + std2) / 100.0,
-        "std_diff": (std1 - std2) / 100.0,
-        "h2h_draw_delta": float(h2h_draw_delta),
-    }
-    x = np.array(
-        [
-            1.0 if (c == f"rule_{rcode}") else feat_map.get(c, 0.0)
-            for c in model["feature_cols"]
-        ],
-        dtype=np.float64,
-    )
-    coef = np.asarray(model["coef"], dtype=np.float64)
-    intercept = np.asarray(model["intercept"], dtype=np.float64)
-    logits = coef @ x + intercept
-    logits -= np.max(logits)
-    exp_l = np.exp(logits)
-    probs = exp_l / np.sum(exp_l)
+    if model.get("type") == "lightgbm":
+        x_arr = np.array([[rcode, r1, r2, r1 - r2]], dtype=np.float64)
+        probs = model["_booster"].predict(x_arr)[0]
+    else:
+        feat_map = {
+            "elo_diff": (r1 - r2) / 400.0,
+            "rating_sum": (r1 + r2 - 3800.0) / 400.0,
+            "std_sum": (std1 + std2) / 100.0,
+            "std_diff": (std1 - std2) / 100.0,
+            "h2h_draw_delta": float(h2h_draw_delta),
+        }
+        x = np.array(
+            [
+                1.0 if (c == f"rule_{rcode}") else feat_map.get(c, 0.0)
+                for c in model["feature_cols"]
+            ],
+            dtype=np.float64,
+        )
+        coef = np.asarray(model["coef"], dtype=np.float64)
+        intercept = np.asarray(model["intercept"], dtype=np.float64)
+        logits = coef @ x + intercept
+        logits -= np.max(logits)
+        exp_l = np.exp(logits)
+        probs = exp_l / np.sum(exp_l)
     labels = metadata["class_labels"]
     prob_map = {labels[i]: float(probs[i]) for i in range(len(labels))}
     return {
