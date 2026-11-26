@@ -191,6 +191,7 @@ def compute_match_predictions(games_out, pid_of):
     i = 0
     n = len(ordered)
     in_eval = False
+    cur_eval_date = None
     while i < n:
         key = (ordered[i]["date"], ordered[i]["tournament_id"], ordered[i]["round"])
         p_date_str = ordered[i]["date"]
@@ -232,10 +233,10 @@ def compute_match_predictions(games_out, pid_of):
                 period_pairs.append((pk, str(g["result"]) == "0.5"))
 
         if period_updates:
-            if in_eval:
-                tracker.apply_period(period_updates, day_int)
-            else:
-                tracker.add_games_only(period_updates, day_int)
+            tracker.add_games_only(period_updates, day_int)
+            if in_eval and p_date_str != cur_eval_date:
+                cur_eval_date = p_date_str
+                tracker.iterate_and_sync(min_iters=1, max_iters=3, tol_elo=0.2)
         for pk, is_d in period_pairs:
             st = pair_stats.setdefault(pk, [0, 0])
             st[0] += 1
