@@ -458,8 +458,8 @@ def run_import(rif_path: Path, db_dir: Path, min_start_date: str = "2023-03-18")
             next_id += 1
             next_gid += 1
 
-        for pno, pid in enumerate(seen_pids, start=1):
-            new_tp_rows.append({"tournament_id": db_tid, "player_id": pid, "player_no": pno})
+        for pid in seen_pids:
+            new_tp_rows.append({"tournament_id": db_tid, "player_id": pid, "player_no": pd.NA})
 
     if new_t_rows:
         db_t = pd.concat([db_t, pd.DataFrame(new_t_rows)], ignore_index=True)
