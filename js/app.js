@@ -115,9 +115,28 @@
       return;
     }
     var isRR = !!(data && data.is_round_robin);
+    var tbRules = (data && data.tiebreak_rules && data.tiebreak_rules.length)
+      ? data.tiebreak_rules
+      : (isRR ? ["sb", "wins"] : ["bh", "mbh", "wins"]);
+    var tbLabels = {
+      bh: "对手分",
+      bh1: "对手分去1",
+      bh2: "对手分去2",
+      mbh: "中间对手分",
+      sb: "小分",
+      wins: "胜局数",
+      h2h: "直胜"
+    };
     var titleEl = document.getElementById("standingsTitle");
     if (titleEl) {
-      titleEl.textContent = "第" + round + "轮后积分与夺冠概率（" + (isRR ? "贝格尔单循环" : "云蛇 v3.998 拦腰编排") + " · 模拟 1,000,000 次）";
+      var modeLabel = isRR ? "贝格尔单循环" : "云蛇 v3.998 拦腰编排";
+      if (round === "pre") {
+        titleEl.textContent = "赛前预测（" + modeLabel + "）";
+      } else if (round === "draw") {
+        titleEl.textContent = "抽签后预测（" + modeLabel + "）";
+      } else {
+        titleEl.textContent = "第" + round + "轮后积分与夺冠概率（" + modeLabel + "）";
+      }
     }
     var table = wrap.querySelector("table.tour-standings");
     if (!table || !table.tBodies[0]) return;
@@ -125,9 +144,9 @@
     while (tbody.rows.length > 0) tbody.deleteRow(tbody.rows.length - 1);
 
     var headTr = el("tr");
-    var headers = isRR
-      ? ["名次", "姓名", "积分", "小分", "胜局数", "夺冠概率"]
-      : ["名次", "姓名", "积分", "对手分", "中间对手分", "胜局数", "夺冠概率"];
+    var headers = ["名次", "姓名", "积分"];
+    tbRules.forEach(function (k) { headers.push(tbLabels[k] || k); });
+    headers.push("夺冠概率");
     headers.forEach(function (h) {
       var th = document.createElement("th");
       th.textContent = h;
@@ -138,19 +157,12 @@
     rows.forEach(function (r) {
       var tr = el("tr");
       tr.appendChild(el("td", "num", String(r.rank)));
-      var nameTd = el("td", "player");
-      var link = el("a", null, r.name || "");
-      link.href = "player.html?id=" + encodeURIComponent(r.player_id);
-      nameTd.appendChild(link);
-      tr.appendChild(nameTd);
+      tr.appendChild(playerCell(r.name || "", r.player_id, r.player_no));
       tr.appendChild(el("td", "num", String(r.pts)));
-      if (isRR) {
-        tr.appendChild(el("td", "num", String(r.sb != null ? r.sb : 0)));
-      } else {
-        tr.appendChild(el("td", "num", String(r.bh != null ? r.bh : 0)));
-        tr.appendChild(el("td", "num", String(r.mbh != null ? r.mbh : 0)));
-      }
-      tr.appendChild(el("td", "num", String(r.wins)));
+      tbRules.forEach(function (k) {
+        var val = r[k];
+        tr.appendChild(el("td", "num", val != null ? String(val) : ""));
+      });
       tr.appendChild(el("td", "prob", Number(r.champ_prob).toFixed(2) + "%"));
       tbody.appendChild(tr);
     });
@@ -658,12 +670,18 @@
         list.push(round);
       }
     });
-    return list.sort(function (a, b) { return a - b; });
+    list.sort(function (a, b) { return a - b; });
+    var out = [];
+    var rs = data && data.round_standings;
+    if (rs && rs.pre) out.push("pre");
+    if (rs && rs.draw) out.push("draw");
+    list.forEach(function (r) { out.push(String(r)); });
+    return out;
   }
 
   function roundFromUrl() {
-    var match = /[?&]round=(\d+)/.exec(window.location.search);
-    return match ? Number(match[1]) : null;
+    var match = /[?&]round=([^&]+)/.exec(window.location.search);
+    return match ? decodeURIComponent(match[1]) : null;
   }
 
   function tournamentUrl(id, round) {
@@ -828,13 +846,20 @@
     }
 
     var table = document.querySelector("table.tour-games");
+    if (round === "pre" || round === "draw") {
+      if (table) table.style.display = "none";
+      renderRoundStandings(data, round);
+      return;
+    }
+    if (table) table.style.display = "";
     if (!table || !table.tBodies[0]) return;
     var tbody = table.tBodies[0];
     // 表头是 tbody 的第一行，只清数据行
     while (tbody.rows.length > 1) tbody.deleteRow(tbody.rows.length - 1);
+    var roundNum = round !== null ? Number(round) : null;
     (data.games || []).forEach(function (game) {
       // 选了轮次就只画这一轮的台次
-      if (round !== null && Number(game.round) !== round) return;
+      if (roundNum !== null && Number(game.round) !== roundNum) return;
       var tr = el("tr");
       var day = el("td", "date", short_date(game.date));
       day.title = game.date;
@@ -873,9 +898,28 @@
       return;
     }
     var isRR = !!(data && data.is_round_robin);
+    var tbRules = (data && data.tiebreak_rules && data.tiebreak_rules.length)
+      ? data.tiebreak_rules
+      : (isRR ? ["sb", "wins"] : ["bh", "mbh", "wins"]);
+    var tbLabels = {
+      bh: "对手分",
+      bh1: "对手分去1",
+      bh2: "对手分去2",
+      mbh: "中间对手分",
+      sb: "小分",
+      wins: "胜局数",
+      h2h: "直胜"
+    };
     var titleEl = document.getElementById("standingsTitle");
     if (titleEl) {
-      titleEl.textContent = "第" + round + "轮后积分与夺冠概率（" + (isRR ? "贝格尔单循环" : "云蛇 v3.998 拦腰编排") + " · 模拟 1,000,000 次）";
+      var modeLabel = isRR ? "贝格尔单循环" : "云蛇 v3.998 拦腰编排";
+      if (round === "pre") {
+        titleEl.textContent = "赛前预测（" + modeLabel + "）";
+      } else if (round === "draw") {
+        titleEl.textContent = "抽签后预测（" + modeLabel + "）";
+      } else {
+        titleEl.textContent = "第" + round + "轮后积分与夺冠概率（" + modeLabel + "）";
+      }
     }
     var table = wrap.querySelector("table.tour-standings");
     if (!table || !table.tBodies[0]) return;
@@ -883,9 +927,9 @@
     while (tbody.rows.length > 0) tbody.deleteRow(tbody.rows.length - 1);
 
     var headTr = el("tr");
-    var headers = isRR
-      ? ["名次", "姓名", "积分", "小分", "胜局数", "夺冠概率"]
-      : ["名次", "姓名", "积分", "对手分", "中间对手分", "胜局数", "夺冠概率"];
+    var headers = ["名次", "姓名", "积分"];
+    tbRules.forEach(function (k) { headers.push(tbLabels[k] || k); });
+    headers.push("夺冠概率");
     headers.forEach(function (h) {
       var th = document.createElement("th");
       th.textContent = h;
@@ -896,19 +940,12 @@
     rows.forEach(function (r) {
       var tr = el("tr");
       tr.appendChild(el("td", "num", String(r.rank)));
-      var nameTd = el("td", "player");
-      var link = el("a", null, r.name || "");
-      link.href = "player.html?id=" + encodeURIComponent(r.player_id);
-      nameTd.appendChild(link);
-      tr.appendChild(nameTd);
+      tr.appendChild(playerCell(r.name || "", r.player_id, r.player_no));
       tr.appendChild(el("td", "num", String(r.pts)));
-      if (isRR) {
-        tr.appendChild(el("td", "num", String(r.sb != null ? r.sb : 0)));
-      } else {
-        tr.appendChild(el("td", "num", String(r.bh != null ? r.bh : 0)));
-        tr.appendChild(el("td", "num", String(r.mbh != null ? r.mbh : 0)));
-      }
-      tr.appendChild(el("td", "num", String(r.wins)));
+      tbRules.forEach(function (k) {
+        var val = r[k];
+        tr.appendChild(el("td", "num", val != null ? String(val) : ""));
+      });
       tr.appendChild(el("td", "prob", Number(r.champ_prob).toFixed(2) + "%"));
       tbody.appendChild(tr);
     });
@@ -929,23 +966,31 @@
     }
 
     select.innerHTML = "";
+    var realRoundCount = 0;
     rounds.forEach(function (round) {
       var option = document.createElement("option");
       option.value = String(round);
-      option.textContent = "第" + round + "轮";
+      if (round === "pre") {
+        option.textContent = "赛前预测";
+      } else if (round === "draw") {
+        option.textContent = "抽签后预测";
+      } else {
+        option.textContent = "第" + round + "轮";
+        realRoundCount++;
+      }
       select.appendChild(option);
     });
-    if (total) total.textContent = "/ 共 " + rounds.length + " 轮";
+    if (total) total.textContent = "/ 共 " + realRoundCount + " 轮";
 
     function syncNav() {
-      var index = rounds.indexOf(Number(select.value));
+      var index = rounds.indexOf(String(select.value));
       if (prev) prev.disabled = index <= 0;
       if (next) next.disabled = index < 0 || index >= rounds.length - 1;
     }
 
     // push 为 true 时把这一轮写进地址栏（浏览器前进/后退可用）
     function goTo(round, push) {
-      var index = rounds.indexOf(Number(round));
+      var index = rounds.indexOf(String(round));
       if (index < 0) return;
       select.value = String(rounds[index]);
       if (push && window.history && window.history.pushState) {
@@ -956,7 +1001,8 @@
     }
 
     var wanted = roundFromUrl();
-    var current = rounds.indexOf(wanted) >= 0 ? wanted : rounds[0];
+    var defaultRound = rounds.indexOf("1") >= 0 ? "1" : rounds[0];
+    var current = rounds.indexOf(wanted) >= 0 ? wanted : defaultRound;
     // 地址栏没带轮次（或带了不存在的轮次）时补成实际显示的那一轮
     if (wanted !== current && window.history && window.history.replaceState) {
       window.history.replaceState({ round: current }, "", tournamentUrl(id, current));
@@ -964,11 +1010,11 @@
     goTo(current, false);
 
     select.addEventListener("change", function () {
-      goTo(Number(select.value), true);
+      goTo(String(select.value), true);
     });
 
     function step(delta) {
-      var index = rounds.indexOf(Number(select.value));
+      var index = rounds.indexOf(String(select.value));
       if (index < 0) return;
       goTo(rounds[index + delta], true);
     }
@@ -979,7 +1025,7 @@
     // 浏览器前进/后退时跟着地址栏上的轮次走
     window.addEventListener("popstate", function () {
       var back = roundFromUrl();
-      goTo(rounds.indexOf(back) >= 0 ? back : rounds[0], false);
+      goTo(rounds.indexOf(back) >= 0 ? back : defaultRound, false);
     });
   }
 
