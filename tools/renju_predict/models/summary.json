@@ -50,8 +50,8 @@
       "塔拉山口-10": 796,
       "山口": 577
     },
-    "cv_5fold_logloss": 0.92574,
-    "cv_5fold_accuracy": 0.53824
+    "cv_5fold_logloss": 0.92502,
+    "cv_5fold_accuracy": 0.54698
   },
   {
     "cutoff_key": "20250331",
@@ -105,8 +105,8 @@
       "山口": 577,
       "五手两打": 50
     },
-    "cv_5fold_logloss": 0.91938,
-    "cv_5fold_accuracy": 0.55306
+    "cv_5fold_logloss": 0.91933,
+    "cv_5fold_accuracy": 0.55095
   },
   {
     "cutoff_key": "20250630",
@@ -160,8 +160,8 @@
       "山口": 577,
       "五手两打": 50
     },
-    "cv_5fold_logloss": 0.91746,
-    "cv_5fold_accuracy": 0.5645
+    "cv_5fold_logloss": 0.91669,
+    "cv_5fold_accuracy": 0.55917
   },
   {
     "cutoff_key": "20250930",
@@ -215,8 +215,8 @@
       "山口": 577,
       "五手两打": 421
     },
-    "cv_5fold_logloss": 0.91094,
-    "cv_5fold_accuracy": 0.54622
+    "cv_5fold_logloss": 0.91085,
+    "cv_5fold_accuracy": 0.54774
   },
   {
     "cutoff_key": "20251231",
@@ -270,8 +270,8 @@
       "山口": 577,
       "五手两打": 421
     },
-    "cv_5fold_logloss": 0.91499,
-    "cv_5fold_accuracy": 0.55474
+    "cv_5fold_logloss": 0.91487,
+    "cv_5fold_accuracy": 0.55018
   },
   {
     "cutoff_key": "20260331",
@@ -325,8 +325,8 @@
       "山口": 577,
       "五手两打": 421
     },
-    "cv_5fold_logloss": 0.91499,
-    "cv_5fold_accuracy": 0.55474
+    "cv_5fold_logloss": 0.91487,
+    "cv_5fold_accuracy": 0.55018
   },
   {
     "cutoff_key": "20260630",
@@ -380,8 +380,8 @@
       "山口": 577,
       "五手两打": 462
     },
-    "cv_5fold_logloss": 0.90473,
-    "cv_5fold_accuracy": 0.56386
+    "cv_5fold_logloss": 0.9052,
+    "cv_5fold_accuracy": 0.56332
   },
   {
     "cutoff_key": "20260930",
@@ -435,8 +435,8 @@
       "五手两打": 715,
       "山口": 577
     },
-    "cv_5fold_logloss": 0.89647,
-    "cv_5fold_accuracy": 0.57613
+    "cv_5fold_logloss": 0.89668,
+    "cv_5fold_accuracy": 0.57635
   },
   {
     "cutoff_key": "20261124",
@@ -490,7 +490,7 @@
       "五手两打": 736,
       "山口": 577
     },
-    "cv_5fold_logloss": 0.89453,
-    "cv_5fold_accuracy": 0.57098
+    "cv_5fold_logloss": 0.89463,
+    "cv_5fold_accuracy": 0.56721
   }
 ]
