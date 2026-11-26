@@ -14,6 +14,7 @@
   var lineStatsEl = document.getElementById("lineStats");
   var previewBtn = document.getElementById("previewBtn");
   var submitServerBtn = document.getElementById("submitServerBtn");
+  var calcChampBtn = document.getElementById("calcChampBtn");
   var downloadTxtBtn = document.getElementById("downloadTxtBtn");
   var downloadDbBtn = document.getElementById("downloadDbBtn");
   var clearBtn = document.getElementById("clearBtn");
@@ -550,6 +551,41 @@
         })
         .finally(function () {
           submitServerBtn.disabled = false;
+        });
+    });
+  }
+
+  if (calcChampBtn) {
+    calcChampBtn.addEventListener("click", function () {
+      var apiTok = (apiTokenEl && apiTokenEl.value.trim()) || localStorage.getItem(API_TOKEN_KEY) || "";
+      if (!apiTok) {
+        setStatus("请先填写并保存「服务器 API 密钥」。", true);
+        return;
+      }
+      calcChampBtn.disabled = true;
+      setStatus("正在清空旧夺冠概率并在后台启动计算 ...", false);
+      fetch(API_BASE + "admin/calc-champ-probs", {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + apiTok }
+      })
+        .then(function (resp) {
+          return resp.json().then(function (data) {
+            if (!resp.ok) throw new Error(data.detail || ("HTTP " + resp.status));
+            return data;
+          });
+        })
+        .then(function (data) {
+          if (data && data.status === "already_running") {
+            setStatus("服务器已有夺冠概率计算任务正在后台运行。", false);
+          } else {
+            setStatus("已清空旧数据并在后台开始计算所有有编号赛事的夺冠概率（1,000,000 次蒙特卡洛模拟，每算完一个赛事即刻生效）。", false);
+          }
+        })
+        .catch(function (err) {
+          setStatus("启动夺冠概率计算失败: " + escHtml(err.message), true);
+        })
+        .finally(function () {
+          calcChampBtn.disabled = false;
         });
     });
   }

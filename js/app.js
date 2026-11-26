@@ -860,10 +860,11 @@
     var tbody = table.tBodies[0];
     while (tbody.rows.length > 0) tbody.deleteRow(tbody.rows.length - 1);
 
+    var hasChamp = rows.some(function (r) { return r.champ_prob != null; });
     var headTr = el("tr");
     var headers = ["名次", "姓名", "积分"];
     tbRules.forEach(function (k) { headers.push(tbLabels[k] || k); });
-    headers.push("夺冠概率");
+    if (hasChamp) headers.push("夺冠概率");
     headers.forEach(function (h) {
       var th = document.createElement("th");
       th.textContent = h;
@@ -880,7 +881,9 @@
         var val = r[k];
         tr.appendChild(el("td", "num", val != null ? String(val) : ""));
       });
-      tr.appendChild(el("td", "prob", Number(r.champ_prob).toFixed(2) + "%"));
+      if (hasChamp) {
+        tr.appendChild(el("td", "prob", Number(r.champ_prob).toFixed(2) + "%"));
+      }
       tbody.appendChild(tr);
     });
     wrap.style.display = "block";
