@@ -8,9 +8,9 @@ import math
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+import lightgbm as lgb
 import numpy as np
 import pandas as pd
-import xgboost as xgb
 
 from whr_tracker import WHR_PRIOR_STD, WHRTracker, day_of
 
@@ -77,12 +77,7 @@ def compute_h2h_draw_delta_before_match(
 
 def load_cutoff_bundle(model_dir: Path) -> Tuple[Dict, Dict]:
     model = json.loads((model_dir / "model.json").read_text(encoding="utf-8"))
-    if model.get("type") == "xgboost":
-        bst = xgb.Booster()
-        bst.load_model(bytearray(json.dumps(model["xgb_model"]).encode("utf-8")))
-        model["_booster"] = bst
-    elif model.get("type") == "lightgbm":
-        import lightgbm as lgb
+    if model.get("type") == "lightgbm":
         model["_booster"] = lgb.Booster(model_str=model["model_str"])
     metadata = json.loads((model_dir / "metadata.json").read_text(encoding="utf-8"))
     return model, metadata
@@ -158,12 +153,8 @@ def predict_from_ratings(
         raise ValueError(f"Unsupported rule {rule!r}. Choose from: {list(rule_map.keys())}")
 
     rcode = rule_map[rule]
-    if model.get("type") == "xgboost":
-        x_arr = np.array([[rcode, r1, r2, r1 - r2]], dtype=np.float32)
-        probs = model["_booster"].inplace_predict(x_arr)[0].astype(np.float64)
-        probs /= probs.sum()
-    elif model.get("type") == "lightgbm":
-        x_arr = np.array([[rcode, r1, r2, r1 - r2]], dtype=np.float64)
+    if model.get("type") == "lightgbm":
+        x_arr = np.array([[rcode, r1, r2, r1 - r2, std1, std2]], dtype=np.float64)
         probs = model["_booster"].predict(x_arr)[0]
     else:
         feat_map = {

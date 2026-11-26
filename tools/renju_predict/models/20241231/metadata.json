@@ -8,7 +8,9 @@
     "rule",
     "first_rating",
     "second_rating",
-    "rating_diff"
+    "rating_diff",
+    "first_std",
+    "second_std"
   ],
   "rule_map": {
     "山口": 0,
@@ -49,6 +51,6 @@
     "塔拉山口-10": 796,
     "山口": 577
   },
-  "cv_5fold_logloss": 0.92502,
-  "cv_5fold_accuracy": 0.54698
+  "cv_5fold_logloss": 0.92104,
+  "cv_5fold_accuracy": 0.53532
 }

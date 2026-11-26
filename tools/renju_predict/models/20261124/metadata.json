@@ -8,7 +8,9 @@
     "rule",
     "first_rating",
     "second_rating",
-    "rating_diff"
+    "rating_diff",
+    "first_std",
+    "second_std"
   ],
   "rule_map": {
     "山口": 0,
@@ -50,6 +52,6 @@
     "五手两打": 736,
     "山口": 577
   },
-  "cv_5fold_logloss": 0.89463,
-  "cv_5fold_accuracy": 0.56721
+  "cv_5fold_logloss": 0.88679,
+  "cv_5fold_accuracy": 0.57182
 }

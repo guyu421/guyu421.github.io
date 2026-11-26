@@ -29,7 +29,7 @@ jobs:
           python-version: "3.11"
 
       - name: 安装依赖
-        run: pip install pandas pyarrow whr scikit-learn xgboost
+        run: pip install pandas pyarrow whr scikit-learn lightgbm
 
       - name: 编译 WHR C 内核
         run: gcc -O3 -shared -fPIC tools/renju_predict/whr_kernel.c -o tools/renju_predict/whr_kernel.so -lm

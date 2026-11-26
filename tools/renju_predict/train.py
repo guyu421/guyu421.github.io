@@ -1,4 +1,4 @@
-"""Train XGBoost models for multiple date cutoffs using WHR rating features."""
+"""Train LightGBM models for multiple date cutoffs using WHR rating features."""
 
 from __future__ import annotations
 
@@ -8,9 +8,9 @@ from datetime import date as _date
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+import lightgbm as lgb
 import numpy as np
 import pandas as pd
-import xgboost as xgb
 from sklearn.metrics import accuracy_score, log_loss
 from sklearn.model_selection import StratifiedKFold
 
@@ -54,23 +54,24 @@ RESULT_TO_CLASS: Dict[str, int] = {
     "1": 2,    # 假先胜
 }
 CLASS_LABELS = ["假后胜", "和棋", "假先胜"]
-FEATURE_NAMES = ["rule", "first_rating", "second_rating", "rating_diff"]
-FEATURE_TYPES = ["c", "q", "q", "q"]
+FEATURE_NAMES = ["rule", "first_rating", "second_rating", "rating_diff", "first_std", "second_std"]
 RESULT_SCORE = {"1": 1.0, "0.5": 0.5, "0": 0.0}
-XGB_PARAMS = {
-    "objective": "multi:softprob",
+LGB_PARAMS = {
+    "objective": "multiclass",
     "num_class": 3,
-    "eval_metric": "mlogloss",
-    "tree_method": "hist",
+    "metric": "multi_logloss",
     "learning_rate": 0.05,
     "max_depth": 3,
-    "min_child_weight": 20,
+    "num_leaves": 7,
+    "min_child_samples": 60,
     "subsample": 0.8,
+    "subsample_freq": 1,
     "colsample_bytree": 1.0,
     "reg_alpha": 2.0,
     "reg_lambda": 10.0,
     "seed": 42,
-    "nthread": 4,
+    "n_jobs": 4,
+    "verbose": -1,
 }
 
 
@@ -124,6 +125,8 @@ def build_all_cutoffs_features(
                     "first_rating": p1.rating,
                     "second_rating": p2.rating,
                     "rating_diff": p1.rating - p2.rating,
+                    "first_std": p1.std,
+                    "second_std": p2.std,
                 }
             )
             targets.append(RESULT_TO_CLASS[str(r.result)])
@@ -161,33 +164,29 @@ def train_cutoff(
     mask_x = dates_all < cutoff_date
     X = X_all[mask_x].reset_index(drop=True)
     y = y_all[mask_x.to_numpy()]
-    X_arr = X.to_numpy(dtype=np.float32)
 
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     oof_probs = np.zeros((len(y), 3), dtype=np.float64)
     best_iters: List[int] = []
-    for train_idx, val_idx in skf.split(X_arr, y):
-        dtrain = xgb.DMatrix(X_arr[train_idx], label=y[train_idx], feature_names=FEATURE_NAMES, feature_types=FEATURE_TYPES)
-        dval = xgb.DMatrix(X_arr[val_idx], label=y[val_idx], feature_names=FEATURE_NAMES, feature_types=FEATURE_TYPES)
-        booster = xgb.train(
-            XGB_PARAMS,
+    for train_idx, val_idx in skf.split(X, y):
+        dtrain = lgb.Dataset(X.iloc[train_idx], label=y[train_idx], categorical_feature=["rule"], free_raw_data=False)
+        dval = lgb.Dataset(X.iloc[val_idx], label=y[val_idx], categorical_feature=["rule"], reference=dtrain, free_raw_data=False)
+        booster = lgb.train(
+            LGB_PARAMS,
             dtrain,
             num_boost_round=1000,
-            evals=[(dval, "val")],
-            early_stopping_rounds=50,
-            verbose_eval=False,
+            valid_sets=[dval],
+            callbacks=[lgb.early_stopping(50, verbose=False)],
         )
-        p_val = booster.predict(dval, iteration_range=(0, booster.best_iteration + 1)).astype(np.float64)
-        p_val /= p_val.sum(axis=1, keepdims=True)
-        oof_probs[val_idx] = p_val
-        best_iters.append(booster.best_iteration + 1)
+        oof_probs[val_idx] = booster.predict(X.iloc[val_idx])
+        best_iters.append(booster.best_iteration if booster.best_iteration > 0 else 50)
 
     cv_logloss = float(log_loss(y, oof_probs, labels=[0, 1, 2]))
     cv_acc = float(accuracy_score(y, np.argmax(oof_probs, axis=1)))
 
     num_boost_round = max(20, int(round(float(np.mean(best_iters)))))
-    dfull = xgb.DMatrix(X_arr, label=y, feature_names=FEATURE_NAMES, feature_types=FEATURE_TYPES)
-    final_booster = xgb.train(XGB_PARAMS, dfull, num_boost_round=num_boost_round)
+    dfull = lgb.Dataset(X, label=y, categorical_feature=["rule"], free_raw_data=False)
+    final_booster = lgb.train(LGB_PARAMS, dfull, num_boost_round=num_boost_round)
 
     out_dir = models_dir / cutoff_key
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -196,10 +195,10 @@ def train_cutoff(
         if stale.exists():
             stale.unlink()
     model_payload = {
-        "type": "xgboost",
+        "type": "lightgbm",
         "feature_cols": list(FEATURE_NAMES),
         "num_boost_round": num_boost_round,
-        "xgb_model": json.loads(final_booster.save_raw(raw_format="json").decode("utf-8")),
+        "model_str": final_booster.model_to_string(),
     }
     (out_dir / "model.json").write_text(
         json.dumps(model_payload, ensure_ascii=False, indent=2),
