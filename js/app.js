@@ -114,14 +114,26 @@
       wrap.style.display = "none";
       return;
     }
+    var isRR = !!(data && data.is_round_robin);
     var titleEl = document.getElementById("standingsTitle");
     if (titleEl) {
-      titleEl.textContent = "第" + round + "轮后积分与夺冠概率（模拟 1,000,000 次）";
+      titleEl.textContent = "第" + round + "轮后积分与夺冠概率（" + (isRR ? "贝格尔单循环" : "云蛇 v3.998 拦腰编排") + " · 模拟 1,000,000 次）";
     }
     var table = wrap.querySelector("table.tour-standings");
     if (!table || !table.tBodies[0]) return;
     var tbody = table.tBodies[0];
-    while (tbody.rows.length > 1) tbody.deleteRow(tbody.rows.length - 1);
+    while (tbody.rows.length > 0) tbody.deleteRow(tbody.rows.length - 1);
+
+    var headTr = el("tr");
+    var headers = isRR
+      ? ["名次", "姓名", "积分", "小分", "胜局数", "夺冠概率"]
+      : ["名次", "姓名", "积分", "对手分", "中间对手分", "胜局数", "夺冠概率"];
+    headers.forEach(function (h) {
+      var th = document.createElement("th");
+      th.textContent = h;
+      headTr.appendChild(th);
+    });
+    tbody.appendChild(headTr);
 
     rows.forEach(function (r) {
       var tr = el("tr");
@@ -132,8 +144,12 @@
       nameTd.appendChild(link);
       tr.appendChild(nameTd);
       tr.appendChild(el("td", "num", String(r.pts)));
-      tr.appendChild(el("td", "num", String(r.bh)));
-      tr.appendChild(el("td", "num", String(r.mbh)));
+      if (isRR) {
+        tr.appendChild(el("td", "num", String(r.sb != null ? r.sb : 0)));
+      } else {
+        tr.appendChild(el("td", "num", String(r.bh != null ? r.bh : 0)));
+        tr.appendChild(el("td", "num", String(r.mbh != null ? r.mbh : 0)));
+      }
       tr.appendChild(el("td", "num", String(r.wins)));
       tr.appendChild(el("td", "prob", Number(r.champ_prob).toFixed(2) + "%"));
       tbody.appendChild(tr);
@@ -856,14 +872,26 @@
       wrap.style.display = "none";
       return;
     }
+    var isRR = !!(data && data.is_round_robin);
     var titleEl = document.getElementById("standingsTitle");
     if (titleEl) {
-      titleEl.textContent = "第" + round + "轮后积分与夺冠概率（模拟 1,000,000 次）";
+      titleEl.textContent = "第" + round + "轮后积分与夺冠概率（" + (isRR ? "贝格尔单循环" : "云蛇 v3.998 拦腰编排") + " · 模拟 1,000,000 次）";
     }
     var table = wrap.querySelector("table.tour-standings");
     if (!table || !table.tBodies[0]) return;
     var tbody = table.tBodies[0];
-    while (tbody.rows.length > 1) tbody.deleteRow(tbody.rows.length - 1);
+    while (tbody.rows.length > 0) tbody.deleteRow(tbody.rows.length - 1);
+
+    var headTr = el("tr");
+    var headers = isRR
+      ? ["名次", "姓名", "积分", "小分", "胜局数", "夺冠概率"]
+      : ["名次", "姓名", "积分", "对手分", "中间对手分", "胜局数", "夺冠概率"];
+    headers.forEach(function (h) {
+      var th = document.createElement("th");
+      th.textContent = h;
+      headTr.appendChild(th);
+    });
+    tbody.appendChild(headTr);
 
     rows.forEach(function (r) {
       var tr = el("tr");
@@ -874,8 +902,12 @@
       nameTd.appendChild(link);
       tr.appendChild(nameTd);
       tr.appendChild(el("td", "num", String(r.pts)));
-      tr.appendChild(el("td", "num", String(r.bh)));
-      tr.appendChild(el("td", "num", String(r.mbh)));
+      if (isRR) {
+        tr.appendChild(el("td", "num", String(r.sb != null ? r.sb : 0)));
+      } else {
+        tr.appendChild(el("td", "num", String(r.bh != null ? r.bh : 0)));
+        tr.appendChild(el("td", "num", String(r.mbh != null ? r.mbh : 0)));
+      }
       tr.appendChild(el("td", "num", String(r.wins)));
       tr.appendChild(el("td", "prob", Number(r.champ_prob).toFixed(2) + "%"));
       tbody.appendChild(tr);
