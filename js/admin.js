@@ -14,9 +14,6 @@
   var lineStatsEl = document.getElementById("lineStats");
   var previewBtn = document.getElementById("previewBtn");
   var submitServerBtn = document.getElementById("submitServerBtn");
-  var champTourSelectEl = document.getElementById("champTourSelect");
-  var champStageSelectEl = document.getElementById("champStageSelect");
-  var calcChampBtn = document.getElementById("calcChampBtn");
   var downloadTxtBtn = document.getElementById("downloadTxtBtn");
   var downloadDbBtn = document.getElementById("downloadDbBtn");
   var clearBtn = document.getElementById("clearBtn");
@@ -92,15 +89,6 @@
           html += '<option value="' + t.tournament_id + '">#' + t.tournament_id + " " + escHtml(t.name) + " (" + (t.start_date || "") + ")</option>";
         });
         tournamentSelectEl.innerHTML = html;
-        if (champTourSelectEl) {
-          var numbered = tournamentsList.filter(function (t) { return !!t.numbered; });
-          var listForChamp = numbered.length ? numbered : tournamentsList;
-          var chHtml = '<option value="0">全部有编号赛事 (' + listForChamp.length + '项)</option>';
-          listForChamp.forEach(function (t) {
-            chHtml += '<option value="' + t.tournament_id + '">#' + t.tournament_id + " " + escHtml(t.name) + " (" + (t.start_date || "") + ")</option>";
-          });
-          champTourSelectEl.innerHTML = chHtml;
-        }
       })
       .catch(function () {});
   }
@@ -562,48 +550,6 @@
         })
         .finally(function () {
           submitServerBtn.disabled = false;
-        });
-    });
-  }
-
-  if (calcChampBtn) {
-    calcChampBtn.addEventListener("click", function () {
-      var apiTok = (apiTokenEl && apiTokenEl.value.trim()) || localStorage.getItem(API_TOKEN_KEY) || "";
-      if (!apiTok) {
-        setStatus("请先填写并保存「服务器 API 密钥」。", true);
-        return;
-      }
-      var tid = champTourSelectEl ? Number(champTourSelectEl.value || 0) : 0;
-      var stages = champStageSelectEl ? (champStageSelectEl.value || "all") : "all";
-      calcChampBtn.disabled = true;
-      setStatus("正在后台启动夺冠概率计算 ...", false);
-      fetch(API_BASE + "admin/calc-champ-probs", {
-        method: "POST",
-        headers: {
-          "Authorization": "Bearer " + apiTok,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ tournament_id: tid, stages: stages })
-      })
-        .then(function (resp) {
-          return resp.json().then(function (data) {
-            if (!resp.ok) throw new Error(data.detail || ("HTTP " + resp.status));
-            return data;
-          });
-        })
-        .then(function (data) {
-          if (data && data.status === "already_running") {
-            setStatus("服务器已有夺冠概率计算任务正在后台运行。", false);
-          } else {
-            var scopeTxt = (tid ? ("赛事 #" + tid) : "全部有编号赛事") + " · 阶段 " + escHtml(stages);
-            setStatus("已启动夺冠概率计算（" + scopeTxt + "，1,000,000 次蒙特卡洛模拟，算完即刻生效）。", false);
-          }
-        })
-        .catch(function (err) {
-          setStatus("启动夺冠概率计算失败: " + escHtml(err.message), true);
-        })
-        .finally(function () {
-          calcChampBtn.disabled = false;
         });
     });
   }
