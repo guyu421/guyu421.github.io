@@ -124,8 +124,9 @@
       return a.no - b.no || a.name.localeCompare(b.name);
     });
     lines.push("[棋手]");
-    roster.forEach(function (p, idx) {
-      lines.push((p.no !== 9999 ? p.no : idx + 1) + " " + p.name);
+    roster.forEach(function (p) {
+      // 没有参赛编号的赛事，只写姓名，不编造编号
+      lines.push(p.no !== 9999 ? (p.no + " " + p.name) : p.name);
     });
     lines.push("");
 
@@ -191,6 +192,7 @@
     txtEditorEl.value = [
       "# 新建赛事模板（若填 赛事ID: 则为覆盖更新；留空则自动分配新赛事ID）",
       "# 棋手可直接写姓名、数据库编号(如 135 或 id:135) 或 #参赛编号(如 #1)",
+      "# [棋手] 行可不写参赛编号（只写姓名），或整段删掉 [棋手]：则该赛事无编号，不做夺冠概率计算",
       "赛事: 2026年示例锦标赛-公开组",
       "规则: 塔拉山口-10",
       "单循环: 否",
@@ -278,10 +280,11 @@
       }
       if (section === "players") {
         var mPl = line.match(/^(\d+)\s+(.+)$/);
-        if (!mPl) {
-          errors.push("第 " + lineNo + " 行棋手格式错误: " + line);
-        } else {
+        if (mPl) {
           roster.push({ no: Number(mPl[1]), name: mPl[2].trim() });
+        } else {
+          // 没有参赛编号：整行即棋手（姓名 / 数据库ID / 带 * 新建重名）
+          roster.push({ no: null, name: line });
         }
         return;
       }
@@ -407,7 +410,7 @@
 
     var rosterNoToToken = {};
     parsed.roster.forEach(function (p) {
-      rosterNoToToken[p.no] = p.name;
+      if (p.no != null) rosterNoToToken[p.no] = p.name;
     });
 
     function resolvePreviewPlayer(tok) {
