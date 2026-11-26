@@ -131,9 +131,9 @@
     if (titleEl) {
       var modeLabel = isRR ? "贝格尔单循环" : "云蛇 v3.998 拦腰编排";
       if (round === "pre") {
-        titleEl.textContent = "赛前预测（" + modeLabel + "）";
+        titleEl.textContent = "抽签前预测（" + modeLabel + "）";
       } else if (round === "draw") {
-        titleEl.textContent = "抽签后预测（" + modeLabel + "）";
+        titleEl.textContent = "首轮前预测（" + modeLabel + "）";
       } else {
         titleEl.textContent = "第" + round + "轮后积分与夺冠概率（" + modeLabel + "）";
       }
@@ -914,9 +914,9 @@
     if (titleEl) {
       var modeLabel = isRR ? "贝格尔单循环" : "云蛇 v3.998 拦腰编排";
       if (round === "pre") {
-        titleEl.textContent = "赛前预测（" + modeLabel + "）";
+        titleEl.textContent = "抽签前预测（" + modeLabel + "）";
       } else if (round === "draw") {
-        titleEl.textContent = "抽签后预测（" + modeLabel + "）";
+        titleEl.textContent = "首轮前预测（" + modeLabel + "）";
       } else {
         titleEl.textContent = "第" + round + "轮后积分与夺冠概率（" + modeLabel + "）";
       }
@@ -971,9 +971,9 @@
       var option = document.createElement("option");
       option.value = String(round);
       if (round === "pre") {
-        option.textContent = "赛前预测";
+        option.textContent = "抽签前预测";
       } else if (round === "draw") {
-        option.textContent = "抽签后预测";
+        option.textContent = "首轮前预测";
       } else {
         option.textContent = "第" + round + "轮";
         realRoundCount++;
