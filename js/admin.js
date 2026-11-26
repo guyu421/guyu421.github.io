@@ -637,7 +637,7 @@
   if (downloadDbBtn) {
     downloadDbBtn.addEventListener("click", function () {
       downloadDbBtn.disabled = true;
-      setStatus("正在从服务器打包下载数据库 (CSV .zip) ...", false);
+      setStatus("正在从服务器打包下载数据库 (SQL .zip) ...", false);
       fetch(API_BASE + "admin/db.zip?t=" + Date.now())
         .then(function (r) {
           if (!r.ok) throw new Error("HTTP " + r.status);
