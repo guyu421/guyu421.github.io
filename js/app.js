@@ -1105,7 +1105,7 @@
     syncTourViewSeg();
   }
 
-  var tourActiveView = "all";
+  var tourActiveView = "games";
   function syncTourViewSeg() {
     var seg = document.getElementById("tourViewSeg");
     var standingsWrap = document.getElementById("roundStandingsWrap");
@@ -1121,16 +1121,14 @@
       return;
     }
     seg.style.display = "flex";
-    if (tourActiveView === "games") {
-      if (hasCards) cardsWrap.style.display = "";
-      if (standingsWrap) standingsWrap.style.display = "none";
-    } else if (tourActiveView === "standings") {
+    if (tourActiveView === "standings") {
       if (cardsWrap) cardsWrap.style.display = "none";
       if (teamWrap) teamWrap.style.display = "none";
       if (standingsWrap) standingsWrap.style.display = "block";
     } else {
       if (hasCards) cardsWrap.style.display = "";
-      if (standingsWrap) standingsWrap.style.display = "block";
+      if (hasTeam) teamWrap.style.display = "";
+      if (standingsWrap) standingsWrap.style.display = "none";
     }
   }
 

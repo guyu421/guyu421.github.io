@@ -136,7 +136,21 @@ main.container .sd-col[data-admin-page] {
 }
 
 .mc-draw.is-lean {
+  padding: 0.1em 0.42em;
+  border-radius: 5px;
+  font-size: 0.78rem;
   font-weight: 700;
+  line-height: 1.3;
+}
+
+.mc-draw.is-lean.lean-green {
+  background: hsl(var(--green-base));
+  color: hsl(var(--on-fill));
+}
+
+.mc-draw.is-lean.lean-grey {
+  background: #6b7280;
+  color: #ffffff;
 }
 
 /* Standings & Feed Tables -> sport.dev .ladder-table */
