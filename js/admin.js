@@ -1,6 +1,6 @@
 (function () {
-  var DATA_BASE = (location.hostname === "66-42-93-24.sslip.io" || location.hostname === "66.42.93.24" || location.hostname === "localhost" || location.hostname === "127.0.0.1") ? "data/" : "https://66-42-93-24.sslip.io/data/";
-  var API_BASE = (location.hostname === "66-42-93-24.sslip.io" || location.hostname === "66.42.93.24" || location.hostname === "localhost" || location.hostname === "127.0.0.1") ? "api/" : "https://66-42-93-24.sslip.io/api/";
+  var DATA_BASE = (location.hostname === "renjuonline.top" || location.hostname === "www.renjuonline.top" || location.hostname === "66-42-93-24.sslip.io" || location.hostname === "66.42.93.24" || location.hostname === "localhost" || location.hostname === "127.0.0.1") ? "data/" : "https://66-42-93-24.sslip.io/data/";
+  var API_BASE = (location.hostname === "renjuonline.top" || location.hostname === "www.renjuonline.top" || location.hostname === "66-42-93-24.sslip.io" || location.hostname === "66.42.93.24" || location.hostname === "localhost" || location.hostname === "127.0.0.1") ? "api/" : "https://66-42-93-24.sslip.io/api/";
   var API_TOKEN_KEY = "renju_admin_api_token";
 
   var apiTokenEl = document.getElementById("apiToken");

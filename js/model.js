@@ -1,5 +1,5 @@
 (function () {
-  var DATA_BASE = (location.hostname === "66-42-93-24.sslip.io" || location.hostname === "66.42.93.24" || location.hostname === "localhost" || location.hostname === "127.0.0.1") ? "data/" : "https://66-42-93-24.sslip.io/data/";
+  var DATA_BASE = (location.hostname === "renjuonline.top" || location.hostname === "www.renjuonline.top" || location.hostname === "66-42-93-24.sslip.io" || location.hostname === "66.42.93.24" || location.hostname === "localhost" || location.hostname === "127.0.0.1") ? "data/" : "https://66-42-93-24.sslip.io/data/";
   var legendEl = document.getElementById("modelLegend");
   var wrapEl = document.getElementById("modelChartWrap");
   var metricsEl = document.getElementById("modelMetrics");
