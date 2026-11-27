@@ -807,35 +807,18 @@
     var tbody = table.tBodies[0];
     // 表头是 tbody 的第一行，只清数据行
     while (tbody.rows.length > 1) tbody.deleteRow(tbody.rows.length - 1);
-    // 按轮次累计上轮积分，供对阵表在选手姓名后显示 [上轮积分]
-    var prevPtsByRound = {};
-    var byR = {};
-    (data.games || []).forEach(function (g) {
-      var r = Number(g.round);
-      if (!isNaN(r)) {
-        if (!byR[r]) byR[r] = [];
-        byR[r].push(g);
+    // 直接从 round_standings 读取上轮积分（第1轮读 draw/pre，第r轮读 r-1），没有则不标
+    var rs = (data && data.round_standings) || {};
+    function lookupPrevPts(rnd, pid, name) {
+      var list = rnd > 1 ? rs[String(rnd - 1)] : (rs.draw || rs.pre);
+      if (!list || !list.length) return null;
+      for (var i = 0; i < list.length; i++) {
+        var row = list[i];
+        if (pid != null && row.player_id === pid) return row.pts != null ? row.pts : null;
+        if (pid == null && name && row.name === name) return row.pts != null ? row.pts : null;
       }
-    });
-    var accPts = {};
-    Object.keys(byR).map(Number).sort(function (a, b) { return a - b; }).forEach(function (r) {
-      var snap = {};
-      Object.keys(accPts).forEach(function (k) { snap[k] = accPts[k]; });
-      prevPtsByRound[r] = snap;
-      byR[r].forEach(function (g) {
-        var fk = g.first_id != null ? String(g.first_id) : ("n:" + (g.first || ""));
-        var sk = g.second_id != null ? String(g.second_id) : ("n:" + (g.second || ""));
-        var res = String(g.result || "");
-        if (res === "1" || res === "+-") {
-          if (g.first && g.first !== "轮空") accPts[fk] = (accPts[fk] || 0) + 1;
-        } else if (res === "0" || res === "-+") {
-          if (g.second && g.second !== "轮空") accPts[sk] = (accPts[sk] || 0) + 1;
-        } else if (res === "0.5") {
-          if (g.first && g.first !== "轮空") accPts[fk] = (accPts[fk] || 0) + 0.5;
-          if (g.second && g.second !== "轮空") accPts[sk] = (accPts[sk] || 0) + 0.5;
-        }
-      });
-    });
+      return null;
+    }
 
     var roundNum = round !== null ? Number(round) : null;
     (data.games || []).forEach(function (game) {
@@ -847,11 +830,9 @@
       tr.appendChild(day);
       tr.appendChild(el("td", "rnd", "第" + game.round + "轮 第" + game.board + "台"));
       tr.appendChild(el("td", "rule", game.rule || ""));
-      var rSnap = prevPtsByRound[Number(game.round)] || {};
-      var fk = game.first_id != null ? String(game.first_id) : ("n:" + (game.first || ""));
-      var sk = game.second_id != null ? String(game.second_id) : ("n:" + (game.second || ""));
-      var fPrev = rSnap[fk] != null ? rSnap[fk] : 0;
-      var sPrev = rSnap[sk] != null ? rSnap[sk] : 0;
+      var gr = Number(game.round);
+      var fPrev = lookupPrevPts(gr, game.first_id, game.first);
+      var sPrev = lookupPrevPts(gr, game.second_id, game.second);
       tr.appendChild(playerCell(game.first, game.first_id, game.first_no, fPrev));
       // 轮空也照库里填的记分显示（一般是 +:-），与其它台次一致
       var scoreTd = el("td", "score");
