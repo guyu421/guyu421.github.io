@@ -858,7 +858,7 @@
         if (val == null) return td;
         var txt = val.toFixed(1) + "%";
         if (pMax != null && val === pMax) {
-          td.appendChild(el("span", "prob-pill " + (val >= 60 ? "is-green" : "is-slate"), txt));
+          td.appendChild(el("span", "prob-pill " + (val >= 50 ? "is-green" : "is-slate"), txt));
         } else {
           td.textContent = txt;
         }
@@ -922,6 +922,14 @@
     });
     tbody.appendChild(headTr);
 
+    var maxChamp = 0;
+    if (hasChamp) {
+      rows.forEach(function (r) {
+        var v = r.champ_prob != null ? Number(r.champ_prob) : 0;
+        if (v > maxChamp) maxChamp = v;
+      });
+    }
+
     rows.forEach(function (r) {
       var tr = el("tr");
       tr.appendChild(el("td", "num", String(r.rank)));
@@ -936,10 +944,8 @@
         var cpVal = r.champ_prob != null ? Number(r.champ_prob) : null;
         if (cpVal != null) {
           var cpTxt = cpVal.toFixed(2) + "%";
-          if (cpVal >= 50) {
-            cpTd.appendChild(el("span", "prob-pill is-green", cpTxt));
-          } else if (r.rank === 1 && cpVal > 0) {
-            cpTd.appendChild(el("span", "prob-pill is-slate", cpTxt));
+          if (maxChamp > 0 && cpVal === maxChamp) {
+            cpTd.appendChild(el("span", "prob-pill " + (cpVal >= 50 ? "is-green" : "is-slate"), cpTxt));
           } else {
             cpTd.textContent = cpTxt;
           }
