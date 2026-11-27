@@ -3,44 +3,28 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script>(function(){try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}})()</script>
   <title>模型 — renjuonline.top</title>
-  <link rel="icon" type="image/png" sizes="48x48" href="/assets/favicon.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
-  <link rel="preload" href="/assets/fonts/jersey10-sd.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="stylesheet" href="/assets/mrgold.css" />
-  <link rel="stylesheet" href="css/site.css?v=10" />
+  <link rel="stylesheet" href="css/site.css?v=11" />
 </head>
-<body class="filter-bar-visible">
-  <nav class="top-nav">
-    <div class="nav-left">
-      <a href="index.html" class="logo-text"><span class="logo-hash hash-combo">#</span>renju.dev</a>
-    </div>
-    <div class="nav-right">
-      <button type="button" id="theme-toggle-btn" aria-label="切换主题" onclick="(function(){var d=document.documentElement.classList.toggle('dark');try{localStorage.setItem('theme',d?'dark':'light');}catch(e){}})()">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="4"></circle>
-          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
-        </svg>
-      </button>
-    </div>
-  </nav>
-
-  <div id="main-tab-bar-container">
-    <div class="main-tab-bar">
-      <div class="main-tab-scroll">
-        <div class="main-tab-group main-tab-filters">
-          <a class="main-tab" href="index.html">赛事</a>
-          <a class="main-tab" href="players.html">棋手</a>
-          <a class="main-tab active" href="model.html">模型</a>
-        </div>
+<body>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <div class="site-topbar">
+        <a href="index.html" class="site-brand"><span class="site-brand-dot"></span>renjuonline.top</a>
       </div>
+      <nav class="site-nav-tabs" aria-label="主导航">
+        <a class="site-nav-tab" href="index.html">赛事</a>
+        <a class="site-nav-tab" href="players.html">棋手</a>
+        <a class="site-nav-tab active" href="model.html">模型</a>
+      </nav>
     </div>
-  </div>
+  </header>
 
-  <main class="container">
+  <main class="page-container">
     <div id="primaryContent">
-      <h1>预测模型</h1>
+      <div class="page-head">
+        <h1>预测模型</h1>
+      </div>
 
       <div class="model-section">
         <h2>模型原理</h2>
@@ -92,6 +76,6 @@
       </div>
     </div>
   </main>
-  <script src="js/model.js?v=10"></script>
+  <script src="js/model.js?v=11"></script>
 </body>
 </html>

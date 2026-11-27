@@ -3,45 +3,42 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script>(function(){try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}})()</script>
   <title>对局详情 — renjuonline.top</title>
-  <link rel="icon" type="image/png" sizes="48x48" href="/assets/favicon.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
-  <link rel="preload" href="/assets/fonts/jersey10-sd.woff2" as="font" type="font/woff2" crossorigin />
-  <link rel="stylesheet" href="/assets/mrgold.css" />
-  <link rel="stylesheet" href="css/site.css?v=10" />
+  <link rel="stylesheet" href="css/site.css?v=11" />
 </head>
-<body class="filter-bar-visible">
-  <nav class="top-nav">
-    <div class="nav-left">
-      <a href="index.html" class="logo-text"><span class="logo-hash hash-combo">#</span>renju.dev</a>
-    </div>
-    <div class="nav-right">
-      <button type="button" id="theme-toggle-btn" aria-label="切换主题" onclick="(function(){var d=document.documentElement.classList.toggle('dark');try{localStorage.setItem('theme',d?'dark':'light');}catch(e){}})()">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="4"></circle>
-          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
-        </svg>
-      </button>
-    </div>
-  </nav>
-
-  <div id="main-tab-bar-container">
-    <div class="main-tab-bar">
-      <div class="main-tab-scroll">
-        <div class="main-tab-group main-tab-filters">
-          <a class="main-tab active" href="index.html">赛事</a>
-          <a class="main-tab" href="players.html">棋手</a>
-          <a class="main-tab" href="model.html">模型</a>
-        </div>
+<body>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <div class="site-topbar">
+        <a href="index.html" class="site-brand"><span class="site-brand-dot"></span>renjuonline.top</a>
       </div>
+      <nav class="site-nav-tabs" aria-label="主导航">
+        <a class="site-nav-tab active" href="index.html">赛事</a>
+        <a class="site-nav-tab" href="players.html">棋手</a>
+        <a class="site-nav-tab" href="model.html">模型</a>
+      </nav>
     </div>
-  </div>
+  </header>
 
-  <main class="container">
+  <main class="page-container">
     <div id="primaryContent" data-game-page>
-      <h1 id="gameTitle">对局详情</h1>
-      <div id="gameMeta" class="game-meta"></div>
+      <div class="game-hero" id="gameHero" style="display:none;">
+        <div class="game-hero-top">
+          <a href="index.html" class="game-hero-back" id="gameHeroBack">‹ 返回</a>
+          <span id="gameHeroDate"></span>
+        </div>
+        <div class="game-hero-tour" id="gameHeroTour"></div>
+        <div class="game-hero-main">
+          <div class="game-hero-player" id="gameHeroFirst"></div>
+          <div class="game-hero-score-circle" id="gameHeroScore">vs</div>
+          <div class="game-hero-player" id="gameHeroSecond"></div>
+        </div>
+        <div class="game-hero-pill" id="gameHeroStatus"></div>
+      </div>
+
+      <h1 id="gameTitle" style="display:none;">对局详情</h1>
+      <div id="gameMeta" class="game-meta-card"></div>
+
       <div class="board-wrap">
         <canvas id="renjuBoard" width="480" height="480"></canvas>
       </div>
@@ -54,6 +51,6 @@
       </div>
     </div>
   </main>
-  <script src="js/game.js?v=10"></script>
+  <script src="js/game.js?v=11"></script>
 </body>
 </html>
