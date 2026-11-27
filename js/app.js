@@ -849,9 +849,24 @@
       }
       tr.appendChild(scoreTd);
       tr.appendChild(playerCell(game.second, game.second_id, game.second_no, sPrev));
-      tr.appendChild(el("td", "prob", game.p_first != null ? Number(game.p_first).toFixed(1) + "%" : ""));
-      tr.appendChild(el("td", "prob", game.p_draw != null ? Number(game.p_draw).toFixed(1) + "%" : ""));
-      tr.appendChild(el("td", "prob", game.p_second != null ? Number(game.p_second).toFixed(1) + "%" : ""));
+      var pf = game.p_first != null ? Number(game.p_first) : null;
+      var pd = game.p_draw != null ? Number(game.p_draw) : null;
+      var ps = game.p_second != null ? Number(game.p_second) : null;
+      var pMax = (pf != null && pd != null && ps != null) ? Math.max(pf, pd, ps) : null;
+      function makeProbTd(val) {
+        var td = el("td", "prob");
+        if (val == null) return td;
+        var txt = val.toFixed(1) + "%";
+        if (pMax != null && val === pMax) {
+          td.appendChild(el("span", "prob-pill " + (val >= 60 ? "is-green" : "is-slate"), txt));
+        } else {
+          td.textContent = txt;
+        }
+        return td;
+      }
+      tr.appendChild(makeProbTd(pf));
+      tr.appendChild(makeProbTd(pd));
+      tr.appendChild(makeProbTd(ps));
       tbody.appendChild(tr);
     });
     renderRoundStandings(data, round);
@@ -917,7 +932,19 @@
         tr.appendChild(el("td", "num", val != null ? String(val) : ""));
       });
       if (hasChamp) {
-        tr.appendChild(el("td", "prob", Number(r.champ_prob).toFixed(2) + "%"));
+        var cpTd = el("td", "prob");
+        var cpVal = r.champ_prob != null ? Number(r.champ_prob) : null;
+        if (cpVal != null) {
+          var cpTxt = cpVal.toFixed(2) + "%";
+          if (cpVal >= 50) {
+            cpTd.appendChild(el("span", "prob-pill is-green", cpTxt));
+          } else if (r.rank === 1 && cpVal > 0) {
+            cpTd.appendChild(el("span", "prob-pill is-slate", cpTxt));
+          } else {
+            cpTd.textContent = cpTxt;
+          }
+        }
+        tr.appendChild(cpTd);
       }
       tbody.appendChild(tr);
     });

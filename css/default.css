@@ -75,84 +75,22 @@ textarea:focus-visible {
 	min-height: 100vh;
 }
 
-/* Header & Navigation — Sport.dev Two-Tier Top Bar + Category Tab Bar */
+/* Header & Navigation — Sport.dev 51px top bar + hairline border */
 
-#header.top-nav {
-	position: sticky;
-	top: 0;
-	z-index: 40;
+#header {
+	position: relative;
 	background: var(--header-bg);
 	border-bottom: 1px solid var(--line);
 	height: 51px;
-	padding: 0 1.25rem;
+	padding: 0 max(1.5rem, calc((100% - 960px) / 2));
 }
 
-.top-nav-in {
-	max-width: 780px;
-	height: 100%;
-	margin: 0 auto;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-}
-
-.brand {
-	font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-	font-size: 1.2rem;
-	font-weight: 800;
-	letter-spacing: -0.03em;
-	color: var(--ink);
-	text-decoration: none;
-	display: inline-flex;
-	align-items: center;
-	gap: 0.25rem;
-}
-
-.brand:hover {
-	color: var(--ink);
-	text-decoration: none;
-}
-
-.brand-hash {
-	color: var(--accent);
-}
-
-.nav-pill-btn {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	padding: 0.3rem 0.85rem;
-	font-size: 0.84rem;
-	font-weight: 600;
-	color: var(--ink);
-	background: var(--surface);
-	border: 1px solid var(--line);
-	border-radius: var(--radius-sm);
-	text-decoration: none;
-	transition: background-color 120ms ease, border-color 120ms ease;
-}
-
-.nav-pill-btn:hover {
-	color: var(--ink);
-	background: var(--surface-alt);
-	border-color: var(--line-strong);
-	text-decoration: none;
-}
-
-#menu.tab-bar {
-	position: sticky;
-	top: 51px;
-	z-index: 39;
-	background: var(--header-bg);
-	border-bottom: 1px solid var(--line);
-	height: 42px;
-	padding: 0 1.25rem;
-}
-
-.tab-bar-in {
-	max-width: 780px;
-	height: 100%;
-	margin: 0 auto;
+#menu {
+	position: absolute;
+	top: 0;
+	left: max(1.5rem, calc((100% - 960px) / 2));
+	right: max(1.5rem, calc((100% - 960px) / 2));
+	height: 51px;
 	display: flex;
 	align-items: center;
 }
@@ -161,8 +99,17 @@ textarea:focus-visible {
 	list-style: none;
 	display: flex;
 	align-items: center;
-	gap: 1.35rem;
+	gap: 1.25rem;
 	height: 100%;
+}
+
+#menu ul::before {
+	content: "#";
+	color: var(--accent);
+	font-weight: 900;
+	font-size: 1.25rem;
+	line-height: 1;
+	margin-right: -0.35rem;
 }
 
 #menu li {
@@ -180,8 +127,8 @@ textarea:focus-visible {
 	align-items: center;
 	height: 100%;
 	color: var(--muted);
-	padding: 0 0.15rem;
-	font-size: 0.92rem;
+	padding: 0 0.2rem;
+	font-size: 0.94rem;
 	font-weight: 600;
 	text-decoration: none;
 	transition: color 120ms ease;
@@ -200,14 +147,12 @@ textarea:focus-visible {
 	transition: transform 150ms ease;
 }
 
-#menu li a:hover,
-#menu li a.is-active {
+#menu li a:hover {
 	color: var(--ink);
 	text-decoration: none;
 }
 
-#menu li a:hover::after,
-#menu li a.is-active::after {
+#menu li a:hover::after {
 	transform: scaleX(1);
 }
 
@@ -421,12 +366,12 @@ textarea:focus-visible {
 	float: none;
 	margin: 0 auto;
 	width: 100%;
-	max-width: 780px;
+	max-width: 960px;
 }
 
 #primaryContent {
 	margin: 0;
-	padding: 1.35rem 1.25rem 2.75rem;
+	padding: 1.4rem 1.5rem 2.75rem;
 }
 
 .clear {
