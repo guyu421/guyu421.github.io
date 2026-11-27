@@ -652,8 +652,9 @@
     }
     while (tbody.rows.length > 1) tbody.deleteRow(tbody.rows.length - 1);
 
+    var roundNum = round !== null ? Number(round) : null;
     (data.team_matches || []).forEach(function (tm) {
-      if (round !== null && Number(tm.round) !== round) return;
+      if (roundNum !== null && Number(tm.round) !== roundNum) return;
 
       // 团体对抗汇总行（沿用原有表格列：日期 | 轮次 | 规则 | 队伍A | 局分 | 队伍B | 胜% | 平% | 负%）
       var tr = el("tr");
