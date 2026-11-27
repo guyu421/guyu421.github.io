@@ -16,6 +16,10 @@ body,
 	overflow-x: auto;
 	-webkit-overflow-scrolling: touch;
 	margin-bottom: 1.5em;
+	background: var(--surface, #fff);
+	border: 1px solid var(--line, #e5e1d8);
+	border-radius: var(--radius-md, 10px);
+	box-shadow: var(--shadow-sm, 0 1px 3px rgba(20, 18, 14, 0.05));
 }
 
 .table-wrap > table {
@@ -26,7 +30,7 @@ body,
 
 @media (max-width: 1023px) {
 	#primaryContent {
-		padding: 1.2em 1.6em 1.2em 1.6em;
+		padding: 1.35rem 1.25rem 2.25rem;
 	}
 }
 
@@ -39,40 +43,43 @@ body,
 	}
 
 	#header {
-		height: 3em;
-		padding-left: 0em;
+		height: 3.25rem;
+		padding: 0 0.9rem;
 	}
 
 	#menu {
 		position: absolute;
-		top: 0em;
-		left: 0em;
-		right: 0em;
-		height: 3em;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 3.25rem;
 		display: flex;
 		align-items: center;
-		padding: 0em 1em;
+		padding: 0 0.9rem;
 		box-sizing: border-box;
 	}
 
 	#menu ul {
 		display: flex;
 		align-items: center;
+		gap: 0.25rem;
 	}
 
 	#menu li {
-		margin-left: 0.9em;
-		padding-left: 0.9em;
+		margin-left: 0.45rem;
+		padding-left: 0.55rem;
 	}
 
 	#menu li a {
-		display: inline-block;
-		padding: 0.5em 0em;
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+		padding: 0 0.5rem;
 	}
 
 	#primaryContent {
-		margin-top: 0.8em;
-		padding: 0.4em 0.75em 1em 0.75em;
+		margin-top: 0;
+		padding: 1rem 0.85rem 2rem;
 	}
 
 	#content h1 {
@@ -533,33 +540,48 @@ a.score-link:hover {
 
 .round-pick select {
 	font: inherit;
-	font-size: 0.95em;
-	padding: 0.15em 0.3em;
-	border: solid 1px #c3ccd2;
-	border-radius: 3px;
-	background: #fff;
-	color: #333;
+	font-size: 0.94em;
+	padding: 0.35em 0.6em;
+	min-height: 36px;
+	border: 1px solid var(--line-strong, #cfc9bc);
+	border-radius: var(--radius-sm, 6px);
+	background: var(--surface, #fff);
+	color: var(--ink, #1c1b18);
+	transition: border-color 140ms ease;
+}
+
+.round-pick select:hover {
+	border-color: var(--accent, #0f4c75);
 }
 
 .round-nav {
 	font: inherit;
-	font-size: 0.95em;
+	font-size: 0.94em;
 	line-height: 1;
-	padding: 0.3em 0.6em;
-	border: solid 1px #c3ccd2;
-	border-radius: 3px;
-	background: #fff;
-	color: #333;
+	min-width: 36px;
+	min-height: 36px;
+	padding: 0.4em 0.75em;
+	border: 1px solid var(--line-strong, #cfc9bc);
+	border-radius: var(--radius-sm, 6px);
+	background: var(--surface, #fff);
+	color: var(--ink, #1c1b18);
 	cursor: pointer;
+	transition: transform 120ms ease, background-color 140ms ease, border-color 140ms ease;
 }
 
 .round-nav:hover:enabled {
-	background: #eef2f5;
+	background: var(--surface-hover, #eef2f6);
+	border-color: var(--accent, #0f4c75);
+	transform: translateY(-1px);
+}
+
+.round-nav:active:enabled {
+	transform: translateY(0);
 }
 
 .round-nav:disabled {
 	color: #bec6cc;
-	border-color: #e1e6ea;
+	border-color: var(--line, #e5e1d8);
 	cursor: default;
 }
 
@@ -854,10 +876,17 @@ a.score-link:hover {
 }
 
 .model-metric-card {
-	background: #f6f8fa;
-	border: 1px solid #dce2e8;
-	border-radius: 6px;
-	padding: 0.6em 0.8em;
+	background: var(--surface, #ffffff);
+	border: 1px solid var(--line, #e5e1d8);
+	border-radius: var(--radius-md, 10px);
+	padding: 0.8rem 1rem;
+	box-shadow: var(--shadow-sm, 0 1px 3px rgba(20, 18, 14, 0.05));
+	transition: transform 150ms ease, border-color 150ms ease;
+}
+
+.model-metric-card:hover {
+	transform: translateY(-2px);
+	border-color: var(--line-strong, #cfc9bc);
 }
 
 .model-metric-label {
