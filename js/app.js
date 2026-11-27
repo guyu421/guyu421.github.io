@@ -952,6 +952,9 @@
         if (name === "轮空") {
           nm.appendChild(el("span", "mc-name", name));
         } else {
+          if (no !== null && no !== undefined && no !== "") {
+            nm.appendChild(el("span", "player-no", String(no)));
+          }
           var nameEl = el("span", "mc-name");
           if (id) {
             var link = el("a", "mc-player-link", name);
@@ -961,11 +964,8 @@
             nameEl.textContent = name || "";
           }
           nm.appendChild(nameEl);
-          var chipParts = [];
-          if (no !== null && no !== undefined && no !== "") chipParts.push("#" + no);
-          if (prevPts !== null && prevPts !== undefined && prevPts !== "") chipParts.push(prevPts + "分");
-          if (chipParts.length) {
-            nm.appendChild(el("span", "mc-chip", chipParts.join(" · ")));
+          if (prevPts !== null && prevPts !== undefined && prevPts !== "") {
+            nm.appendChild(el("span", "mc-chip mc-pts-chip", prevPts + "分"));
           }
         }
         side.appendChild(nm);

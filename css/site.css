@@ -131,6 +131,14 @@ main.container .sd-col[data-admin-page] {
   font-weight: 600;
 }
 
+.mc-side.is-away .mc-pts-chip {
+  order: 0;
+}
+
+.mc-nm .player-no {
+  margin-right: 0;
+}
+
 .mc-pct.is-lean {
   display: inline-block;
 }
