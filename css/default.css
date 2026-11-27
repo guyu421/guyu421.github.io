@@ -1,25 +1,27 @@
-/* Design System Tokens — Editorial Renju Ratings */
+/* Design System Tokens — Sport.dev Dark Analytics Style */
 
 :root {
-	--bg: #f7f6f2;
-	--surface: #ffffff;
-	--surface-alt: #f4f2ec;
-	--surface-hover: #eef2f6;
-	--ink: #1c1b18;
-	--ink-soft: #43413b;
-	--muted: #6b6860;
-	--line: #e5e1d8;
-	--line-strong: #cfc9bc;
-	--accent: #0f4c75;
-	--accent-hover: #0a3757;
-	--header-bg: #0e2f47;
-	--th-bg: #143d59;
-	--win: #157347;
-	--draw: #1d5fa7;
-	--loss: #c0392b;
+	--bg: #090d16;
+	--surface: #111827;
+	--surface-alt: #151e30;
+	--surface-hover: #1d293d;
+	--ink: #f8fafc;
+	--ink-soft: #cbd5e1;
+	--muted: #94a3b8;
+	--line: rgba(148, 163, 184, 0.16);
+	--line-strong: rgba(148, 163, 184, 0.32);
+	--accent: #38bdf8;
+	--accent-hover: #7dd3fc;
+	--neon: #10b981;
+	--neon-soft: rgba(16, 185, 129, 0.14);
+	--header-bg: #060910;
+	--th-bg: #0f172a;
+	--win: #34d399;
+	--draw: #38bdf8;
+	--loss: #f87171;
 	--radius-sm: 6px;
 	--radius-md: 10px;
-	--shadow-sm: 0 1px 3px rgba(20, 18, 14, 0.05);
+	--shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.35);
 }
 
 /* Basic */
@@ -39,6 +41,7 @@ body {
 	line-height: 1.6;
 	color: var(--ink);
 	background-color: var(--bg);
+	background-image: radial-gradient(ellipse 80% 45% at 50% -10%, rgba(16, 185, 129, 0.08), transparent 70%);
 	-webkit-font-smoothing: antialiased;
 }
 
@@ -59,7 +62,7 @@ button:focus-visible,
 select:focus-visible,
 input:focus-visible,
 textarea:focus-visible {
-	outline: 2px solid var(--accent);
+	outline: 2px solid var(--neon);
 	outline-offset: 2px;
 }
 
@@ -77,7 +80,7 @@ textarea:focus-visible {
 #header {
 	position: relative;
 	background: var(--header-bg);
-	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+	border-bottom: 1px solid var(--line);
 	height: 3.6rem;
 	padding: 0 max(1.5rem, calc((100% - 1120px) / 2));
 }
@@ -104,7 +107,7 @@ textarea:focus-visible {
 	align-items: center;
 	padding-left: 0.75rem;
 	margin-left: 0.4rem;
-	border-left: 1px solid rgba(255, 255, 255, 0.16);
+	border-left: 1px solid var(--line);
 }
 
 #menu li.first {
@@ -115,10 +118,10 @@ textarea:focus-visible {
 
 #menu li a {
 	position: relative;
-	color: rgba(255, 255, 255, 0.92);
-	padding: 0.45rem 0.55rem;
+	color: var(--ink-soft);
+	padding: 0.45rem 0.6rem;
 	font-size: 0.95rem;
-	font-weight: 500;
+	font-weight: 600;
 	letter-spacing: 0.01em;
 	text-decoration: none;
 	border-radius: var(--radius-sm);
@@ -128,11 +131,11 @@ textarea:focus-visible {
 #menu li a::after {
 	content: "";
 	position: absolute;
-	left: 0.55rem;
-	right: 0.55rem;
+	left: 0.6rem;
+	right: 0.6rem;
 	bottom: 0.25rem;
 	height: 2px;
-	background: #7ec4f2;
+	background: var(--neon);
 	transform: scaleX(0);
 	transform-origin: left;
 	transition: transform 180ms ease;
@@ -140,7 +143,7 @@ textarea:focus-visible {
 
 #menu li a:hover {
 	color: #ffffff;
-	background: rgba(255, 255, 255, 0.08);
+	background: rgba(255, 255, 255, 0.06);
 	text-decoration: none;
 }
 
@@ -205,7 +208,7 @@ textarea:focus-visible {
 #content blockquote {
 	margin-bottom: 1.25em;
 	padding: 0.75em 1em;
-	border-left: 4px solid var(--accent);
+	border-left: 4px solid var(--neon);
 	background: var(--surface);
 	border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
@@ -229,14 +232,16 @@ textarea:focus-visible {
 
 #content table th {
 	font-weight: 600;
-	font-size: 0.85rem;
-	letter-spacing: 0.02em;
-	padding: 0.68rem 0.85rem;
+	font-size: 0.82rem;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	padding: 0.72rem 0.85rem;
 	text-align: center;
 	white-space: nowrap;
-	color: #ffffff;
+	color: var(--muted);
 	background: var(--th-bg);
-	border-right: 1px solid rgba(255, 255, 255, 0.14);
+	border-bottom: 1px solid var(--line-strong);
+	border-right: 1px solid var(--line);
 }
 
 #content table th:last-child {
@@ -244,7 +249,7 @@ textarea:focus-visible {
 }
 
 #content table th a {
-	color: #ffffff;
+	color: var(--ink);
 }
 
 #content table th.second {
@@ -252,9 +257,9 @@ textarea:focus-visible {
 	padding: 0.65rem 0.85rem;
 	text-align: center;
 	white-space: nowrap;
-	color: #ffffff;
-	background: #4e7c9c;
-	border-right: 1px solid rgba(255, 255, 255, 0.14);
+	color: var(--ink-soft);
+	background: #172338;
+	border-right: 1px solid var(--line);
 }
 
 #content table td {
@@ -270,11 +275,13 @@ textarea:focus-visible {
 #content table td.right,
 #content table td.num {
 	text-align: right;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 #content table td.graynum {
 	text-align: right;
 	color: var(--muted);
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 #content table td.cnum,
@@ -302,7 +309,7 @@ textarea:focus-visible {
 }
 
 #content table tr:nth-child(1) {
-	color: #ffffff;
+	color: var(--muted);
 	background: var(--th-bg);
 }
 
@@ -325,7 +332,7 @@ textarea:focus-visible {
 }
 
 #content table tr.rowH {
-	color: #ffffff;
+	color: var(--muted);
 	background: var(--th-bg);
 }
 

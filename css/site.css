@@ -494,20 +494,21 @@ a.score-link:hover {
 	padding: 0.35em 0.75em;
 	font-size: 0.95em;
 	font-weight: 600;
-	border: 1px solid #c3ccd4;
-	background: #ffffff;
-	color: #2c3e50;
-	border-radius: 4px;
+	border: 1px solid var(--line-strong);
+	background: var(--surface);
+	color: var(--ink);
+	border-radius: var(--radius-sm);
 	cursor: pointer;
+	transition: background-color 140ms ease, border-color 140ms ease;
 }
 
 .board-controls button:hover:not(:disabled) {
-	background: #eef3f8;
-	border-color: #7b93a8;
+	background: var(--surface-hover);
+	border-color: var(--neon);
 }
 
 .board-controls button:disabled {
-	opacity: 0.45;
+	opacity: 0.4;
 	cursor: default;
 }
 
@@ -516,7 +517,7 @@ a.score-link:hover {
 	text-align: center;
 	font-variant-numeric: tabular-nums;
 	font-size: 0.92em;
-	color: #4f5d6b;
+	color: var(--muted);
 }
 
 /* 手机端赛事列表卡片：日期在左上角，靠左排，其余格子仍居中 */
@@ -535,7 +536,7 @@ a.score-link:hover {
 	justify-content: center;
 	gap: 0.45em;
 	margin: 0 0 0.9em;
-	color: #444;
+	color: var(--ink-soft);
 }
 
 .round-pick select {
@@ -543,15 +544,15 @@ a.score-link:hover {
 	font-size: 0.94em;
 	padding: 0.35em 0.6em;
 	min-height: 36px;
-	border: 1px solid var(--line-strong, #cfc9bc);
-	border-radius: var(--radius-sm, 6px);
-	background: var(--surface, #fff);
-	color: var(--ink, #1c1b18);
+	border: 1px solid var(--line-strong);
+	border-radius: var(--radius-sm);
+	background: var(--surface);
+	color: var(--ink);
 	transition: border-color 140ms ease;
 }
 
 .round-pick select:hover {
-	border-color: var(--accent, #0f4c75);
+	border-color: var(--neon);
 }
 
 .round-nav {
@@ -561,17 +562,17 @@ a.score-link:hover {
 	min-width: 36px;
 	min-height: 36px;
 	padding: 0.4em 0.75em;
-	border: 1px solid var(--line-strong, #cfc9bc);
-	border-radius: var(--radius-sm, 6px);
-	background: var(--surface, #fff);
-	color: var(--ink, #1c1b18);
+	border: 1px solid var(--line-strong);
+	border-radius: var(--radius-sm);
+	background: var(--surface);
+	color: var(--ink);
 	cursor: pointer;
 	transition: transform 120ms ease, background-color 140ms ease, border-color 140ms ease;
 }
 
 .round-nav:hover:enabled {
-	background: var(--surface-hover, #eef2f6);
-	border-color: var(--accent, #0f4c75);
+	background: var(--surface-hover);
+	border-color: var(--neon);
 	transform: translateY(-1px);
 }
 
@@ -580,13 +581,13 @@ a.score-link:hover {
 }
 
 .round-nav:disabled {
-	color: #bec6cc;
-	border-color: var(--line, #e5e1d8);
+	color: #475569;
+	border-color: var(--line);
 	cursor: default;
 }
 
 .round-total {
-	color: #6f7b83;
+	color: var(--muted);
 	font-size: 0.9em;
 	white-space: nowrap;
 }
@@ -598,31 +599,32 @@ a.score-link:hover {
 }
 
 #content table th {
-	color: #ffffff;
+	color: var(--muted);
 }
 
 .player-no {
-	color: #8a8a8a;
+	color: var(--muted);
 	font-size: 0.85em;
 	margin-right: 0.25em;
 	font-variant-numeric: tabular-nums;
 }
 
 .player-pts {
-	color: #8a8a8a;
-	font-size: 0.85em;
-	margin-left: 0.25em;
+	color: var(--neon);
+	font-size: 0.82em;
+	margin-left: 0.3em;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 	font-variant-numeric: tabular-nums;
 }
 
 /* 后台管理 */
 
 .admin-panel {
-	background: #f6f8fa;
-	border: 1px solid #dce2e8;
-	border-radius: 6px;
-	padding: 0.7em 0.9em;
-	margin-bottom: 0.85em;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-md);
+	padding: 0.85em 1em;
+	margin-bottom: 0.95em;
 }
 
 .admin-row {
@@ -634,17 +636,18 @@ a.score-link:hover {
 
 .admin-row label {
 	font-size: 0.9em;
-	color: #3a4650;
+	color: var(--ink-soft);
 	font-weight: 600;
 }
 
 .admin-row input,
 .admin-row select {
-	padding: 0.35em 0.55em;
-	border: 1px solid #c6cfd8;
-	border-radius: 4px;
+	padding: 0.4em 0.6em;
+	border: 1px solid var(--line-strong);
+	border-radius: var(--radius-sm);
 	font-size: 0.9em;
-	background: #ffffff;
+	background: var(--bg);
+	color: var(--ink);
 }
 
 .admin-row select {
@@ -653,18 +656,20 @@ a.score-link:hover {
 
 .admin-row button,
 .admin-actions button {
-	padding: 0.42em 0.85em;
-	border: 1px solid #c0c9d2;
-	border-radius: 4px;
-	background: #ffffff;
-	color: #24303a;
+	padding: 0.45em 0.9em;
+	border: 1px solid var(--line-strong);
+	border-radius: var(--radius-sm);
+	background: var(--surface-alt);
+	color: var(--ink);
 	cursor: pointer;
 	font-size: 0.9em;
+	transition: background-color 140ms ease, border-color 140ms ease;
 }
 
 .admin-row button:hover,
 .admin-actions button:hover {
-	background: #eef2f6;
+	background: var(--surface-hover);
+	border-color: var(--neon);
 }
 
 .admin-editor-wrap {
@@ -677,21 +682,21 @@ a.score-link:hover {
 	align-items: center;
 	margin-bottom: 0.35em;
 	font-size: 0.9em;
-	color: #46535e;
+	color: var(--muted);
 }
 
 #txtEditor {
 	width: 100%;
 	min-height: 460px;
 	box-sizing: border-box;
-	padding: 0.8em 0.9em;
+	padding: 0.85em 1em;
 	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 	font-size: 13.5px;
-	line-height: 1.5;
-	border: 1px solid #c6cfd8;
-	border-radius: 6px;
-	background: #fcfdff;
-	color: #1c242b;
+	line-height: 1.55;
+	border: 1px solid var(--line-strong);
+	border-radius: var(--radius-md);
+	background: #0b1120;
+	color: var(--ink);
 	resize: vertical;
 }
 
@@ -804,19 +809,21 @@ a.score-link:hover {
 .model-section h2 {
 	font-size: 1.15em;
 	margin: 0 0 0.65em 0;
-	color: #24303a;
+	color: var(--ink);
 }
 
 .model-desc {
 	margin: 0 0 0.4em 0;
 	line-height: 1.65;
-	color: #333e48;
+	color: var(--ink-soft);
 }
 
 .model-desc code {
-	background: #f2f5f8;
+	background: var(--surface-alt);
+	border: 1px solid var(--line);
+	color: var(--neon);
 	padding: 0.1em 0.35em;
-	border-radius: 3px;
+	border-radius: 4px;
 	font-size: 0.9em;
 }
 
@@ -824,7 +831,7 @@ a.score-link:hover {
 	margin: 0;
 	padding-left: 1.3em;
 	line-height: 1.65;
-	color: #333e48;
+	color: var(--ink-soft);
 }
 
 .model-list li {
@@ -832,9 +839,11 @@ a.score-link:hover {
 }
 
 .model-list code {
-	background: #f2f5f8;
+	background: var(--surface-alt);
+	border: 1px solid var(--line);
+	color: var(--neon);
 	padding: 0.1em 0.35em;
-	border-radius: 3px;
+	border-radius: 4px;
 	font-size: 0.9em;
 }
 
@@ -845,7 +854,7 @@ a.score-link:hover {
 	gap: 0.6em 1.2em;
 	margin-bottom: 0.6em;
 	font-size: 0.92em;
-	color: #2c3842;
+	color: var(--ink-soft);
 }
 
 .model-legend-item {
@@ -876,35 +885,36 @@ a.score-link:hover {
 }
 
 .model-metric-card {
-	background: var(--surface, #ffffff);
-	border: 1px solid var(--line, #e5e1d8);
-	border-radius: var(--radius-md, 10px);
-	padding: 0.8rem 1rem;
-	box-shadow: var(--shadow-sm, 0 1px 3px rgba(20, 18, 14, 0.05));
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-md);
+	padding: 0.85rem 1rem;
+	box-shadow: var(--shadow-sm);
 	transition: transform 150ms ease, border-color 150ms ease;
 }
 
 .model-metric-card:hover {
 	transform: translateY(-2px);
-	border-color: var(--line-strong, #cfc9bc);
+	border-color: var(--neon);
 }
 
 .model-metric-label {
 	font-size: 0.82em;
-	color: #5a6772;
-	margin-bottom: 0.2em;
+	color: var(--muted);
+	margin-bottom: 0.25em;
 }
 
 .model-metric-value {
-	font-size: 1.2em;
+	font-size: 1.3em;
 	font-weight: 700;
-	color: #1f2a33;
+	color: var(--neon);
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 	font-variant-numeric: tabular-nums;
 }
 
 .model-metric-sub {
 	font-size: 0.78em;
-	color: #5a6772;
+	color: var(--muted);
 	margin-top: 0.25em;
 	line-height: 1.35;
 }
@@ -913,6 +923,9 @@ a.score-link:hover {
 	position: relative;
 	width: 100%;
 	background: #ffffff;
+	border-radius: var(--radius-md);
+	border: 1px solid var(--line);
+	padding: 0.5rem;
 }
 
 .model-svg {
