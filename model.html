@@ -1,88 +1,97 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-CN">
+<html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>模型</title>
-  <link href="css/default.css" rel="stylesheet" type="text/css" />
-  <link href="css/site.css?v=6" rel="stylesheet" type="text/css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>(function(){try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}})()</script>
+  <title>模型 — renjuonline.top</title>
+  <link rel="icon" type="image/png" sizes="48x48" href="/assets/favicon.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
+  <link rel="preload" href="/assets/fonts/jersey10-sd.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="/assets/mrgold.css" />
+  <link rel="stylesheet" href="css/site.css?v=10" />
 </head>
-<body>
-  <div id="outer">
-    <header id="header" class="top-nav">
-      <div class="top-nav-in">
-        <a href="index.html" class="brand"><span class="brand-hash">#</span> renjuonline</a>
-        <a href="admin.html" class="nav-pill-btn">管理</a>
-      </div>
-    </header>
-    <nav id="menu" class="tab-bar" aria-label="主导航">
-      <div class="tab-bar-in">
-        <ul>
-          <li class="first"><a href="index.html">赛事</a></li>
-          <li><a href="players.html">棋手</a></li>
-          <li><a href="model.html" class="is-active">模型</a></li>
-        </ul>
-      </div>
-    </nav>
-    <div id="content">
-      <div id="primaryContentContainer">
-        <div id="primaryContent">
-          <h1>预测模型</h1>
+<body class="filter-bar-visible">
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a href="index.html" class="logo-text"><span class="logo-hash hash-combo">#</span>renju.dev</a>
+    </div>
+    <div class="nav-right">
+      <button type="button" id="theme-toggle-btn" aria-label="切换主题" onclick="(function(){var d=document.documentElement.classList.toggle('dark');try{localStorage.setItem('theme',d?'dark':'light');}catch(e){}})()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+        </svg>
+      </button>
+    </div>
+  </nav>
 
-          <div class="model-section">
-            <h2>模型原理</h2>
-            <p class="model-desc">严格不引入未来信息，利用 LightGBM 模型直接输出<code>假先胜</code>、<code>和棋</code>、<code>假后胜</code>三分类概率。</p>
-            <p class="model-desc">所用 5 个特征如下：</p>
-            <ul class="model-list">
-              <li>比赛规则：<code>rule</code></li>
-              <li>双方平均 WHR 等级分：<code>mean_rating</code>（<code>(first_rating + second_rating) / 2</code>）</li>
-              <li>双方等级分差：<code>rating_diff</code>（<code>first_rating - second_rating</code>）</li>
-              <li>假先方 WHR 标准差：<code>first_std</code></li>
-              <li>假后方 WHR 标准差：<code>second_std</code></li>
-            </ul>
-          </div>
-
-          <div class="model-section">
-            <h2>夺冠概率计算</h2>
-            <p class="model-desc">在抽签前、首轮前、每轮结束后结合赛前预测模型胜平负概率进行 <code>1,000,000</code> 次蒙特卡洛模拟：</p>
-            <p class="model-desc">积分编排赛使用云蛇v3.998编排引擎，采用拦腰编排，首轮采用 <code>1-2, 4-3, 5-6</code> 型，启用FIDE调整及轮空补对手分；单循环赛使用贝格尔编排法。</p>
-            <p class="model-desc">在完全并列的 <code>n</code> 名棋手之间，每人均分名次概率（各占 <code>1/n</code>）。</p>
-          </div>
-
-          <div class="model-section">
-            <h2>预测评估指标</h2>
-            <div class="model-metrics" id="modelMetrics"></div>
-            <div class="model-legend" id="modelLegend"></div>
-            <div class="model-chart-wrap" id="modelChartWrap"></div>
-          </div>
-
-          <div class="model-section">
-            <div class="model-legend" id="calLegend">
-              <span class="model-legend-item">
-                <span class="model-legend-dash"></span>
-                <span>完美校准</span>
-              </span>
-              <span class="model-legend-item">
-                <span class="model-legend-line" style="background:#2f6fcd;"></span>
-                <span>假先胜</span>
-              </span>
-              <span class="model-legend-item">
-                <span class="model-legend-line" style="background:#2d9d6f;"></span>
-                <span>和棋</span>
-              </span>
-              <span class="model-legend-item">
-                <span class="model-legend-line" style="background:#d96b27;"></span>
-                <span>假后胜</span>
-              </span>
-            </div>
-            <div class="model-chart-wrap" id="calChartWrap"></div>
-          </div>
+  <div id="main-tab-bar-container">
+    <div class="main-tab-bar">
+      <div class="main-tab-scroll">
+        <div class="main-tab-group main-tab-filters">
+          <a class="main-tab" href="index.html">赛事</a>
+          <a class="main-tab" href="players.html">棋手</a>
+          <a class="main-tab active" href="model.html">模型</a>
         </div>
       </div>
-      <div class="clear"></div>
     </div>
   </div>
-  <script src="js/model.js"></script>
+
+  <main class="container">
+    <div id="primaryContent">
+      <h1>预测模型</h1>
+
+      <div class="model-section">
+        <h2>模型原理</h2>
+        <p class="model-desc">严格不引入未来信息，利用 LightGBM 模型直接输出<code>假先胜</code>、<code>和棋</code>、<code>假后胜</code>三分类概率。</p>
+        <p class="model-desc">所用 5 个特征如下：</p>
+        <ul class="model-list">
+          <li>比赛规则：<code>rule</code></li>
+          <li>双方平均 WHR 等级分：<code>mean_rating</code>（<code>(first_rating + second_rating) / 2</code>）</li>
+          <li>双方等级分差：<code>rating_diff</code>（<code>first_rating - second_rating</code>）</li>
+          <li>假先方 WHR 标准差：<code>first_std</code></li>
+          <li>假后方 WHR 标准差：<code>second_std</code></li>
+        </ul>
+      </div>
+
+      <div class="model-section">
+        <h2>夺冠概率计算</h2>
+        <p class="model-desc">在抽签前、首轮前、每轮结束后结合赛前预测模型胜平负概率进行 <code>1,000,000</code> 次蒙特卡洛模拟：</p>
+        <p class="model-desc">积分编排赛使用云蛇v3.998编排引擎，采用拦腰编排，首轮采用 <code>1-2, 4-3, 5-6</code> 型，启用FIDE调整及轮空补对手分；单循环赛使用贝格尔编排法。</p>
+        <p class="model-desc">在完全并列的 <code>n</code> 名棋手之间，每人均分名次概率（各占 <code>1/n</code>）。</p>
+      </div>
+
+      <div class="model-section">
+        <h2>预测评估指标</h2>
+        <div class="model-metrics" id="modelMetrics"></div>
+        <div class="model-legend" id="modelLegend"></div>
+        <div class="model-chart-wrap" id="modelChartWrap"></div>
+      </div>
+
+      <div class="model-section">
+        <div class="model-legend" id="calLegend">
+          <span class="model-legend-item">
+            <span class="model-legend-dash"></span>
+            <span>完美校准</span>
+          </span>
+          <span class="model-legend-item">
+            <span class="model-legend-line" style="background:#2f6fcd;"></span>
+            <span>假先胜</span>
+          </span>
+          <span class="model-legend-item">
+            <span class="model-legend-line" style="background:#2d9d6f;"></span>
+            <span>和棋</span>
+          </span>
+          <span class="model-legend-item">
+            <span class="model-legend-line" style="background:#d96b27;"></span>
+            <span>假后胜</span>
+          </span>
+        </div>
+        <div class="model-chart-wrap" id="calChartWrap"></div>
+      </div>
+    </div>
+  </main>
+  <script src="js/model.js?v=10"></script>
 </body>
 </html>

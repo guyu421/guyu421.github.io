@@ -680,9 +680,24 @@
       }
       tb.appendChild(document.createTextNode(tm.team_b_name || ""));
       tr.appendChild(tb);
-      tr.appendChild(el("td", "prob", tm.p_win != null ? Number(tm.p_win).toFixed(1) + "%" : ""));
-      tr.appendChild(el("td", "prob", tm.p_draw != null ? Number(tm.p_draw).toFixed(1) + "%" : ""));
-      tr.appendChild(el("td", "prob", tm.p_loss != null ? Number(tm.p_loss).toFixed(1) + "%" : ""));
+      var pWin = tm.p_win != null ? Number(tm.p_win) : null;
+      var pDraw = tm.p_draw != null ? Number(tm.p_draw) : null;
+      var pLoss = tm.p_loss != null ? Number(tm.p_loss) : null;
+      var tmMax = (pWin != null && pDraw != null && pLoss != null) ? Math.max(pWin, pDraw, pLoss) : null;
+      function makeTmProbTd(val) {
+        var td = el("td", "prob");
+        if (val == null) return td;
+        var txt = val.toFixed(1) + "%";
+        if (tmMax != null && val === tmMax) {
+          td.appendChild(el("span", "prob-pill " + (val >= 50 ? "is-green" : "is-slate"), txt));
+        } else {
+          td.textContent = txt;
+        }
+        return td;
+      }
+      tr.appendChild(makeTmProbTd(pWin));
+      tr.appendChild(makeTmProbTd(pDraw));
+      tr.appendChild(makeTmProbTd(pLoss));
       tbody.appendChild(tr);
 
       if (tm.score_probs && tm.score_probs.length) {
@@ -784,9 +799,24 @@
 
         var pLeft = aIsFirst ? b.p_first : b.p_second;
         var pRight = aIsFirst ? b.p_second : b.p_first;
-        bTr.appendChild(el("td", "prob", pLeft != null ? Number(pLeft).toFixed(1) + "%" : ""));
-        bTr.appendChild(el("td", "prob", b.p_draw != null ? Number(b.p_draw).toFixed(1) + "%" : ""));
-        bTr.appendChild(el("td", "prob", pRight != null ? Number(pRight).toFixed(1) + "%" : ""));
+        var bL = pLeft != null ? Number(pLeft) : null;
+        var bD = b.p_draw != null ? Number(b.p_draw) : null;
+        var bR = pRight != null ? Number(pRight) : null;
+        var bMax = (bL != null && bD != null && bR != null) ? Math.max(bL, bD, bR) : null;
+        function makeBProbTd(val) {
+          var td = el("td", "prob");
+          if (val == null) return td;
+          var txt = val.toFixed(1) + "%";
+          if (bMax != null && val === bMax) {
+            td.appendChild(el("span", "prob-pill " + (val >= 50 ? "is-green" : "is-slate"), txt));
+          } else {
+            td.textContent = txt;
+          }
+          return td;
+        }
+        bTr.appendChild(makeBProbTd(bL));
+        bTr.appendChild(makeBProbTd(bD));
+        bTr.appendChild(makeBProbTd(bR));
         tbody.appendChild(bTr);
       });
     });

@@ -1,999 +1,738 @@
-/* 字体 */
+/* ==========================================================================
+   renjuonline.top — sport.dev-frontend (/assets/mrgold.css) integration
+   All design tokens, typography, header, tabs, match rows, ladder tables,
+   segmented controls, and cards come directly from /assets/mrgold.css.
+   ========================================================================== */
 
-body,
-#content table,
-#content table th,
-#content table td,
-#content h1 {
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
-		"Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+main.container #primaryContent {
+  max-width: 46rem;
+  margin-inline: auto;
+  padding-top: 1.1rem;
+  padding-bottom: 2.5rem;
 }
 
-/* 表格横向滚动容器 — sport.dev 纯白底细线分割 */
-
-.table-wrap {
-	width: 100%;
-	overflow-x: auto;
-	-webkit-overflow-scrolling: touch;
-	margin-bottom: 1.5em;
-	background: transparent;
-	border: 0;
-	border-radius: 0;
+/* Wide pages (admin editor) */
+main.container #primaryContent[data-admin-page] {
+  max-width: 58rem;
 }
 
-.table-wrap > table {
-	margin-bottom: 0em;
+/* Top nav search input in Chinese */
+nav.top-nav .nav-left {
+  margin-right: 0;
 }
 
-/* 窄屏（平板） */
-
-@media (max-width: 1023px) {
-	#primaryContent {
-		padding: 1.35rem 1.25rem 2.25rem;
-	}
+/* Page header block matching sport.dev .tpg-top / .lpg-top */
+#primaryContent > h1 {
+  margin: 0 0 0.35rem;
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.15;
+  color: hsl(var(--foreground));
+  letter-spacing: -0.01em;
 }
 
-/* 手机 */
-
-@media (max-width: 640px) {
-	body {
-		font-size: 15px;
-		-webkit-text-size-adjust: 100%;
-	}
-
-	#header {
-		height: 51px;
-		padding: 0 0.9rem;
-	}
-
-	#menu {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		height: 51px;
-		display: flex;
-		align-items: center;
-		padding: 0 0.9rem;
-		box-sizing: border-box;
-	}
-
-	#menu ul {
-		display: flex;
-		align-items: center;
-		gap: 0.25rem;
-	}
-
-	#menu li {
-		margin-left: 0.45rem;
-		padding-left: 0.55rem;
-	}
-
-	#menu li a {
-		display: inline-flex;
-		align-items: center;
-		min-height: 44px;
-		padding: 0 0.5rem;
-	}
-
-	#primaryContent {
-		margin-top: 0;
-		padding: 1rem 0.85rem 2rem;
-	}
-
-	#content h1 {
-		font-size: 1.3em;
-		margin-bottom: 0.6em;
-	}
-
-	#content table {
-		width: 100%;
-		font-size: 14px;
-	}
-
-	#content table th,
-	#content table td {
-		padding: 0.5em 0.5em;
-	}
-
-	#content table[data-feed="players"] td.num {
-		text-align: center;
-	}
-
-	/* 赛事：手机上改成列表卡片，日期与人数/对局数在上，赛事名在下 */
-
-	#content table[data-feed="tournaments"],
-	#content table[data-feed="tournaments"] tbody {
-		display: block;
-		width: 100%;
-	}
-
-	#content table[data-feed="tournaments"] tr:nth-child(1) {
-		display: none;
-	}
-
-	#content table[data-feed="tournaments"] tr {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto auto;
-		align-items: baseline;
-		column-gap: 0.7em;
-		padding: 0.7em 0.85em;
-		border-top: solid 1px #fff;
-	}
-
-	#content table[data-feed="tournaments"] td {
-		border: 0em;
-		padding: 0em;
-		white-space: normal;
-		line-height: 1.7;
-	}
-
-	#content table[data-feed="tournaments"] td:nth-child(1) {
-		grid-row: 1;
-		grid-column: 1;
-		white-space: nowrap;
-		color: #8a8a8a;
-		font-size: 0.85em;
-	}
-
-	#content table[data-feed="tournaments"] td:nth-child(3),
-	#content table[data-feed="tournaments"] td:nth-child(4) {
-		grid-row: 1;
-		color: #8a8a8a;
-		font-size: 0.85em;
-		text-align: right;
-	}
-
-	#content table[data-feed="tournaments"] td:nth-child(3)::after {
-		content: " 人";
-	}
-
-	#content table[data-feed="tournaments"] td:nth-child(4)::after {
-		content: " 局";
-	}
-
-	#content table[data-feed="tournaments"] td:nth-child(2) {
-		grid-row: 2;
-		grid-column: 1 / -1;
-	}
-
-	/* 赛事对局：手机端改为两行卡片，日期与轮次在上、双方与比分在下 */
-
-	#content table.tour-games,
-	#content table.tour-games > tbody {
-		display: block;
-		width: 100%;
-	}
-
-	#content table.tour-games > thead {
-		display: none;
-	}
-
-	#content table.tour-games > tbody > tr {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-		align-items: baseline;
-		column-gap: 0.6em;
-		padding: 0.7em 0.85em;
-		border-top: solid 1px #fff;
-	}
-
-	#content table.tour-games > tbody > tr:nth-child(1) {
-		display: none;
-	}
-
-	#content table.tour-games > tbody > tr:not(.score-probs-row) > td {
-		border: 0em;
-		padding: 0em;
-		white-space: normal;
-		line-height: 1.7;
-	}
-
-	#content table.tour-games > tbody > tr:not(.score-probs-row) > td.date {
-		grid-row: 1;
-		grid-column: 1;
-		color: #8a8a8a;
-		font-size: 0.85em;
-	}
-
-	#content table.tour-games > tbody > tr:not(.score-probs-row) > td.rnd {
-		grid-row: 1;
-		grid-column: 3;
-		color: #8a8a8a;
-		font-size: 0.85em;
-	}
-
-	/* 规则放在卡片中间一行 */
-	#content table.tour-games > tbody > tr:not(.score-probs-row) > td.rule {
-		grid-row: 1;
-		grid-column: 2;
-		text-align: center;
-		/* 桌面端给轮次留的 1.1em 左内边距在卡片里会把字顶歪 */
-		padding-left: 0em;
-		color: #8a8a8a;
-		font-size: 0.85em;
-	}
-
-	#content table.tour-games > tbody > tr:not(.score-probs-row) > td:nth-child(4) {
-		grid-row: 2;
-		grid-column: 1;
-	}
-
-	#content table.tour-games > tbody > tr:not(.score-probs-row) > td.score {
-		grid-row: 2;
-		grid-column: 2;
-		text-align: center;
-	}
-
-	#content table.tour-games > tbody > tr:not(.score-probs-row) > td:nth-child(6) {
-		grid-row: 2;
-		grid-column: 3;
-		text-align: right;
-	}
-
-	/* 团体局分概率子表：保持完整双行表格并在窄屏下可横向滚动 */
-	#content table.tour-games > tbody > tr.score-probs-row {
-		display: block;
-		padding: 0 0.85em 0.7em;
-		border-top: 0;
-	}
-
-	#content table.tour-games > tbody > tr.score-probs-row > td {
-		display: block;
-		width: 100%;
-		overflow-x: auto;
-		-webkit-overflow-scrolling: touch;
-		padding: 0;
-		border: 0;
-	}
-
-	#content table.tour-games table.score-probs-table {
-		display: table;
-		width: 100%;
-		min-width: max-content;
-		border-collapse: collapse;
-		margin: 0;
-		font-size: 12px;
-		text-align: center;
-	}
-
-	#content table.tour-games table.score-probs-table tr {
-		display: table-row;
-		padding: 0;
-		border: 0;
-	}
-
-	#content table.tour-games table.score-probs-table tr:nth-child(1) {
-		display: table-row;
-	}
-
-	#content table.tour-games table.score-probs-table td {
-		display: table-cell;
-		padding: 3px 6px;
-		border: 1px solid #ddd;
-		white-space: nowrap;
-		line-height: 1.4;
-		text-align: center;
-	}
-
-	/* 棋手详情：收紧表格，保证五列放得下 */
-
-	#content h1#playerName {
-		margin-bottom: 0.35em;
-	}
-
-	#playerMeta p {
-		margin-bottom: 0.15em;
-	}
-
-	#content table.player-games {
-		font-size: 13px;
-	}
-
-	#content table.player-games th,
-	#content table.player-games td {
-		padding: 0.4em 0.22em;
-	}
-
-	#chart {
-		margin: 0.5em 0 0.9em 0;
-	}
+@media (min-width: 768px) {
+  #primaryContent > h1 {
+    font-size: 1.85rem;
+  }
 }
 
-@media (max-width: 360px) {
-	#content table {
-		font-size: 13px;
-	}
-
-	/* 详情表七列，再窄一档要缩字号、收边距才放得下 */
-	#content table.player-games {
-		font-size: 12.5px;
-	}
-
-	#content table.player-games th,
-	#content table.player-games td {
-		padding: 0.4em 0.15em;
-	}
+#primaryContent h2 {
+  margin: 1.5rem 0 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--secondary-text-color);
 }
 
-/* 棋手详情页 */
-
-#chart {
-	width: 100%;
-	margin: 0.8em 0 1.2em 0;
-	position: relative;
+#primaryContent h3,
+#standingsTitle {
+  margin: 1.6rem 0 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--secondary-text-color);
 }
 
-#chart svg {
-	display: block;
-	max-width: 100%;
+/* Meta subtitle lines (#tourMeta, #playerMeta, #gameMeta) -> sport.dev .lpg-sub / .tpg-snap */
+#tourMeta,
+#playerMeta,
+#gameMeta {
+  margin: 0.25rem 0 0.9rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--secondary-text-color);
 }
 
-/* 曲线悬浮提示：半透明深色底，贴着当前节点 */
-.chart-tip {
-	position: absolute;
-	z-index: 2;
-	display: none;
-	padding: 0.45em 0.6em;
-	border-radius: 5px;
-	background: rgba(38, 42, 46, 0.78);
-	color: #fff;
-	font-size: 12px;
-	line-height: 1.5;
-	white-space: nowrap;
-	pointer-events: none;
-	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
-}
-
-.chart-tip b {
-	display: block;
-	font-weight: 600;
-}
-
-.chart-tip span {
-	display: block;
-	color: rgba(255, 255, 255, 0.82);
-}
-
-#content table.player-games th:nth-child(2),
-#content table.player-games td.rnd {
-	white-space: nowrap;
-}
-
-#content table.player-games td.date {
-	white-space: nowrap;
-	color: #6f7b83;
-}
-
-#content table.player-games th:nth-child(3),
-#content table.player-games td.rule {
-	white-space: nowrap;
-	text-align: center;
-}
-
-#content table.player-games td.skip {
-	color: #8a8a8a;
-}
-
-/* 结果列（胜/和/负）居中 */
-#content table.player-games td.win,
-#content table.player-games td.draw,
-#content table.player-games td.loss {
-	text-align: center;
-}
-
+#tourMeta p,
 #playerMeta p,
-#tourMeta p {
-	color: #444;
-	margin-bottom: 0.15em;
+#gameMeta .meta-line {
+  margin: 0.15rem 0;
 }
 
-/* 战绩里的每一项整体换行，不会把“胜 5”拆到两行 */
-#playerMeta .nowrap {
-	white-space: nowrap;
+#tourMeta b,
+#playerMeta b,
+#gameMeta strong {
+  font-weight: 600;
+  color: hsl(var(--foreground));
 }
 
-/* 赛事对局页 */
-
-#content h1#tourName {
-	margin-bottom: 0.35em;
+#gameMeta a,
+#tourMeta a,
+#playerMeta a {
+  color: hsl(var(--foreground));
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
-#tourMeta {
-	margin-bottom: 0.9em;
+.nowrap {
+  white-space: nowrap;
 }
 
-#content table.tour-games th:nth-child(2),
-#content table.tour-games td.rnd {
-	white-space: nowrap;
-}
-
-#content table.tour-games th:nth-child(3),
-#content table.tour-games td.rule {
-	white-space: nowrap;
-	text-align: center;
-}
-
-/* 只有桌面表格需要把规则列从轮次列推开；手机卡片里会顶歪 */
-@media (min-width: 641px) {
-	#content table.tour-games th:nth-child(3),
-	#content table.tour-games td.rule {
-		padding-left: 1.1em;
-	}
-}
-
-#content table.tour-games td.date {
-	white-space: nowrap;
-	color: #6f7b83;
-}
-
-#content table.tour-games td.score {
-	text-align: center;
-}
-
-#content table.tour-games td.skip {
-	color: #8a8a8a;
-}
-
-#content table.tour-games td.prob {
-	font-variant-numeric: tabular-nums;
-	white-space: nowrap;
-}
-
-.prob-pill {
-	display: inline-block;
-	padding: 0.2em 0.55em;
-	border-radius: 5px;
-	font-weight: 600;
-	font-size: 0.9em;
-	line-height: 1.25;
-	color: #ffffff;
-	font-variant-numeric: tabular-nums;
-}
-
-.prob-pill.is-green {
-	background: hsl(142 76% 36%);
-}
-
-.prob-pill.is-slate {
-	background: hsl(0 0% 43.1%);
-}
-
-/* 所有表格的单元格统一居中（表头与内容都居中对齐） */
-
-#content #primaryContent table th,
-#content #primaryContent table td {
-	text-align: center;
-}
-
-/* 结果标志点击进入对局详情 */
-a.score-link {
-	color: inherit;
-	text-decoration: none;
-	border-bottom: 1px dashed #9aa7b2;
-	padding: 0 2px;
-}
-
-a.score-link:hover {
-	color: #1f5f99;
-	border-bottom-color: #1f5f99;
-}
-
-/* 对局详情页与棋盘 */
-.game-meta {
-	margin: 0.6em 0 0.8em;
-	line-height: 1.7;
-	font-size: 0.95em;
-}
-
-.board-wrap {
-	position: relative;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	margin: 0.5em 0;
-}
-
-#renjuBoard {
-	display: block;
-	max-width: 100%;
-}
-
-.board-controls {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	gap: 0.6em;
-	margin: 0.8em 0 1.4em;
-}
-
-.board-controls button {
-	min-width: 44px;
-	padding: 0.35em 0.75em;
-	font-size: 0.95em;
-	font-weight: 600;
-	border: 1px solid var(--line-strong);
-	background: var(--surface);
-	color: var(--ink);
-	border-radius: var(--radius-sm);
-	cursor: pointer;
-	transition: background-color 140ms ease, border-color 140ms ease;
-}
-
-.board-controls button:hover:not(:disabled) {
-	background: var(--surface-hover);
-	border-color: var(--neon);
-}
-
-.board-controls button:disabled {
-	opacity: 0.4;
-	cursor: default;
-}
-
-.board-controls .step-info {
-	min-width: 72px;
-	text-align: center;
-	font-variant-numeric: tabular-nums;
-	font-size: 0.92em;
-	color: var(--muted);
-}
-
-/* 手机端赛事列表卡片：日期在左上角，靠左排，其余格子仍居中 */
-
-@media (max-width: 640px) {
-	#content #primaryContent table[data-feed="tournaments"] td:nth-child(1) {
-		text-align: left;
-	}
-}
-
-/* 赛事页的轮次选择：< [第N轮] / 共 X 轮 > */
-
-/* 赛事页的轮次选择：Sport.dev 居中胶囊分段控件 */
-
+/* Year / Round / Pager bar -> sport.dev .round-pager + .view-seg */
 .round-pick {
-	display: flex;
-	width: fit-content;
-	align-items: center;
-	justify-content: center;
-	gap: 0.25em;
-	margin: 0 auto 1em;
-	padding: 3px;
-	background: var(--muted-bg, #e6e6e6);
-	border-radius: 8px;
-	color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.45rem;
+  margin: 0.65rem 0 0.9rem;
+}
+
+.round-pick .round-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  flex: 0 0 auto;
+  background: hsl(var(--muted));
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  color: hsl(var(--muted-foreground));
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.round-pick .round-nav:hover:not(:disabled) {
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--muted-foreground) / 0.5);
+}
+
+.round-pick .round-nav:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .round-pick select {
-	font: inherit;
-	font-size: 0.9em;
-	font-weight: 600;
-	padding: 0.25em 0.7em;
-	min-height: 32px;
-	border: 0;
-	border-radius: 6px;
-	background: var(--surface, #fff);
-	color: var(--ink);
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
-	cursor: pointer;
+  height: 2rem;
+  padding: 0 1.8rem 0 0.7rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  background-color: hsl(var(--muted));
+  color: hsl(var(--foreground));
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
 }
 
-.round-nav {
-	font: inherit;
-	font-size: 0.9em;
-	font-weight: 600;
-	line-height: 1;
-	min-width: 32px;
-	min-height: 32px;
-	padding: 0.3em 0.65em;
-	border: 0;
-	border-radius: 6px;
-	background: transparent;
-	color: var(--ink);
-	cursor: pointer;
-	transition: background-color 120ms ease;
+.round-pick select:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 1px;
 }
 
-.round-nav:hover:enabled {
-	background: var(--surface);
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+.round-pick .round-total {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--secondary-text-color);
+  font-variant-numeric: tabular-nums;
 }
 
-.round-nav:active:enabled {
-	background: #f0f0f0;
+/* Tables -> sport.dev .ladder-table exact look */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-.round-nav:disabled {
-	color: #9a9a9a;
-	cursor: default;
+table[data-feed],
+table.tour-games,
+table.tour-standings,
+table.player-games {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
 }
 
-.round-total {
-	color: var(--muted);
-	font-size: 0.85em;
-	padding: 0 0.35em;
-	white-space: nowrap;
+table[data-feed] th,
+table.tour-games th,
+table.tour-standings th,
+table.player-games th {
+  padding: 0.45rem 0.5rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.72rem;
+  color: hsl(var(--muted-foreground));
+  border-bottom: 1px solid hsl(var(--border));
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
-@media (max-width: 640px) {
-	.round-pick {
-		margin-bottom: 0.75em;
-	}
-	#content table.tour-standings th,
-	#content table.tour-standings td {
-		padding: 0.45rem 0.35rem;
-		font-size: 13px;
-	}
+table[data-feed] tr,
+table.tour-games tr,
+table.tour-standings tr,
+table.player-games tr {
+  border-bottom: 1px solid hsl(var(--border));
 }
 
-#content table th {
-	color: var(--muted);
+table[data-feed] tbody tr:last-child,
+table.tour-games tbody tr:last-child,
+table.tour-standings tbody tr:last-child,
+table.player-games tbody tr:last-child {
+  border-bottom: none;
 }
 
+table[data-feed] tbody tr:hover:not(:first-child),
+table.tour-games tbody tr:hover:not(:first-child),
+table.tour-standings tbody tr:hover:not(:first-child),
+table.player-games tbody tr:hover {
+  background-color: hsl(var(--muted) / 0.38);
+}
+
+table[data-feed] td,
+table.tour-games td,
+table.tour-standings td,
+table.player-games td {
+  padding: 0.5rem 0.5rem;
+  vertical-align: middle;
+  color: hsl(var(--foreground));
+}
+
+table[data-feed] td a,
+table.tour-games td a,
+table.tour-standings td a,
+table.player-games td a,
+table.player-games th a {
+  color: hsl(var(--foreground));
+  font-weight: 600;
+  text-decoration: none;
+}
+
+table[data-feed] td a:hover,
+table.tour-games td a:hover,
+table.tour-standings td a:hover,
+table.player-games td a:hover,
+table.player-games th a:hover {
+  text-decoration: underline;
+}
+
+/* Column alignments & muted cells */
+td.period,
+td.date,
+td.rnd,
+td.rule,
+td.cnum {
+  color: hsl(var(--muted-foreground));
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+td.num,
+td.prob {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+table[data-feed="tournaments"] th:nth-child(n+3),
+table[data-feed="players"] th:nth-child(1),
+table[data-feed="players"] th:nth-child(n+3),
+table.tour-standings th:nth-child(1),
+table.tour-standings th:nth-child(n+3),
+table.tour-games th:nth-child(n+7) {
+  text-align: right;
+}
+
+table.tour-games th:nth-child(5),
+table.tour-games td.score {
+  text-align: center;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+table.tour-games td.score a.score-link,
+table.player-games td a.score-link {
+  display: inline-block;
+  padding: 0.08em 0.45em;
+  border-radius: 4px;
+  background: hsl(var(--muted));
+  color: hsl(var(--foreground));
+  font-weight: 700;
+  text-decoration: none;
+}
+
+table.tour-games td.score a.score-link:hover,
+table.player-games td a.score-link:hover {
+  background: hsl(var(--foreground) / 0.14);
+  text-decoration: none;
+}
+
+/* Player draw number (#12) & previous-round points ([3.5]) -> sport.dev .mc-chip */
 .player-no {
-	color: var(--muted);
-	font-size: 0.82em;
-	margin-right: 0.3em;
-	font-variant-numeric: tabular-nums;
+  display: inline-block;
+  margin-right: 0.32rem;
+  padding: 0.05em 0.36em;
+  border: 1px solid hsl(var(--border));
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+  color: var(--secondary-text-color);
+  vertical-align: baseline;
 }
 
 .player-pts {
-	display: inline-block;
-	background: var(--muted-bg, #e6e6e6);
-	color: var(--ink-soft, #222);
-	font-weight: 600;
-	font-size: 0.78em;
-	padding: 0.05em 0.4em;
-	border-radius: 4px;
-	margin-left: 0.35em;
-	font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-	font-variant-numeric: tabular-nums;
+  display: inline-block;
+  margin-left: 0.28rem;
+  font-size: 0.74rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--secondary-text-color);
 }
 
-/* 后台管理 */
+td.skip {
+  color: var(--secondary-text-color);
+  font-style: italic;
+}
 
-.admin-panel {
-	background: var(--surface-alt);
-	border: 1px solid var(--line);
-	border-radius: var(--radius-md);
-	padding: 0.85em 1em;
-	margin-bottom: 0.95em;
+/* Probability pills -> sport.dev .mc-pct.is-lean.lean-green / .lean-grey */
+.prob-pill {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.25;
+  padding: 0.14em 0.42em;
+  border-radius: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.prob-pill.is-green {
+  background-color: hsl(var(--green-base));
+  color: hsl(var(--on-fill));
+}
+
+.prob-pill.is-slate {
+  background-color: #6b7280;
+  color: #ffffff;
+}
+
+html.dark:not([data-theme]) .prob-pill.is-slate {
+  background-color: #9ca3af;
+  color: hsl(var(--background));
+}
+
+/* Player games grouped tournament headers */
+table.player-games tr.tour-group-head th,
+table.player-games tr:has(> th[colspan="7"]) th {
+  padding-top: 1.15rem;
+  padding-bottom: 0.35rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  color: hsl(var(--foreground));
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+table.player-games th.second {
+  font-size: 0.72rem;
+  color: hsl(var(--muted-foreground));
+  background: hsl(var(--muted) / 0.45);
+}
+
+table.player-games tr:has(> th.second) td {
+  background: hsl(var(--muted) / 0.45);
+  font-size: 0.78rem;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Player rating history chart -> sport.dev .stats-chart-card */
+#chart {
+  position: relative;
+  margin: 0.75rem 0 1.35rem;
+  padding: 0.85rem 0.9rem 0.65rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  background-color: hsl(var(--card));
+}
+
+#chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+#chart .chart-tip {
+  transform: none;
+  z-index: 20;
+}
+
+#chart .chart-tip b,
+#chart .chart-tip span {
+  display: block;
+}
+
+/* Model evaluation page -> sport.dev .about-card / .results-stat-tile / .stats-chart-card */
+.model-section {
+  margin: 0 0 1.25rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  background-color: hsl(var(--card));
+}
+
+.model-section h2 {
+  margin: 0 0 0.55rem !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+.model-desc {
+  margin: 0 0 0.45rem;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: hsl(var(--muted-foreground));
+}
+
+.model-list {
+  margin: 0.35rem 0 0;
+  padding-left: 1.2rem;
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: hsl(var(--muted-foreground));
+}
+
+.model-section code {
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: hsl(var(--muted));
+  color: hsl(var(--foreground));
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+.model-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin: 0.65rem 0 1rem;
+}
+
+@media (min-width: 640px) {
+  .model-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.model-metric-card {
+  padding: 0.7rem 0.8rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  background-color: hsl(var(--background));
+}
+
+.model-metric-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--secondary-text-color);
+}
+
+.model-metric-value {
+  margin-top: 0.2rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  color: hsl(var(--foreground));
+}
+
+.model-metric-sub {
+  margin-top: 0.2rem;
+  font-size: 0.7rem;
+  line-height: 1.35;
+  color: var(--secondary-text-color);
+}
+
+.model-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.model-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.model-legend-line {
+  display: inline-block;
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.model-legend-dash {
+  display: inline-block;
+  width: 12px;
+  height: 0;
+  border-top: 2px dashed #9aa5b1;
+}
+
+.model-chart-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.model-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.model-tooltip {
+  position: absolute;
+  z-index: 25;
+  padding: 0.4rem 0.65rem;
+  border-radius: 6px;
+  background-color: hsl(var(--foreground));
+  color: hsl(var(--background));
+  font-size: 0.78rem;
+  line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.model-tt-date {
+  font-weight: 700;
+  margin-bottom: 0.15rem;
+}
+
+.model-tt-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.model-tt-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+
+/* Game board viewer (game.html) */
+.board-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0 0.85rem;
+  padding: 1rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  background-color: hsl(var(--card));
+}
+
+#renjuBoard {
+  display: block;
+  max-width: 100%;
+  border-radius: 4px;
+}
+
+.board-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.board-controls button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.4rem;
+  height: 2.1rem;
+  padding: 0 0.65rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  background: hsl(var(--muted));
+  color: hsl(var(--foreground));
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.board-controls button:hover:not(:disabled) {
+  border-color: hsl(var(--muted-foreground) / 0.6);
+}
+
+.board-controls button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.board-controls .step-info {
+  min-width: 4.8rem;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: hsl(var(--foreground));
+}
+
+/* Admin page (admin.html) */
+.admin-panel,
+.admin-editor-wrap,
+.admin-preview,
+.admin-status {
+  margin-bottom: 0.85rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  background-color: hsl(var(--card));
 }
 
 .admin-row {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 0.5em 0.7em;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .admin-row label {
-	font-size: 0.9em;
-	color: var(--ink-soft);
-	font-weight: 600;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
 }
 
 .admin-row input,
 .admin-row select {
-	padding: 0.4em 0.6em;
-	border: 1px solid var(--line-strong);
-	border-radius: var(--radius-sm);
-	font-size: 0.9em;
-	background: var(--surface);
-	color: var(--ink);
+  height: 2.1rem;
+  padding: 0 0.65rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  background: hsl(var(--input-bg));
+  color: hsl(var(--foreground));
+  font-size: 0.84rem;
+}
+
+.admin-row input {
+  min-width: 16rem;
+  flex: 1 1 14rem;
 }
 
 .admin-row select {
-	max-width: 24em;
+  min-width: 16rem;
+  max-width: 26rem;
 }
 
 .admin-row button,
 .admin-actions button {
-	padding: 0.45em 0.9em;
-	border: 1px solid var(--line-strong);
-	border-radius: var(--radius-sm);
-	background: var(--surface);
-	color: var(--ink);
-	cursor: pointer;
-	font-size: 0.9em;
-	transition: background-color 120ms ease, border-color 120ms ease;
-}
-
-.admin-row button:hover,
-.admin-actions button:hover {
-	background: var(--surface-hover);
-	border-color: var(--ink);
-}
-
-.admin-editor-wrap {
-	margin-bottom: 0.85em;
-}
-
-.admin-editor-head {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	margin-bottom: 0.35em;
-	font-size: 0.9em;
-	color: var(--muted);
-}
-
-#txtEditor {
-	width: 100%;
-	min-height: 460px;
-	box-sizing: border-box;
-	padding: 0.85em 1em;
-	font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-	font-size: 13.5px;
-	line-height: 1.55;
-	border: 1px solid var(--line-strong);
-	border-radius: var(--radius-md);
-	background: #fafafa;
-	color: var(--ink);
-	resize: vertical;
+  height: 2.1rem;
+  padding: 0 0.85rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  background: hsl(var(--muted));
+  color: hsl(var(--foreground));
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .admin-actions {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.6em;
-	margin-bottom: 1em;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
 }
 
 .admin-actions .admin-btn-primary {
-	background: #2f6f9f;
-	border-color: #275d85;
-	color: #ffffff;
-}
-
-.admin-actions .admin-btn-primary:hover {
-	background: #275d85;
+  background: hsl(var(--foreground));
+  color: hsl(var(--background));
+  border-color: hsl(var(--foreground));
 }
 
 .admin-actions .admin-btn-success {
-	background: #2b7a4b;
-	border-color: #22633c;
-	color: #ffffff;
+  background: hsl(var(--green-base));
+  color: hsl(var(--on-fill));
+  border-color: hsl(var(--green-base));
 }
 
-.admin-actions .admin-btn-success:hover {
-	background: #22633c;
+.admin-editor-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--secondary-text-color);
 }
 
-.admin-actions button:disabled {
-	opacity: 0.6;
-	cursor: not-allowed;
-}
-
-.admin-status {
-	padding: 0.7em 0.9em;
-	border-radius: 6px;
-	margin-bottom: 1em;
-	font-size: 0.92em;
-	line-height: 1.5;
-}
-
-.admin-status.is-ok {
-	background: #edf7f0;
-	border: 1px solid #b8dec4;
-	color: #1c5b34;
-}
-
-.admin-status.is-error {
-	background: #fdf0f0;
-	border: 1px solid #ecc0c0;
-	color: #8a2323;
+#txtEditor {
+  width: 100%;
+  min-height: 20rem;
+  padding: 0.7rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  background: hsl(var(--input-bg));
+  color: hsl(var(--foreground));
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  resize: vertical;
 }
 
 .admin-muted {
-	font-size: 0.85em;
-	color: #6b7782;
+  font-size: 0.78rem;
+  color: var(--secondary-text-color);
 }
 
-.admin-badge {
-	display: inline-block;
-	padding: 0.05em 0.35em;
-	font-size: 0.75em;
-	border-radius: 3px;
-	background: #fff0c2;
-	color: #7c5200;
-	border: 1px solid #ebd184;
-}
+/* Mobile compact adjustments */
+@media (max-width: 600px) {
+  table[data-feed],
+  table.tour-games,
+  table.tour-standings,
+  table.player-games {
+    font-size: 0.76rem;
+  }
 
-.admin-disambig {
-	margin-bottom: 0.8em;
-	padding: 0.7em 0.9em;
-	background: #fff8e6;
-	border: 1px solid #ebd184;
-	border-radius: 4px;
-}
-
-.admin-disambig p {
-	margin: 0 0 0.45em 0;
-}
-
-.admin-disambig-item {
-	margin: 0.35em 0;
-	line-height: 1.8;
-}
-
-.admin-pick-btn {
-	margin: 0.15em 0.25em;
-	padding: 0.2em 0.55em;
-	font-size: 0.85em;
-	border-radius: 3px;
-	cursor: pointer;
-	border: 1px solid #c5cfd8;
-	background: #ffffff;
-	color: #24303a;
-}
-
-.admin-pick-btn:hover {
-	background: #e9f2fb;
-	border-color: #7eb0e0;
-}
-
-/* 模型页 */
-
-.model-section {
-	margin-bottom: 1.5em;
-}
-
-.model-section h2 {
-	font-size: 1.15em;
-	margin: 0 0 0.65em 0;
-	color: var(--ink);
-}
-
-.model-desc {
-	margin: 0 0 0.4em 0;
-	line-height: 1.65;
-	color: var(--ink-soft);
-}
-
-.model-desc code {
-	background: var(--muted-bg);
-	border: 1px solid var(--line);
-	color: var(--ink);
-	padding: 0.1em 0.35em;
-	border-radius: 4px;
-	font-size: 0.9em;
-}
-
-.model-list {
-	margin: 0;
-	padding-left: 1.3em;
-	line-height: 1.65;
-	color: var(--ink-soft);
-}
-
-.model-list li {
-	margin-bottom: 0.45em;
-}
-
-.model-list code {
-	background: var(--muted-bg);
-	border: 1px solid var(--line);
-	color: var(--ink);
-	padding: 0.1em 0.35em;
-	border-radius: 4px;
-	font-size: 0.9em;
-}
-
-.model-legend {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 0.6em 1.2em;
-	margin-bottom: 0.6em;
-	font-size: 0.92em;
-	color: var(--ink-soft);
-}
-
-.model-legend-item {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.45em;
-}
-
-.model-legend-line {
-	display: inline-block;
-	width: 14px;
-	height: 3px;
-	border-radius: 2px;
-}
-
-.model-legend-dash {
-	display: inline-block;
-	width: 16px;
-	height: 0;
-	border-top: 2px dashed #9aa5b1;
-}
-
-.model-metrics {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-	gap: 0.65em;
-	margin-bottom: 0.9em;
-}
-
-.model-metric-card {
-	background: var(--surface-alt);
-	border: 1px solid var(--line);
-	border-radius: var(--radius-md);
-	padding: 0.85rem 1rem;
-	transition: transform 140ms ease, border-color 140ms ease;
-}
-
-.model-metric-card:hover {
-	transform: translateY(-2px);
-	border-color: var(--line-strong);
-}
-
-.model-metric-label {
-	font-size: 0.82em;
-	color: var(--muted);
-	margin-bottom: 0.25em;
-}
-
-.model-metric-value {
-	font-size: 1.3em;
-	font-weight: 700;
-	color: var(--ink);
-	font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-	font-variant-numeric: tabular-nums;
-}
-
-.model-metric-sub {
-	font-size: 0.78em;
-	color: var(--muted);
-	margin-top: 0.25em;
-	line-height: 1.35;
-}
-
-.model-chart-wrap {
-	position: relative;
-	width: 100%;
-	background: #ffffff;
-	border-radius: var(--radius-md);
-	border: 1px solid var(--line);
-	padding: 0.5rem;
-}
-
-.model-svg {
-	display: block;
-	width: 100%;
-	height: auto;
-}
-
-.model-tooltip {
-	position: absolute;
-	top: 12px;
-	z-index: 20;
-	background: rgba(38, 42, 46, 0.78);
-	border-radius: 5px;
-	padding: 0.45em 0.65em;
-	font-size: 12px;
-	line-height: 1.5;
-	color: #ffffff;
-	pointer-events: none;
-	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
-	white-space: nowrap;
-}
-
-.model-tt-date {
-	font-weight: 600;
-	margin-bottom: 0.2em;
-}
-
-.model-tt-row {
-	display: flex;
-	align-items: center;
-	gap: 0.4em;
-}
-
-.model-tt-dot {
-	width: 7px;
-	height: 7px;
-	border-radius: 50%;
-	display: inline-block;
+  table[data-feed] th,
+  table[data-feed] td,
+  table.tour-games th,
+  table.tour-games td,
+  table.tour-standings th,
+  table.tour-standings td,
+  table.player-games th,
+  table.player-games td {
+    padding: 0.38rem 0.28rem;
+  }
 }

@@ -1,79 +1,88 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-CN">
+<html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>后台管理</title>
-  <link href="css/default.css" rel="stylesheet" type="text/css" />
-  <link href="css/site.css" rel="stylesheet" type="text/css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>(function(){try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}})()</script>
+  <title>后台管理 — renjuonline.top</title>
+  <link rel="icon" type="image/png" sizes="48x48" href="/assets/favicon.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
+  <link rel="preload" href="/assets/fonts/jersey10-sd.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="/assets/mrgold.css" />
+  <link rel="stylesheet" href="css/site.css?v=10" />
 </head>
-<body>
-  <div id="outer">
-    <header id="header" class="top-nav">
-      <div class="top-nav-in">
-        <a href="index.html" class="brand"><span class="brand-hash">#</span> renjuonline</a>
-        <a href="admin.html" class="nav-pill-btn">管理</a>
-      </div>
-    </header>
-    <nav id="menu" class="tab-bar" aria-label="主导航">
-      <div class="tab-bar-in">
-        <ul>
-          <li class="first"><a href="index.html">赛事</a></li>
-          <li><a href="players.html">棋手</a></li>
-          <li><a href="model.html">模型</a></li>
-        </ul>
-      </div>
-    </nav>
-    <div id="content">
-      <div id="primaryContentContainer">
-        <div id="primaryContent">
-          <h1>数据库后台管理</h1>
+<body class="filter-bar-visible">
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a href="index.html" class="logo-text"><span class="logo-hash hash-combo">#</span>renju.dev</a>
+    </div>
+    <div class="nav-right">
+      <button type="button" id="theme-toggle-btn" aria-label="切换主题" onclick="(function(){var d=document.documentElement.classList.toggle('dark');try{localStorage.setItem('theme',d?'dark':'light');}catch(e){}})()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+        </svg>
+      </button>
+    </div>
+  </nav>
 
-          <div class="admin-panel">
-            <div class="admin-row">
-              <label for="apiToken">服务器 API 密钥:</label>
-              <input id="apiToken" type="password" placeholder="服务器管理密钥（仅保存在本地浏览器）" />
-              <button type="button" id="saveApiTokenBtn">保存密钥</button>
-              <span id="apiTokenStatus" class="admin-muted"></span>
-            </div>
-          </div>
-
-          <div class="admin-panel">
-            <div class="admin-row">
-              <label for="tournamentSelect">加载已有赛事:</label>
-              <select id="tournamentSelect">
-                <option value="">-- 选择赛事 --</option>
-              </select>
-              <button type="button" id="loadTournamentBtn">加载到文本框</button>
-              <button type="button" id="newTemplateBtn">新建赛事模板</button>
-              <button type="button" id="cmdTemplateBtn">单条修改指令模板</button>
-            </div>
-          </div>
-
-          <div class="admin-editor-wrap">
-            <div class="admin-editor-head">
-              <span>编辑区（纯文本 `.txt`，支持新建/覆盖赛事或 `SET / DEL / RENAME / MERGE` 指令）</span>
-              <span id="lineStats" class="admin-muted">0 行</span>
-            </div>
-            <textarea id="txtEditor" spellcheck="false" placeholder="在此输入或粘贴赛事/对局文本..."></textarea>
-          </div>
-
-          <div class="admin-actions">
-            <button type="button" id="previewBtn" class="admin-btn-primary">解析预览</button>
-            <button type="button" id="submitServerBtn" class="admin-btn-success">直接写入服务器数据库</button>
-            <button type="button" id="downloadTxtBtn">下载 .txt</button>
-            <button type="button" id="downloadDbBtn">下载数据库 (.zip)</button>
-            <button type="button" id="clearBtn">清空</button>
-          </div>
-
-          <div id="statusBox" class="admin-status" style="display:none;"></div>
-          <div id="previewBox" class="admin-preview" style="display:none;"></div>
+  <div id="main-tab-bar-container">
+    <div class="main-tab-bar">
+      <div class="main-tab-scroll">
+        <div class="main-tab-group main-tab-filters">
+          <a class="main-tab" href="index.html">赛事</a>
+          <a class="main-tab" href="players.html">棋手</a>
+          <a class="main-tab" href="model.html">模型</a>
         </div>
       </div>
-      <div class="clear"></div>
     </div>
   </div>
-  <script src="js/admin.js"></script>
+
+  <main class="container">
+    <div id="primaryContent" data-admin-page>
+      <h1>数据库后台管理</h1>
+
+      <div class="admin-panel">
+        <div class="admin-row">
+          <label for="apiToken">服务器 API 密钥:</label>
+          <input id="apiToken" type="password" placeholder="服务器管理密钥（仅保存在本地浏览器）" />
+          <button type="button" id="saveApiTokenBtn">保存密钥</button>
+          <span id="apiTokenStatus" class="admin-muted"></span>
+        </div>
+      </div>
+
+      <div class="admin-panel">
+        <div class="admin-row">
+          <label for="tournamentSelect">加载已有赛事:</label>
+          <select id="tournamentSelect">
+            <option value="">-- 选择赛事 --</option>
+          </select>
+          <button type="button" id="loadTournamentBtn">加载到文本框</button>
+          <button type="button" id="newTemplateBtn">新建赛事模板</button>
+          <button type="button" id="cmdTemplateBtn">单条修改指令模板</button>
+        </div>
+      </div>
+
+      <div class="admin-editor-wrap">
+        <div class="admin-editor-head">
+          <span>编辑区（纯文本 `.txt`，支持新建/覆盖赛事或 `SET / DEL / RENAME / MERGE` 指令）</span>
+          <span id="lineStats" class="admin-muted">0 行</span>
+        </div>
+        <textarea id="txtEditor" spellcheck="false" placeholder="在此输入或粘贴赛事/对局文本..."></textarea>
+      </div>
+
+      <div class="admin-actions">
+        <button type="button" id="previewBtn" class="admin-btn-primary">解析预览</button>
+        <button type="button" id="submitServerBtn" class="admin-btn-success">直接写入服务器数据库</button>
+        <button type="button" id="downloadTxtBtn">下载 .txt</button>
+        <button type="button" id="downloadDbBtn">下载数据库 (.zip)</button>
+        <button type="button" id="clearBtn">清空</button>
+      </div>
+
+      <div id="statusBox" class="admin-status" style="display:none;"></div>
+      <div id="previewBox" class="admin-preview" style="display:none;"></div>
+    </div>
+  </main>
+  <script src="js/admin.js?v=10"></script>
 </body>
 </html>
