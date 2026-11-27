@@ -42,7 +42,7 @@ body,
 	}
 
 	#header {
-		height: 3.25rem;
+		height: 51px;
 		padding: 0 0.9rem;
 	}
 
@@ -51,7 +51,7 @@ body,
 		top: 0;
 		left: 0;
 		right: 0;
-		height: 3.25rem;
+		height: 51px;
 		display: flex;
 		align-items: center;
 		padding: 0 0.9rem;
@@ -529,71 +529,75 @@ a.score-link:hover {
 
 /* 赛事页的轮次选择：< [第N轮] / 共 X 轮 > */
 
+/* 赛事页的轮次选择：Sport.dev 居中胶囊分段控件 */
+
 .round-pick {
 	display: flex;
+	width: fit-content;
 	align-items: center;
 	justify-content: center;
-	gap: 0.45em;
-	margin: 0 0 0.9em;
-	color: var(--ink-soft);
+	gap: 0.35em;
+	margin: 0 auto 1em;
+	padding: 3px 4px;
+	background: var(--muted-bg, #e6e6e6);
+	border-radius: 9999px;
+	color: var(--ink);
 }
 
 .round-pick select {
 	font: inherit;
-	font-size: 0.94em;
-	padding: 0.35em 0.6em;
-	min-height: 36px;
-	border: 1px solid var(--line-strong);
-	border-radius: var(--radius-sm);
-	background: var(--surface);
+	font-size: 0.9em;
+	font-weight: 600;
+	padding: 0.25em 0.7em;
+	min-height: 32px;
+	border: 0;
+	border-radius: 9999px;
+	background: var(--surface, #fff);
 	color: var(--ink);
-	transition: border-color 140ms ease;
-}
-
-.round-pick select:hover {
-	border-color: var(--neon);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+	cursor: pointer;
 }
 
 .round-nav {
 	font: inherit;
-	font-size: 0.94em;
+	font-size: 0.9em;
+	font-weight: 600;
 	line-height: 1;
-	min-width: 36px;
-	min-height: 36px;
-	padding: 0.4em 0.75em;
-	border: 1px solid var(--line-strong);
-	border-radius: var(--radius-sm);
-	background: var(--surface);
+	min-width: 32px;
+	min-height: 32px;
+	padding: 0.3em 0.65em;
+	border: 0;
+	border-radius: 9999px;
+	background: transparent;
 	color: var(--ink);
 	cursor: pointer;
-	transition: transform 120ms ease, background-color 140ms ease, border-color 140ms ease;
+	transition: background-color 120ms ease;
 }
 
 .round-nav:hover:enabled {
-	background: var(--surface-hover);
-	border-color: var(--neon);
-	transform: translateY(-1px);
+	background: var(--surface);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 .round-nav:active:enabled {
-	transform: translateY(0);
+	background: #f0f0f0;
 }
 
 .round-nav:disabled {
-	color: #b5b5b5;
-	border-color: var(--line);
+	color: #9a9a9a;
 	cursor: default;
 }
 
 .round-total {
 	color: var(--muted);
-	font-size: 0.9em;
+	font-size: 0.85em;
+	padding: 0 0.35em;
 	white-space: nowrap;
 }
 
 @media (max-width: 640px) {
 	.round-pick {
-		margin-bottom: 0.7em;
+		margin-bottom: 0.75em;
 	}
 	#content table.tour-standings th,
 	#content table.tour-standings td {
@@ -608,16 +612,20 @@ a.score-link:hover {
 
 .player-no {
 	color: var(--muted);
-	font-size: 0.85em;
-	margin-right: 0.25em;
+	font-size: 0.82em;
+	margin-right: 0.3em;
 	font-variant-numeric: tabular-nums;
 }
 
 .player-pts {
-	color: var(--green, #16a34a);
+	display: inline-block;
+	background: var(--muted-bg, #e6e6e6);
+	color: var(--ink-soft, #222);
 	font-weight: 600;
-	font-size: 0.82em;
-	margin-left: 0.3em;
+	font-size: 0.78em;
+	padding: 0.05em 0.4em;
+	border-radius: 4px;
+	margin-left: 0.35em;
 	font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 	font-variant-numeric: tabular-nums;
 }
