@@ -495,7 +495,13 @@
       });
       tbody.appendChild(titles);
 
-      (group.games || []).forEach(function (game) {
+      var sortedGames = (group.games || []).slice().sort(function (a, b) {
+        var ra = Number(a.round) || 0;
+        var rb = Number(b.round) || 0;
+        if (rb !== ra) return rb - ra;
+        return (Number(a.board) || 0) - (Number(b.board) || 0);
+      });
+      sortedGames.forEach(function (game) {
         var tr = el("tr");
         var day = el("td", "date", short_date(game.date));
         day.title = game.date;
