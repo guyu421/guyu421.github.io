@@ -575,7 +575,7 @@
 
   /* ---------- 赛事对局页 ---------- */
 
-  function playerCell(name, id, no) {
+  function playerCell(name, id, no, prevPts) {
     var td = el("td");
     if (name === "轮空") {
       td.className = "skip";
@@ -591,6 +591,9 @@
       td.appendChild(link);
     } else {
       td.appendChild(document.createTextNode(name || ""));
+    }
+    if (prevPts !== null && prevPts !== undefined && prevPts !== "") {
+      td.appendChild(el("span", "player-pts", "[" + prevPts + "]"));
     }
     return td;
   }
@@ -804,6 +807,36 @@
     var tbody = table.tBodies[0];
     // 表头是 tbody 的第一行，只清数据行
     while (tbody.rows.length > 1) tbody.deleteRow(tbody.rows.length - 1);
+    // 按轮次累计上轮积分，供对阵表在选手姓名后显示 [上轮积分]
+    var prevPtsByRound = {};
+    var byR = {};
+    (data.games || []).forEach(function (g) {
+      var r = Number(g.round);
+      if (!isNaN(r)) {
+        if (!byR[r]) byR[r] = [];
+        byR[r].push(g);
+      }
+    });
+    var accPts = {};
+    Object.keys(byR).map(Number).sort(function (a, b) { return a - b; }).forEach(function (r) {
+      var snap = {};
+      Object.keys(accPts).forEach(function (k) { snap[k] = accPts[k]; });
+      prevPtsByRound[r] = snap;
+      byR[r].forEach(function (g) {
+        var fk = g.first_id != null ? String(g.first_id) : ("n:" + (g.first || ""));
+        var sk = g.second_id != null ? String(g.second_id) : ("n:" + (g.second || ""));
+        var res = String(g.result || "");
+        if (res === "1" || res === "+-") {
+          if (g.first && g.first !== "轮空") accPts[fk] = (accPts[fk] || 0) + 1;
+        } else if (res === "0" || res === "-+") {
+          if (g.second && g.second !== "轮空") accPts[sk] = (accPts[sk] || 0) + 1;
+        } else if (res === "0.5") {
+          if (g.first && g.first !== "轮空") accPts[fk] = (accPts[fk] || 0) + 0.5;
+          if (g.second && g.second !== "轮空") accPts[sk] = (accPts[sk] || 0) + 0.5;
+        }
+      });
+    });
+
     var roundNum = round !== null ? Number(round) : null;
     (data.games || []).forEach(function (game) {
       // 选了轮次就只画这一轮的台次
@@ -814,7 +847,12 @@
       tr.appendChild(day);
       tr.appendChild(el("td", "rnd", "第" + game.round + "轮 第" + game.board + "台"));
       tr.appendChild(el("td", "rule", game.rule || ""));
-      tr.appendChild(playerCell(game.first, game.first_id, game.first_no));
+      var rSnap = prevPtsByRound[Number(game.round)] || {};
+      var fk = game.first_id != null ? String(game.first_id) : ("n:" + (game.first || ""));
+      var sk = game.second_id != null ? String(game.second_id) : ("n:" + (game.second || ""));
+      var fPrev = rSnap[fk] != null ? rSnap[fk] : 0;
+      var sPrev = rSnap[sk] != null ? rSnap[sk] : 0;
+      tr.appendChild(playerCell(game.first, game.first_id, game.first_no, fPrev));
       // 轮空也照库里填的记分显示（一般是 +:-），与其它台次一致
       var scoreTd = el("td", "score");
       var scoreText = RESULT_SCORE[String(game.result)] || String(game.result);
@@ -827,7 +865,7 @@
         scoreTd.textContent = scoreText;
       }
       tr.appendChild(scoreTd);
-      tr.appendChild(playerCell(game.second, game.second_id, game.second_no));
+      tr.appendChild(playerCell(game.second, game.second_id, game.second_no, sPrev));
       tr.appendChild(el("td", "prob", game.p_first != null ? Number(game.p_first).toFixed(1) + "%" : ""));
       tr.appendChild(el("td", "prob", game.p_draw != null ? Number(game.p_draw).toFixed(1) + "%" : ""));
       tr.appendChild(el("td", "prob", game.p_second != null ? Number(game.p_second).toFixed(1) + "%" : ""));
