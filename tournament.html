@@ -3,96 +3,105 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>(function(){try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}})()</script>
   <title>赛事对局 — 连珠网</title>
-  <link rel="stylesheet" href="css/site.css?v=12" />
+  <link rel="icon" type="image/png" sizes="48x48" href="/assets/favicon.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
+  <link rel="preload" href="/assets/fonts/jersey10-sd.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="/assets/mrgold.css" />
+  <link rel="stylesheet" href="css/site.css?v=13" />
 </head>
-<body>
-  <header id="top">
-    <div class="site-title-nav">
-      <a href="index.html" class="site-name"><strong>连珠网</strong></a>
-      <nav id="topnav" aria-label="主导航">
-        <a class="active" href="index.html">赛事</a>
-        <a href="players.html">棋手</a>
-        <a href="model.html">模型</a>
-      </nav>
+<body class="filter-bar-visible">
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a href="index.html" class="logo-text"><span class="logo-hash hash-combo">#</span>连珠网</a>
     </div>
-  </header>
+    <div class="nav-right">
+      <button type="button" id="theme-toggle-btn" aria-label="切换主题" onclick="(function(){var d=document.documentElement.classList.toggle('dark');try{localStorage.setItem('theme',d?'dark':'light');}catch(e){}})()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+        </svg>
+      </button>
+    </div>
+  </nav>
 
-  <main id="main-wrap">
-    <div id="primaryContent" data-tournament-page class="swiss-layout">
-      <aside class="swiss__side">
-        <div class="box swiss__stats">
-          <h2>赛事信息</h2>
-          <div id="tourMeta" class="swiss__meta-list"></div>
+  <div id="main-tab-bar-container">
+    <div class="main-tab-bar">
+      <div class="main-tab-scroll">
+        <div class="main-tab-group main-tab-filters">
+          <a class="main-tab active" href="index.html">赛事</a>
+          <a class="main-tab" href="players.html">棋手</a>
+          <a class="main-tab" href="model.html">模型</a>
         </div>
-      </aside>
+      </div>
+    </div>
+  </div>
 
-      <div class="swiss__main">
-        <div class="box">
-          <div class="swiss__main__header">
-            <div class="swiss__header-left">
-              <svg class="swiss__trophy" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0 0 11 15.9V19H7v2h10v-2h-4v-3.1a5.01 5.01 0 0 0 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/>
-              </svg>
-              <h1 id="tourName">赛事</h1>
-            </div>
-            <div class="swiss__round-badge" id="tourRoundBadge"></div>
-          </div>
+  <main class="container">
+    <div id="primaryContent" class="sd-col" data-tournament-page>
+      <section class="lpg-head">
+        <div class="tpg-who">
+          <h1 id="tourName" class="tpg-name lpg-name">赛事</h1>
+          <div id="tourMeta" class="lpg-sub"></div>
+        </div>
+      </section>
 
-          <div class="swiss__controls">
-            <div class="round-pick">
-              <button type="button" class="round-nav" id="roundPrev" aria-label="上一轮">&lt;</button>
-              <select id="roundSelect" aria-label="选择轮次"></select>
-              <span class="round-total" id="roundTotal"></span>
-              <button type="button" class="round-nav" id="roundNext" aria-label="下一轮">&gt;</button>
-            </div>
-            <div class="fbt-group" id="tourViewSeg" style="display:none;">
-              <button type="button" class="fbt active" data-view="all">全部</button>
-              <button type="button" class="fbt" data-view="games">对阵</button>
-              <button type="button" class="fbt" data-view="standings">积分榜</button>
-            </div>
-          </div>
+      <div id="tourViewSeg" class="view-pills" style="display:none;">
+        <span class="view-seg">
+          <button type="button" class="view-pill active" data-view="all">全部</button>
+          <button type="button" class="view-pill" data-view="games">对阵</button>
+          <button type="button" class="view-pill" data-view="standings">积分榜</button>
+        </span>
+      </div>
 
-          <div class="slist-wrapper" id="tourGamesWrap">
-            <table class="slist tour-games">
-              <tbody>
-                <tr>
-                  <th>日期</th>
-                  <th>轮次</th>
-                  <th>规则</th>
-                  <th>假先</th>
-                  <th>结果</th>
-                  <th>假后</th>
-                  <th>假先胜</th>
-                  <th>和棋</th>
-                  <th>假后胜</th>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+      <div class="round-pager">
+        <button type="button" class="round-pager-btn round-nav" id="roundPrev" aria-label="上一轮">&lt;</button>
+        <select id="roundSelect" aria-label="选择轮次"></select>
+        <span class="round-total" id="roundTotal"></span>
+        <button type="button" class="round-pager-btn round-nav" id="roundNext" aria-label="下一轮">&gt;</button>
+      </div>
 
-          <div id="roundStandingsWrap" style="display:none;">
-            <h3 id="standingsTitle" class="swiss__section-title">本轮后积分与夺冠概率</h3>
-            <div class="slist-wrapper">
-              <table class="slist swiss__standing renju-table tour-standings">
-                <tbody>
-                  <tr>
-                    <th>名次</th>
-                    <th>姓名</th>
-                    <th>积分</th>
-                    <th>对手分</th>
-                    <th>中间对手分</th>
-                    <th>胜局数</th>
-                    <th>夺冠概率</th>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+      <div id="tourMatchesCards" class="upcoming-matches-card"></div>
+
+      <div class="table-wrap" id="tourTeamTableWrap" style="display:none;">
+        <table class="ladder-table tour-games">
+          <tbody>
+            <tr>
+              <th>日期</th>
+              <th>轮次</th>
+              <th>规则</th>
+              <th>假先</th>
+              <th>结果</th>
+              <th>假后</th>
+              <th class="num">假先胜</th>
+              <th class="num">和棋</th>
+              <th class="num">假后胜</th>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="roundStandingsWrap" style="display:none; margin-top: 1.5rem;">
+        <h3 id="standingsTitle" class="tpg-h">本轮后积分与夺冠概率</h3>
+        <div class="table-wrap">
+          <table class="ladder-table renju-table tour-standings">
+            <tbody>
+              <tr>
+                <th class="num">名次</th>
+                <th>姓名</th>
+                <th class="num">积分</th>
+                <th class="num">对手分</th>
+                <th class="num">中间对手分</th>
+                <th class="num">胜局数</th>
+                <th class="num">夺冠概率</th>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   </main>
-  <script src="js/app.js?v=12"></script>
+  <script src="js/app.js?v=13"></script>
 </body>
 </html>

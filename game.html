@@ -3,28 +3,48 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>(function(){try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}})()</script>
   <title>对局详情 — 连珠网</title>
-  <link rel="stylesheet" href="css/site.css?v=12" />
+  <link rel="icon" type="image/png" sizes="48x48" href="/assets/favicon.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
+  <link rel="preload" href="/assets/fonts/jersey10-sd.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="/assets/mrgold.css" />
+  <link rel="stylesheet" href="css/site.css?v=13" />
 </head>
-<body>
-  <header id="top">
-    <div class="site-title-nav">
-      <a href="index.html" class="site-name"><strong>连珠网</strong></a>
-      <nav id="topnav" aria-label="主导航">
-        <a class="active" href="index.html">赛事</a>
-        <a href="players.html">棋手</a>
-        <a href="model.html">模型</a>
-      </nav>
+<body class="filter-bar-visible">
+  <nav class="top-nav">
+    <div class="nav-left">
+      <a href="index.html" class="logo-text"><span class="logo-hash hash-combo">#</span>连珠网</a>
     </div>
-  </header>
+    <div class="nav-right">
+      <button type="button" id="theme-toggle-btn" aria-label="切换主题" onclick="(function(){var d=document.documentElement.classList.toggle('dark');try{localStorage.setItem('theme',d?'dark':'light');}catch(e){}})()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+        </svg>
+      </button>
+    </div>
+  </nav>
 
-  <main id="main-wrap" class="is-narrow">
-    <div id="primaryContent" data-game-page class="box">
-      <div class="swiss__main__header">
-        <div class="swiss__header-left">
-          <h1 id="gameTitle">对局详情</h1>
+  <div id="main-tab-bar-container">
+    <div class="main-tab-bar">
+      <div class="main-tab-scroll">
+        <div class="main-tab-group main-tab-filters">
+          <a class="main-tab active" href="index.html">赛事</a>
+          <a class="main-tab" href="players.html">棋手</a>
+          <a class="main-tab" href="model.html">模型</a>
         </div>
       </div>
+    </div>
+  </div>
+
+  <main class="container">
+    <div id="primaryContent" class="sd-col" data-game-page>
+      <section class="lpg-head">
+        <div class="tpg-who">
+          <h1 id="gameTitle" class="tpg-name lpg-name">对局详情</h1>
+        </div>
+      </section>
       <div id="gameMeta" class="game-meta"></div>
       <div class="board-wrap">
         <canvas id="renjuBoard" width="480" height="480"></canvas>
@@ -38,6 +58,6 @@
       </div>
     </div>
   </main>
-  <script src="js/game.js?v=12"></script>
+  <script src="js/game.js?v=13"></script>
 </body>
 </html>

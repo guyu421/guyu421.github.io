@@ -859,39 +859,29 @@
   }
 
   function renderTournamentGames(data, round) {
-    var gamesWrap = document.getElementById("tourGamesWrap");
+    var cardsWrap = document.getElementById("tourMatchesCards");
+    var teamWrap = document.getElementById("tourTeamTableWrap");
     var table = document.querySelector("table.tour-games");
 
-    var badge = document.getElementById("tourRoundBadge");
-    if (badge) {
-      if (round === "pre") {
-        badge.innerHTML = "<span>阶段</span>抽签前";
-      } else if (round === "draw") {
-        badge.innerHTML = "<span>阶段</span>首轮前";
-      } else if (round != null) {
-        badge.innerHTML = "<span>轮次</span>第 " + round + " 轮";
-      }
-    }
-
     if (data.team_matches && data.team_matches.length) {
-      if (gamesWrap) gamesWrap.style.display = "";
+      if (cardsWrap) { cardsWrap.innerHTML = ""; cardsWrap.style.display = "none"; }
+      if (teamWrap) teamWrap.style.display = "";
       if (table) table.style.display = "";
       renderTeamMatches(data, round);
       renderRoundStandings(data, round);
       return;
     }
 
+    if (teamWrap) teamWrap.style.display = "none";
     if (round === "pre" || round === "draw") {
-      if (gamesWrap) gamesWrap.style.display = "none";
-      if (table) table.style.display = "none";
+      if (cardsWrap) { cardsWrap.innerHTML = ""; cardsWrap.style.display = "none"; }
       renderRoundStandings(data, round);
       return;
     }
-    if (gamesWrap) gamesWrap.style.display = "";
-    if (table) table.style.display = "";
-    if (!table || !table.tBodies[0]) return;
-    var tbody = table.tBodies[0];
-    while (tbody.rows.length > 1) tbody.deleteRow(tbody.rows.length - 1);
+
+    if (!cardsWrap) return;
+    cardsWrap.style.display = "";
+    cardsWrap.innerHTML = "";
 
     var rs = (data && data.round_standings) || {};
     function lookupPrevPts(rnd, pid, name) {
@@ -906,49 +896,123 @@
     }
 
     var roundNum = round !== null ? Number(round) : null;
-    (data.games || []).forEach(function (game) {
-      if (roundNum !== null && Number(game.round) !== roundNum) return;
-      var tr = el("tr");
-      var day = el("td", "date", short_date(game.date));
-      day.title = game.date;
-      tr.appendChild(day);
-      tr.appendChild(el("td", "rnd", "第" + game.round + "轮 第" + game.board + "台"));
-      tr.appendChild(el("td", "rule", game.rule || ""));
+    var games = (data.games || []).filter(function (g) {
+      return roundNum === null || Number(g.round) === roundNum;
+    });
+
+    games.forEach(function (game, idx) {
+      if (idx > 0) {
+        cardsWrap.appendChild(el("div", "upcoming-match-divider"));
+      }
+      var mcRow = el("div", "upcoming-match-row mc-row");
+      var mcIn = el("div", "mc-in");
+      var summary = el("div", "upcoming-match-summary");
+
+      // Top meta line (.mc-meta)
+      var meta = el("div", "mc-meta");
+      var lead = el("span", "mc-lead");
+      var lg = el("b", "mc-lg", "第" + game.round + "轮 第" + game.board + "台");
+      lead.appendChild(lg);
+      if (game.rule) {
+        lead.appendChild(document.createTextNode(" "));
+        lead.appendChild(el("span", "mc-rd", game.rule));
+      }
+      meta.appendChild(lead);
+
+      var end = el("span", "mc-end");
+      if (game.date) {
+        end.appendChild(el("span", "mc-where", game.date));
+      }
+      var bye = game.first === "轮空" || game.second === "轮空";
+      if (!bye && game.game_id !== null && game.game_id !== undefined) {
+        var chevLink = el("a", "mc-chev");
+        chevLink.href = "game.html?id=" + encodeURIComponent(game.game_id);
+        chevLink.setAttribute("aria-label", "查看对局");
+        end.appendChild(chevLink);
+      } else {
+        end.appendChild(el("span", "mc-chev"));
+      }
+      meta.appendChild(end);
+      summary.appendChild(meta);
+
+      // Main 3-column face-off (.mc-main)
+      var main = el("div", "mc-main");
       var gr = Number(game.round);
       var fPrev = lookupPrevPts(gr, game.first_id, game.first);
       var sPrev = lookupPrevPts(gr, game.second_id, game.second);
-      tr.appendChild(playerCell(game.first, game.first_id, game.first_no, fPrev));
-      var scoreTd = el("td", "score");
-      var scoreText = RESULT_SCORE[String(game.result)] || String(game.result);
-      var bye = game.first === "轮空" || game.second === "轮空";
-      if (!bye && game.game_id !== null && game.game_id !== undefined) {
-        var scoreLink = el("a", "score-link", scoreText);
-        scoreLink.href = "game.html?id=" + encodeURIComponent(game.game_id);
-        scoreTd.appendChild(scoreLink);
-      } else {
-        scoreTd.textContent = scoreText;
-      }
-      tr.appendChild(scoreTd);
-      tr.appendChild(playerCell(game.second, game.second_id, game.second_no, sPrev));
+
       var pf = game.p_first != null ? Number(game.p_first) : null;
       var pd = game.p_draw != null ? Number(game.p_draw) : null;
       var ps = game.p_second != null ? Number(game.p_second) : null;
       var pMax = (pf != null && pd != null && ps != null) ? Math.max(pf, pd, ps) : null;
-      function makeProbTd(val) {
-        var td = el("td", "prob");
-        if (val == null) return td;
-        var txt = val.toFixed(1) + "%";
-        if (pMax != null && val === pMax) {
-          td.appendChild(el("span", "prob-pill " + (val >= 50 ? "is-green" : "is-slate"), txt));
+
+      function buildSide(name, id, no, prevPts, prob, sideClass) {
+        var side = el("div", "mc-side " + sideClass);
+        var nm = el("span", "mc-nm");
+        if (name === "轮空") {
+          nm.appendChild(el("span", "mc-name", name));
         } else {
-          td.textContent = txt;
+          var nameEl = el("span", "mc-name");
+          if (id) {
+            var link = el("a", "mc-player-link", name);
+            link.href = "player.html?id=" + encodeURIComponent(id);
+            nameEl.appendChild(link);
+          } else {
+            nameEl.textContent = name || "";
+          }
+          nm.appendChild(nameEl);
+          var chipParts = [];
+          if (no !== null && no !== undefined && no !== "") chipParts.push("#" + no);
+          if (prevPts !== null && prevPts !== undefined && prevPts !== "") chipParts.push(prevPts + "分");
+          if (chipParts.length) {
+            nm.appendChild(el("span", "mc-chip", chipParts.join(" · ")));
+          }
         }
-        return td;
+        side.appendChild(nm);
+
+        if (prob != null) {
+          var isLead = pMax != null && prob === pMax;
+          var cls = "mc-pct" + (isLead ? (" is-fav is-lean " + (prob >= 50 ? "lean-green" : "lean-grey")) : "");
+          side.appendChild(el("span", cls, prob.toFixed(1) + "%"));
+        }
+        return side;
       }
-      tr.appendChild(makeProbTd(pf));
-      tr.appendChild(makeProbTd(pd));
-      tr.appendChild(makeProbTd(ps));
-      tbody.appendChild(tr);
+
+      main.appendChild(buildSide(game.first, game.first_id, game.first_no, fPrev, pf, "is-home"));
+
+      var center = el("div", "mc-c");
+      var scoreText = RESULT_SCORE[String(game.result)] || String(game.result);
+      var scoreSpan = el("span", "mc-score");
+      if (scoreText.indexOf(":") >= 0) {
+        var parts = scoreText.split(":");
+        scoreSpan.appendChild(document.createTextNode(parts[0]));
+        scoreSpan.appendChild(el("span", "mc-dash", "–"));
+        scoreSpan.appendChild(document.createTextNode(parts[1]));
+      } else {
+        scoreSpan.textContent = scoreText;
+      }
+      if (!bye && game.game_id !== null && game.game_id !== undefined) {
+        var scoreLink = el("a", "mc-player-link");
+        scoreLink.href = "game.html?id=" + encodeURIComponent(game.game_id);
+        scoreLink.appendChild(scoreSpan);
+        center.appendChild(scoreLink);
+      } else {
+        center.appendChild(scoreSpan);
+      }
+
+      if (pd != null) {
+        var dLead = pMax != null && pd === pMax;
+        var dCls = "mc-draw" + (dLead ? (" is-fav is-lean " + (pd >= 50 ? "lean-green" : "lean-grey")) : "");
+        center.appendChild(el("span", dCls, "和棋 " + pd.toFixed(1) + "%"));
+      }
+      main.appendChild(center);
+
+      main.appendChild(buildSide(game.second, game.second_id, game.second_no, sPrev, ps, "is-away"));
+
+      summary.appendChild(main);
+      mcIn.appendChild(summary);
+      mcRow.appendChild(mcIn);
+      cardsWrap.appendChild(mcRow);
     });
     renderRoundStandings(data, round);
   }
@@ -1045,10 +1109,12 @@
   function syncTourViewSeg() {
     var seg = document.getElementById("tourViewSeg");
     var standingsWrap = document.getElementById("roundStandingsWrap");
-    var gamesWrap = document.getElementById("tourGamesWrap");
-    var table = document.querySelector("table.tour-games");
+    var cardsWrap = document.getElementById("tourMatchesCards");
+    var teamWrap = document.getElementById("tourTeamTableWrap");
     if (!seg) return;
-    var hasGames = table && table.tBodies[0] && table.tBodies[0].rows.length > 1;
+    var hasCards = cardsWrap && cardsWrap.children.length > 0;
+    var hasTeam = teamWrap && teamWrap.style.display !== "none";
+    var hasGames = hasCards || hasTeam;
     var hasStandings = standingsWrap && standingsWrap.querySelector("table.tour-standings tbody tr") && standingsWrap.style.display !== "none";
     if (!hasGames || !hasStandings) {
       seg.style.display = "none";
@@ -1056,13 +1122,14 @@
     }
     seg.style.display = "flex";
     if (tourActiveView === "games") {
-      if (gamesWrap) gamesWrap.style.display = "";
+      if (hasCards) cardsWrap.style.display = "";
       if (standingsWrap) standingsWrap.style.display = "none";
     } else if (tourActiveView === "standings") {
-      if (gamesWrap) gamesWrap.style.display = "none";
+      if (cardsWrap) cardsWrap.style.display = "none";
+      if (teamWrap) teamWrap.style.display = "none";
       if (standingsWrap) standingsWrap.style.display = "block";
     } else {
-      if (gamesWrap) gamesWrap.style.display = "";
+      if (hasCards) cardsWrap.style.display = "";
       if (standingsWrap) standingsWrap.style.display = "block";
     }
   }
@@ -1145,10 +1212,10 @@
 
     var seg = document.getElementById("tourViewSeg");
     if (seg) {
-      seg.querySelectorAll(".fbt").forEach(function (btn) {
+      seg.querySelectorAll(".view-pill").forEach(function (btn) {
         btn.addEventListener("click", function () {
           tourActiveView = btn.getAttribute("data-view") || "all";
-          seg.querySelectorAll(".fbt").forEach(function (b) {
+          seg.querySelectorAll(".view-pill").forEach(function (b) {
             b.classList.toggle("active", b === btn);
           });
           renderTournamentGames(data, String(select.value));
@@ -1300,8 +1367,8 @@
 
     function buildPagerBar() {
       var bar = document.createElement("div");
-      bar.className = "round-pick";
-      var prevBtn = el("button", "round-nav", "<");
+      bar.className = "round-pager";
+      var prevBtn = el("button", "round-pager-btn round-nav", "<");
       prevBtn.type = "button";
       var select = document.createElement("select");
       for (var p = 1; p <= totalPages; p++) {
@@ -1313,7 +1380,7 @@
         select.appendChild(opt);
       }
       var totalSpan = el("span", "round-total", "/ 共 " + totalPages + " 页（" + sorted.length + " 人）");
-      var nextBtn = el("button", "round-nav", ">");
+      var nextBtn = el("button", "round-pager-btn round-nav", ">");
       nextBtn.type = "button";
       bar.appendChild(prevBtn);
       bar.appendChild(select);
