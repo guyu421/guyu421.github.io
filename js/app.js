@@ -40,14 +40,54 @@
     return [];
   }
 
-  function load(feed) {
-    return fetch(DATA_BASE + feed + ".json")
+  function fetchJsonWithRetry(url, retries) {
+    var left = retries == null ? 2 : retries;
+    return fetch(url)
       .then(function (res) {
         if (!res.ok) throw new Error("HTTP " + res.status);
         return res.json();
       })
-      .then(normalize)
-      .catch(function () { return []; });
+      .catch(function (err) {
+        if (left > 0) {
+          return new Promise(function (resolve) {
+            setTimeout(resolve, 400);
+          }).then(function () {
+            return fetchJsonWithRetry(url, left - 1);
+          });
+        }
+        throw err;
+      });
+  }
+
+  function showFeedStatus(feed, text, retryFn) {
+    var table = document.querySelector("table[data-feed='" + feed + "']");
+    if (!table || !table.tBodies[0]) return;
+    var tbody = table.tBodies[0];
+    while (tbody.rows.length > 1) tbody.deleteRow(tbody.rows.length - 1);
+    var tr = document.createElement("tr");
+    var td = document.createElement("td");
+    td.colSpan = (tbody.rows[0] && tbody.rows[0].cells.length) || 6;
+    td.style.textAlign = "center";
+    td.style.padding = "20px";
+    td.style.color = "var(--c-font-dim)";
+    td.appendChild(document.createTextNode(text + " "));
+    if (retryFn) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = "重试";
+      btn.className = "round-nav";
+      btn.style.marginLeft = "8px";
+      btn.addEventListener("click", retryFn);
+      td.appendChild(btn);
+    }
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+  }
+
+  function load(feed) {
+    showFeedStatus(feed, "正在加载数据…");
+    return fetchJsonWithRetry(DATA_BASE + feed + ".json", 2)
+      .then(normalize);
   }
 
   function formatPeriod(row) {
@@ -549,11 +589,7 @@
       if (heading) heading.textContent = "未找到棋手";
       return Promise.resolve();
     }
-    return fetch(DATA_BASE + "player/" + id + ".json")
-      .then(function (res) {
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        return res.json();
-      })
+    return fetchJsonWithRetry(DATA_BASE + "player/" + id + ".json", 2)
       .then(function (data) {
         if (!data || !data.name) throw new Error("empty");
         document.title = data.name;
@@ -1129,11 +1165,8 @@
       if (heading) heading.textContent = "未找到赛事";
       return Promise.resolve();
     }
-    return fetch(DATA_BASE + "tournament/" + id + ".json")
-      .then(function (res) {
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        return res.json();
-      })
+    if (heading) heading.textContent = "加载中…";
+    return fetchJsonWithRetry(DATA_BASE + "tournament/" + id + ".json", 2)
       .then(function (data) {
         if (!data || !data.name) throw new Error("empty");
         document.title = data.name;
@@ -1336,16 +1369,21 @@
     if (document.querySelector("[data-tournament-page]")) return initTournament();
     var feed = getFeed();
     if (!feed) return Promise.resolve();
-    return load(feed).then(function (rows) {
-      if (feed === "tournaments") {
-        setupYearPicker(rows);
-      } else if (feed === "players") {
-        setupPlayersPager(rows);
-      } else {
-        render(feed, sortRows(feed, rows));
-      }
-      return rows;
-    });
+    function runFeed() {
+      return load(feed).then(function (rows) {
+        if (feed === "tournaments") {
+          setupYearPicker(rows);
+        } else if (feed === "players") {
+          setupPlayersPager(rows);
+        } else {
+          render(feed, sortRows(feed, rows));
+        }
+        return rows;
+      }).catch(function () {
+        showFeedStatus(feed, "数据加载失败，请重试", runFeed);
+      });
+    }
+    return runFeed();
   }
 
   if (document.readyState === "loading") {
