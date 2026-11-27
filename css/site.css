@@ -41,39 +41,34 @@ body,
 		-webkit-text-size-adjust: 100%;
 	}
 
-	#header {
+	#header.top-nav {
 		height: 51px;
 		padding: 0 0.9rem;
 	}
 
-	#menu {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		height: 51px;
-		display: flex;
-		align-items: center;
+	#menu.tab-bar {
+		position: sticky;
+		top: 51px;
+		height: 42px;
 		padding: 0 0.9rem;
-		box-sizing: border-box;
 	}
 
 	#menu ul {
 		display: flex;
 		align-items: center;
-		gap: 0.25rem;
+		gap: 1rem;
 	}
 
 	#menu li {
-		margin-left: 0.45rem;
-		padding-left: 0.55rem;
+		margin-left: 0;
+		padding-left: 0;
 	}
 
 	#menu li a {
 		display: inline-flex;
 		align-items: center;
-		min-height: 44px;
-		padding: 0 0.5rem;
+		min-height: 42px;
+		padding: 0 0.25rem;
 	}
 
 	#primaryContent {
