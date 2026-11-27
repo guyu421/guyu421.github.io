@@ -1,27 +1,28 @@
-/* Design System Tokens — Sport.dev Dark Analytics Style */
+/* Design System Tokens — Sport.dev Crisp Light Analytics Style */
 
 :root {
-	--bg: #090d16;
-	--surface: #111827;
-	--surface-alt: #151e30;
-	--surface-hover: #1d293d;
-	--ink: #f8fafc;
-	--ink-soft: #cbd5e1;
-	--muted: #94a3b8;
-	--line: rgba(148, 163, 184, 0.16);
-	--line-strong: rgba(148, 163, 184, 0.32);
-	--accent: #38bdf8;
-	--accent-hover: #7dd3fc;
-	--neon: #10b981;
-	--neon-soft: rgba(16, 185, 129, 0.14);
-	--header-bg: #060910;
-	--th-bg: #0f172a;
-	--win: #34d399;
-	--draw: #38bdf8;
-	--loss: #f87171;
+	--bg: #ffffff;
+	--surface: #ffffff;
+	--surface-alt: #f7f7f8;
+	--surface-hover: #f1f3f5;
+	--muted-bg: #e6e6e6;
+	--ink: #000000;
+	--ink-soft: #222222;
+	--muted: #555555;
+	--line: #dcdcdc;
+	--line-strong: #c4c4c4;
+	--accent: #1d4ed8;
+	--accent-hover: #1e40af;
+	--cobalt: #205ca5;
+	--green: #16a34a;
+	--red: #dc2626;
+	--header-bg: #ffffff;
+	--th-bg: #f7f7f8;
+	--win: #16a34a;
+	--draw: #1d4ed8;
+	--loss: #dc2626;
 	--radius-sm: 6px;
-	--radius-md: 10px;
-	--shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.35);
+	--radius-md: 8px;
 }
 
 /* Basic */
@@ -35,24 +36,23 @@
 }
 
 body {
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
-		"Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+		"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
 	font-size: 15px;
-	line-height: 1.6;
+	line-height: 1.55;
 	color: var(--ink);
 	background-color: var(--bg);
-	background-image: radial-gradient(ellipse 80% 45% at 50% -10%, rgba(16, 185, 129, 0.08), transparent 70%);
 	-webkit-font-smoothing: antialiased;
 }
 
 a {
-	color: var(--accent);
+	color: var(--cobalt);
 	text-decoration: none;
-	transition: color 140ms ease;
+	transition: color 120ms ease;
 }
 
 a:hover {
-	color: var(--accent-hover);
+	color: var(--accent);
 	text-decoration: underline;
 	text-underline-offset: 3px;
 }
@@ -62,7 +62,7 @@ button:focus-visible,
 select:focus-visible,
 input:focus-visible,
 textarea:focus-visible {
-	outline: 2px solid var(--neon);
+	outline: 2px solid var(--accent);
 	outline-offset: 2px;
 }
 
@@ -75,13 +75,13 @@ textarea:focus-visible {
 	min-height: 100vh;
 }
 
-/* Header & Navigation */
+/* Header & Navigation — Sport.dev clean opaque bar + hairline border */
 
 #header {
 	position: relative;
 	background: var(--header-bg);
 	border-bottom: 1px solid var(--line);
-	height: 3.6rem;
+	height: 3.4rem;
 	padding: 0 max(1.5rem, calc((100% - 1120px) / 2));
 }
 
@@ -90,7 +90,7 @@ textarea:focus-visible {
 	top: 0;
 	left: max(1.5rem, calc((100% - 1120px) / 2));
 	right: max(1.5rem, calc((100% - 1120px) / 2));
-	height: 3.6rem;
+	height: 3.4rem;
 	display: flex;
 	align-items: center;
 }
@@ -99,14 +99,14 @@ textarea:focus-visible {
 	list-style: none;
 	display: flex;
 	align-items: center;
-	gap: 0.35rem;
+	gap: 0.25rem;
 }
 
 #menu li {
 	display: inline-flex;
 	align-items: center;
-	padding-left: 0.75rem;
-	margin-left: 0.4rem;
+	padding-left: 0.65rem;
+	margin-left: 0.35rem;
 	border-left: 1px solid var(--line);
 }
 
@@ -118,32 +118,31 @@ textarea:focus-visible {
 
 #menu li a {
 	position: relative;
-	color: var(--ink-soft);
-	padding: 0.45rem 0.6rem;
+	color: var(--ink);
+	padding: 0.45rem 0.65rem;
 	font-size: 0.95rem;
 	font-weight: 600;
-	letter-spacing: 0.01em;
 	text-decoration: none;
 	border-radius: var(--radius-sm);
-	transition: color 140ms ease, background-color 140ms ease;
+	transition: background-color 120ms ease;
 }
 
 #menu li a::after {
 	content: "";
 	position: absolute;
-	left: 0.6rem;
-	right: 0.6rem;
-	bottom: 0.25rem;
+	left: 0.65rem;
+	right: 0.65rem;
+	bottom: 0.2rem;
 	height: 2px;
-	background: var(--neon);
+	background: var(--ink);
 	transform: scaleX(0);
 	transform-origin: left;
-	transition: transform 180ms ease;
+	transition: transform 160ms ease;
 }
 
 #menu li a:hover {
-	color: #ffffff;
-	background: rgba(255, 255, 255, 0.06);
+	color: var(--ink);
+	background: var(--surface-alt);
 	text-decoration: none;
 }
 
@@ -154,12 +153,12 @@ textarea:focus-visible {
 /* Content */
 
 #content {
-	line-height: 1.6;
-	background: transparent;
+	line-height: 1.55;
+	background: var(--bg);
 }
 
 #content p {
-	margin-bottom: 1.15em;
+	margin-bottom: 1.1em;
 }
 
 #content h1,
@@ -170,25 +169,25 @@ textarea:focus-visible {
 #content h6 {
 	color: var(--ink);
 	font-weight: 700;
-	letter-spacing: -0.015em;
-	margin-bottom: 0.9em;
+	letter-spacing: -0.02em;
+	margin-bottom: 0.85em;
 	border-bottom: 1px solid var(--line);
 	padding-bottom: 0.45em;
 }
 
 #content h1 {
-	font-size: 1.65rem;
+	font-size: 1.6rem;
 }
 
 #content h2 {
-	font-size: 1.25rem;
+	font-size: 1.2rem;
 }
 
 #content h3 {
 	font-size: 1.05rem;
 	border-bottom: 0;
 	padding-bottom: 0;
-	margin-bottom: 0.6em;
+	margin-bottom: 0.55em;
 }
 
 #content ul {
@@ -208,8 +207,8 @@ textarea:focus-visible {
 #content blockquote {
 	margin-bottom: 1.25em;
 	padding: 0.75em 1em;
-	border-left: 4px solid var(--neon);
-	background: var(--surface);
+	border-left: 3px solid var(--ink);
+	background: var(--surface-alt);
 	border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 
@@ -233,14 +232,13 @@ textarea:focus-visible {
 #content table th {
 	font-weight: 600;
 	font-size: 0.82rem;
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
-	padding: 0.72rem 0.85rem;
+	letter-spacing: 0.02em;
+	padding: 0.65rem 0.8rem;
 	text-align: center;
 	white-space: nowrap;
 	color: var(--muted);
 	background: var(--th-bg);
-	border-bottom: 1px solid var(--line-strong);
+	border-bottom: 1px solid var(--line);
 	border-right: 1px solid var(--line);
 }
 
@@ -254,16 +252,17 @@ textarea:focus-visible {
 
 #content table th.second {
 	font-weight: 600;
-	padding: 0.65rem 0.85rem;
+	padding: 0.6rem 0.8rem;
 	text-align: center;
 	white-space: nowrap;
-	color: var(--ink-soft);
-	background: #172338;
+	color: var(--ink);
+	background: var(--muted-bg);
+	border-bottom: 1px solid var(--line);
 	border-right: 1px solid var(--line);
 }
 
 #content table td {
-	padding: 0.62rem 0.85rem;
+	padding: 0.6rem 0.8rem;
 	border-right: 1px solid var(--line);
 	white-space: nowrap;
 }
@@ -275,13 +274,13 @@ textarea:focus-visible {
 #content table td.right,
 #content table td.num {
 	text-align: right;
-	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
 #content table td.graynum {
 	text-align: right;
 	color: var(--muted);
-	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
 #content table td.cnum,
@@ -313,18 +312,12 @@ textarea:focus-visible {
 	background: var(--th-bg);
 }
 
-#content table tr:nth-child(even) {
+#content table tr:nth-child(even),
+#content table tr:nth-child(2n+3) {
 	background: var(--surface);
 	border-top: 1px solid var(--line);
 	color: inherit;
-	transition: background-color 120ms ease;
-}
-
-#content table tr:nth-child(2n+3) {
-	background: var(--surface-alt);
-	border-top: 1px solid var(--line);
-	color: inherit;
-	transition: background-color 120ms ease;
+	transition: background-color 110ms ease;
 }
 
 #content table tr:nth-child(n+2):hover {
@@ -336,14 +329,9 @@ textarea:focus-visible {
 	background: var(--th-bg);
 }
 
-#content table tr.rowA {
-	background: var(--surface);
-	border-top: 1px solid var(--line);
-	color: inherit;
-}
-
+#content table tr.rowA,
 #content table tr.rowB {
-	background: var(--surface-alt);
+	background: var(--surface);
 	border-top: 1px solid var(--line);
 	color: inherit;
 }
@@ -368,7 +356,7 @@ textarea:focus-visible {
 
 #content pre {
 	display: block;
-	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 	white-space: pre;
 }
 
@@ -383,7 +371,7 @@ textarea:focus-visible {
 
 #primaryContent {
 	margin: 0;
-	padding: 1.65rem 1.5rem 2.75rem;
+	padding: 1.5rem 1.5rem 2.75rem;
 }
 
 .clear {

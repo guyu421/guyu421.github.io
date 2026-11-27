@@ -17,9 +17,8 @@ body,
 	-webkit-overflow-scrolling: touch;
 	margin-bottom: 1.5em;
 	background: var(--surface, #fff);
-	border: 1px solid var(--line, #e5e1d8);
-	border-radius: var(--radius-md, 10px);
-	box-shadow: var(--shadow-sm, 0 1px 3px rgba(20, 18, 14, 0.05));
+	border: 1px solid var(--line, #dcdcdc);
+	border-radius: var(--radius-md, 8px);
 }
 
 .table-wrap > table {
@@ -581,7 +580,7 @@ a.score-link:hover {
 }
 
 .round-nav:disabled {
-	color: #475569;
+	color: #b5b5b5;
 	border-color: var(--line);
 	cursor: default;
 }
@@ -595,6 +594,11 @@ a.score-link:hover {
 @media (max-width: 640px) {
 	.round-pick {
 		margin-bottom: 0.7em;
+	}
+	#content table.tour-standings th,
+	#content table.tour-standings td {
+		padding: 0.45rem 0.35rem;
+		font-size: 13px;
 	}
 }
 
@@ -610,17 +614,18 @@ a.score-link:hover {
 }
 
 .player-pts {
-	color: var(--neon);
+	color: var(--green, #16a34a);
+	font-weight: 600;
 	font-size: 0.82em;
 	margin-left: 0.3em;
-	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 	font-variant-numeric: tabular-nums;
 }
 
 /* 后台管理 */
 
 .admin-panel {
-	background: var(--surface);
+	background: var(--surface-alt);
 	border: 1px solid var(--line);
 	border-radius: var(--radius-md);
 	padding: 0.85em 1em;
@@ -646,7 +651,7 @@ a.score-link:hover {
 	border: 1px solid var(--line-strong);
 	border-radius: var(--radius-sm);
 	font-size: 0.9em;
-	background: var(--bg);
+	background: var(--surface);
 	color: var(--ink);
 }
 
@@ -659,17 +664,17 @@ a.score-link:hover {
 	padding: 0.45em 0.9em;
 	border: 1px solid var(--line-strong);
 	border-radius: var(--radius-sm);
-	background: var(--surface-alt);
+	background: var(--surface);
 	color: var(--ink);
 	cursor: pointer;
 	font-size: 0.9em;
-	transition: background-color 140ms ease, border-color 140ms ease;
+	transition: background-color 120ms ease, border-color 120ms ease;
 }
 
 .admin-row button:hover,
 .admin-actions button:hover {
 	background: var(--surface-hover);
-	border-color: var(--neon);
+	border-color: var(--ink);
 }
 
 .admin-editor-wrap {
@@ -690,12 +695,12 @@ a.score-link:hover {
 	min-height: 460px;
 	box-sizing: border-box;
 	padding: 0.85em 1em;
-	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+	font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 	font-size: 13.5px;
 	line-height: 1.55;
 	border: 1px solid var(--line-strong);
 	border-radius: var(--radius-md);
-	background: #0b1120;
+	background: #fafafa;
 	color: var(--ink);
 	resize: vertical;
 }
@@ -819,9 +824,9 @@ a.score-link:hover {
 }
 
 .model-desc code {
-	background: var(--surface-alt);
+	background: var(--muted-bg);
 	border: 1px solid var(--line);
-	color: var(--neon);
+	color: var(--ink);
 	padding: 0.1em 0.35em;
 	border-radius: 4px;
 	font-size: 0.9em;
@@ -839,9 +844,9 @@ a.score-link:hover {
 }
 
 .model-list code {
-	background: var(--surface-alt);
+	background: var(--muted-bg);
 	border: 1px solid var(--line);
-	color: var(--neon);
+	color: var(--ink);
 	padding: 0.1em 0.35em;
 	border-radius: 4px;
 	font-size: 0.9em;
@@ -885,17 +890,16 @@ a.score-link:hover {
 }
 
 .model-metric-card {
-	background: var(--surface);
+	background: var(--surface-alt);
 	border: 1px solid var(--line);
 	border-radius: var(--radius-md);
 	padding: 0.85rem 1rem;
-	box-shadow: var(--shadow-sm);
-	transition: transform 150ms ease, border-color 150ms ease;
+	transition: transform 140ms ease, border-color 140ms ease;
 }
 
 .model-metric-card:hover {
 	transform: translateY(-2px);
-	border-color: var(--neon);
+	border-color: var(--line-strong);
 }
 
 .model-metric-label {
@@ -907,8 +911,8 @@ a.score-link:hover {
 .model-metric-value {
 	font-size: 1.3em;
 	font-weight: 700;
-	color: var(--neon);
-	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	color: var(--ink);
+	font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 	font-variant-numeric: tabular-nums;
 }
 
