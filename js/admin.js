@@ -151,7 +151,8 @@
             lines.push(g.board + " " + g.first + " +- 轮空");
           } else {
             var resStr = g.result;
-            if (g.result === "1") resStr = "1 - 0";
+            if (g.result === "" || g.result === null || g.result === undefined) resStr = "vs";
+            else if (g.result === "1") resStr = "1 - 0";
             else if (g.result === "0") resStr = "0 - 1";
             else if (g.result === "0.5") resStr = "0.5 - 0.5";
             var extra = [];
@@ -312,11 +313,19 @@
         if (kv.moves) extraParts.push(kv.moves.split(/\s+/).length + "手");
         var extraStr = extraParts.join(" ");
 
-        var mBye = rest.match(/^(\d+)\s+(.+?)\s*(?:[+-]{1,2}\s+)?轮空(?:\s+.*)?$/);
+        var mBye = rest.match(/^(\d+)\s+(.+?)\s*(?:[+-]{1,2}\s+|vs\s+)?轮空(?:\s+.*)?$/i);
         if (mBye) {
           matches.push({
             round: curRound, date: curDate, board: Number(mBye[1]),
             first: mBye[2].trim().replace(/[+-]+$/, "").trim(), second: "轮空", result: "+-", extra: ""
+          });
+          return;
+        }
+        var mPending = rest.match(/^(\d+)\s+(.+?)\s+(?:vs|\?\s*[-:]\s*\?|-:-|\?|未赛)\s+(.+?)$/i);
+        if (mPending) {
+          matches.push({
+            round: curRound, date: curDate, board: Number(mPending[1]),
+            first: mPending[2].trim(), second: mPending[3].trim(), result: "vs", extra: extraStr
           });
           return;
         }
