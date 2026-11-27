@@ -4,36 +4,36 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>赛事 — renjuonline.top</title>
-  <link rel="stylesheet" href="css/site.css?v=11" />
+  <link rel="stylesheet" href="css/site.css?v=12" />
 </head>
 <body>
-  <header class="site-header">
-    <div class="site-header-inner">
-      <div class="site-topbar">
-        <a href="index.html" class="site-brand"><span class="site-brand-dot"></span>renjuonline.top</a>
-      </div>
-      <nav class="site-nav-tabs" aria-label="主导航">
-        <a class="site-nav-tab active" href="index.html">赛事</a>
-        <a class="site-nav-tab" href="players.html">棋手</a>
-        <a class="site-nav-tab" href="model.html">模型</a>
+  <header id="top">
+    <div class="site-title-nav">
+      <a href="index.html" class="site-name"><strong>renjuonline</strong>.top</a>
+      <nav id="topnav" aria-label="主导航">
+        <a class="active" href="index.html">赛事</a>
+        <a href="players.html">棋手</a>
+        <a href="model.html">模型</a>
       </nav>
     </div>
   </header>
 
-  <main class="page-container">
-    <div id="primaryContent">
-      <div class="page-head">
-        <h1>赛事</h1>
-      </div>
-      <div class="round-pick year-pick">
-        <div class="round-pick-left">
-          <button type="button" class="round-nav" id="yearPrev" aria-label="上一年">‹ 上一年</button>
-          <select id="yearSelect" aria-label="选择年份"></select>
-          <button type="button" class="round-nav" id="yearNext" aria-label="下一年">下一年 ›</button>
+  <main id="main-wrap" class="is-narrow">
+    <div id="primaryContent" class="box">
+      <div class="swiss__main__header">
+        <div class="swiss__header-left">
+          <h1>赛事</h1>
         </div>
       </div>
-      <div class="table-wrap">
-        <table data-feed="tournaments">
+      <div class="swiss__controls">
+        <div class="round-pick year-pick">
+          <button type="button" class="round-nav" id="yearPrev" aria-label="上一年">&lt;</button>
+          <select id="yearSelect" aria-label="选择年份"></select>
+          <button type="button" class="round-nav" id="yearNext" aria-label="下一年">&gt;</button>
+        </div>
+      </div>
+      <div class="slist-wrapper">
+        <table class="slist" data-feed="tournaments">
           <tbody>
             <tr>
               <th>日期</th>
@@ -46,6 +46,6 @@
       </div>
     </div>
   </main>
-  <script src="js/app.js?v=11"></script>
+  <script src="js/app.js?v=12"></script>
 </body>
 </html>

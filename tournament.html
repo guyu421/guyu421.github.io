@@ -4,82 +4,95 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>赛事对局 — renjuonline.top</title>
-  <link rel="stylesheet" href="css/site.css?v=11" />
+  <link rel="stylesheet" href="css/site.css?v=12" />
 </head>
 <body>
-  <header class="site-header">
-    <div class="site-header-inner">
-      <div class="site-topbar">
-        <a href="index.html" class="site-brand"><span class="site-brand-dot"></span>renjuonline.top</a>
-      </div>
-      <nav class="site-nav-tabs" aria-label="主导航">
-        <a class="site-nav-tab active" href="index.html">赛事</a>
-        <a class="site-nav-tab" href="players.html">棋手</a>
-        <a class="site-nav-tab" href="model.html">模型</a>
+  <header id="top">
+    <div class="site-title-nav">
+      <a href="index.html" class="site-name"><strong>renjuonline</strong>.top</a>
+      <nav id="topnav" aria-label="主导航">
+        <a class="active" href="index.html">赛事</a>
+        <a href="players.html">棋手</a>
+        <a href="model.html">模型</a>
       </nav>
     </div>
   </header>
 
-  <main class="page-container">
-    <div id="primaryContent" data-tournament-page>
-      <div class="page-head">
-        <h1 id="tourName">赛事</h1>
-        <div id="tourMeta" class="page-meta"></div>
-      </div>
-      <div class="round-pick">
-        <div class="round-pick-left">
-          <button type="button" class="round-nav" id="roundPrev" aria-label="上一轮">‹</button>
-          <select id="roundSelect" aria-label="选择轮次"></select>
-          <span class="round-total" id="roundTotal"></span>
-          <button type="button" class="round-nav" id="roundNext" aria-label="下一轮">›</button>
+  <main id="main-wrap">
+    <div id="primaryContent" data-tournament-page class="swiss-layout">
+      <aside class="swiss__side">
+        <div class="box swiss__stats">
+          <h2>赛事信息</h2>
+          <div id="tourMeta" class="swiss__meta-list"></div>
         </div>
-        <div class="seg-bar" id="tourViewSeg" style="display:none;">
-          <button type="button" class="seg-btn active" data-view="all">全部</button>
-          <button type="button" class="seg-btn" data-view="games">对阵</button>
-          <button type="button" class="seg-btn" data-view="standings">积分榜</button>
-        </div>
-      </div>
+      </aside>
 
-      <div id="tourFixturesWrap"></div>
+      <div class="swiss__main">
+        <div class="box">
+          <div class="swiss__main__header">
+            <div class="swiss__header-left">
+              <svg class="swiss__trophy" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0 0 11 15.9V19H7v2h10v-2h-4v-3.1a5.01 5.01 0 0 0 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/>
+              </svg>
+              <h1 id="tourName">赛事</h1>
+            </div>
+            <div class="swiss__round-badge" id="tourRoundBadge"></div>
+          </div>
 
-      <div class="table-wrap" id="tourTeamTableWrap" style="display:none;">
-        <table class="tour-games">
-          <tbody>
-            <tr>
-              <th>日期</th>
-              <th>轮次</th>
-              <th>规则</th>
-              <th>假先</th>
-              <th>结果</th>
-              <th>假后</th>
-              <th>假先胜</th>
-              <th>和棋</th>
-              <th>假后胜</th>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+          <div class="swiss__controls">
+            <div class="round-pick">
+              <button type="button" class="round-nav" id="roundPrev" aria-label="上一轮">&lt;</button>
+              <select id="roundSelect" aria-label="选择轮次"></select>
+              <span class="round-total" id="roundTotal"></span>
+              <button type="button" class="round-nav" id="roundNext" aria-label="下一轮">&gt;</button>
+            </div>
+            <div class="fbt-group" id="tourViewSeg" style="display:none;">
+              <button type="button" class="fbt active" data-view="all">全部</button>
+              <button type="button" class="fbt" data-view="games">对阵</button>
+              <button type="button" class="fbt" data-view="standings">积分榜</button>
+            </div>
+          </div>
 
-      <div id="roundStandingsWrap" style="display:none;">
-        <h3 id="standingsTitle" class="card-section-title">本轮后积分与夺冠概率</h3>
-        <div class="table-wrap">
-          <table class="renju-table tour-standings">
-            <tbody>
-              <tr>
-                <th>名次</th>
-                <th>姓名</th>
-                <th>积分</th>
-                <th>对手分</th>
-                <th>中间对手分</th>
-                <th>胜局数</th>
-                <th>夺冠概率</th>
-              </tr>
-            </tbody>
-          </table>
+          <div class="slist-wrapper" id="tourGamesWrap">
+            <table class="slist tour-games">
+              <tbody>
+                <tr>
+                  <th>日期</th>
+                  <th>轮次</th>
+                  <th>规则</th>
+                  <th>假先</th>
+                  <th>结果</th>
+                  <th>假后</th>
+                  <th>假先胜</th>
+                  <th>和棋</th>
+                  <th>假后胜</th>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div id="roundStandingsWrap" style="display:none;">
+            <h3 id="standingsTitle" class="swiss__section-title">本轮后积分与夺冠概率</h3>
+            <div class="slist-wrapper">
+              <table class="slist swiss__standing renju-table tour-standings">
+                <tbody>
+                  <tr>
+                    <th>名次</th>
+                    <th>姓名</th>
+                    <th>积分</th>
+                    <th>对手分</th>
+                    <th>中间对手分</th>
+                    <th>胜局数</th>
+                    <th>夺冠概率</th>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </main>
-  <script src="js/app.js?v=11"></script>
+  <script src="js/app.js?v=12"></script>
 </body>
 </html>

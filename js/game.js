@@ -137,56 +137,6 @@
     }
     document.title = (data.first || "") + " vs " + (data.second || "") + " - 对局详情";
 
-    var scoreStr = RESULT_SCORE[String(data.result)] || String(data.result || "vs");
-    var firstColor = "";
-    var secondColor = "";
-    if (data.second !== "轮空" && data.swap) {
-      var plusCount = (String(data.swap).match(/\+/g) || []).length;
-      if (plusCount % 2 === 1) {
-        firstColor = "白 ";
-        secondColor = "黑 ";
-      } else {
-        firstColor = "黑 ";
-        secondColor = "白 ";
-      }
-    }
-
-    var hero = document.getElementById("gameHero");
-    if (hero) {
-      hero.style.display = "block";
-      var back = document.getElementById("gameHeroBack");
-      if (back) {
-        back.href = data.tournament_id
-          ? "tournament.html?id=" + encodeURIComponent(data.tournament_id) + "&round=" + encodeURIComponent(data.round || 1)
-          : "index.html";
-      }
-      var dateEl = document.getElementById("gameHeroDate");
-      if (dateEl) dateEl.textContent = data.date || "";
-      var tourEl = document.getElementById("gameHeroTour");
-      if (tourEl) {
-        var tLink = data.tournament_id
-          ? '<a href="tournament.html?id=' + encodeURIComponent(data.tournament_id) + "&round=" + encodeURIComponent(data.round || 1) + '">' + escapeHtml(data.tournament || "") + "</a>"
-          : escapeHtml(data.tournament || "");
-        tourEl.innerHTML = tLink + " · 第" + escapeHtml(data.round) + "轮 第" + escapeHtml(data.board) + "台";
-      }
-      var fEl = document.getElementById("gameHeroFirst");
-      if (fEl) {
-        fEl.innerHTML = firstColor + (data.first_id
-          ? '<a href="player.html?id=' + encodeURIComponent(data.first_id) + '">' + escapeHtml(data.first || "") + "</a>"
-          : escapeHtml(data.first || ""));
-      }
-      var sEl = document.getElementById("gameHeroSecond");
-      if (sEl) {
-        sEl.innerHTML = secondColor + (data.second_id && data.second !== "轮空"
-          ? '<a href="player.html?id=' + encodeURIComponent(data.second_id) + '">' + escapeHtml(data.second || "") + "</a>"
-          : escapeHtml(data.second || ""));
-      }
-      var scEl = document.getElementById("gameHeroScore");
-      if (scEl) scEl.textContent = scoreStr;
-      var stEl = document.getElementById("gameHeroStatus");
-      if (stEl) stEl.textContent = data.rule ? data.rule : "终局";
-    }
-
     var box = document.getElementById("gameMeta");
     if (!box) return;
     box.innerHTML = "";
@@ -202,6 +152,40 @@
       div.appendChild(span);
       box.appendChild(div);
     }
+
+    var tourHtml = data.tournament_id
+      ? '<a href="tournament.html?id=' + encodeURIComponent(data.tournament_id) + '">' + escapeHtml(data.tournament || "") + "</a>"
+      : escapeHtml(data.tournament || "");
+    var roundHtml = data.tournament_id
+      ? '<a href="tournament.html?id=' + encodeURIComponent(data.tournament_id) + "&round=" + encodeURIComponent(data.round) + '">第' + data.round + "轮</a>"
+      : "第" + data.round + "轮";
+    addRow("赛事", tourHtml + " · " + roundHtml + " 第" + data.board + "台");
+    addRow("日期", escapeHtml(data.date || ""));
+    addRow("规则", escapeHtml(data.rule || ""));
+
+    var firstHtml = data.first_id
+      ? '<a href="player.html?id=' + encodeURIComponent(data.first_id) + '">' + escapeHtml(data.first || "") + "</a>"
+      : escapeHtml(data.first || "");
+    var secondHtml = data.second_id && data.second !== "轮空"
+      ? '<a href="player.html?id=' + encodeURIComponent(data.second_id) + '">' + escapeHtml(data.second || "") + "</a>"
+      : escapeHtml(data.second || "");
+    var scoreStr = RESULT_SCORE[String(data.result)] || String(data.result || "");
+    var firstColor = "";
+    var secondColor = "";
+    if (data.second !== "轮空" && data.swap) {
+      var plusCount = (String(data.swap).match(/\+/g) || []).length;
+      if (plusCount % 2 === 1) {
+        firstColor = "白 ";
+        secondColor = "黑 ";
+      } else {
+        firstColor = "黑 ";
+        secondColor = "白 ";
+      }
+    }
+    addRow(
+      "对阵与结果",
+      firstColor + firstHtml + " &nbsp;<strong>" + escapeHtml(scoreStr) + "</strong>&nbsp; " + secondColor + secondHtml
+    );
 
     if (data.p_first != null && data.p_draw != null && data.p_second != null) {
       addRow(

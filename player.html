@@ -4,36 +4,36 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>棋手详情 — renjuonline.top</title>
-  <link rel="stylesheet" href="css/site.css?v=11" />
+  <link rel="stylesheet" href="css/site.css?v=12" />
 </head>
 <body>
-  <header class="site-header">
-    <div class="site-header-inner">
-      <div class="site-topbar">
-        <a href="index.html" class="site-brand"><span class="site-brand-dot"></span>renjuonline.top</a>
-      </div>
-      <nav class="site-nav-tabs" aria-label="主导航">
-        <a class="site-nav-tab" href="index.html">赛事</a>
-        <a class="site-nav-tab active" href="players.html">棋手</a>
-        <a class="site-nav-tab" href="model.html">模型</a>
+  <header id="top">
+    <div class="site-title-nav">
+      <a href="index.html" class="site-name"><strong>renjuonline</strong>.top</a>
+      <nav id="topnav" aria-label="主导航">
+        <a href="index.html">赛事</a>
+        <a class="active" href="players.html">棋手</a>
+        <a href="model.html">模型</a>
       </nav>
     </div>
   </header>
 
-  <main class="page-container">
-    <div id="primaryContent" data-player-page>
-      <div class="page-head">
-        <h1 id="playerName">棋手</h1>
-        <div id="playerMeta" class="page-meta"></div>
+  <main id="main-wrap" class="is-narrow">
+    <div id="primaryContent" data-player-page class="box">
+      <div class="swiss__main__header">
+        <div class="swiss__header-left">
+          <h1 id="playerName">棋手</h1>
+        </div>
       </div>
+      <div id="playerMeta" class="game-meta"></div>
       <div id="chart"></div>
-      <div class="table-wrap">
-        <table class="player-games">
+      <div class="table-wrap slist-wrapper">
+        <table class="slist player-games">
           <tbody></tbody>
         </table>
       </div>
     </div>
   </main>
-  <script src="js/app.js?v=11"></script>
+  <script src="js/app.js?v=12"></script>
 </body>
 </html>

@@ -4,41 +4,28 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>对局详情 — renjuonline.top</title>
-  <link rel="stylesheet" href="css/site.css?v=11" />
+  <link rel="stylesheet" href="css/site.css?v=12" />
 </head>
 <body>
-  <header class="site-header">
-    <div class="site-header-inner">
-      <div class="site-topbar">
-        <a href="index.html" class="site-brand"><span class="site-brand-dot"></span>renjuonline.top</a>
-      </div>
-      <nav class="site-nav-tabs" aria-label="主导航">
-        <a class="site-nav-tab active" href="index.html">赛事</a>
-        <a class="site-nav-tab" href="players.html">棋手</a>
-        <a class="site-nav-tab" href="model.html">模型</a>
+  <header id="top">
+    <div class="site-title-nav">
+      <a href="index.html" class="site-name"><strong>renjuonline</strong>.top</a>
+      <nav id="topnav" aria-label="主导航">
+        <a class="active" href="index.html">赛事</a>
+        <a href="players.html">棋手</a>
+        <a href="model.html">模型</a>
       </nav>
     </div>
   </header>
 
-  <main class="page-container">
-    <div id="primaryContent" data-game-page>
-      <div class="game-hero" id="gameHero" style="display:none;">
-        <div class="game-hero-top">
-          <a href="index.html" class="game-hero-back" id="gameHeroBack">‹ 返回</a>
-          <span id="gameHeroDate"></span>
+  <main id="main-wrap" class="is-narrow">
+    <div id="primaryContent" data-game-page class="box">
+      <div class="swiss__main__header">
+        <div class="swiss__header-left">
+          <h1 id="gameTitle">对局详情</h1>
         </div>
-        <div class="game-hero-tour" id="gameHeroTour"></div>
-        <div class="game-hero-main">
-          <div class="game-hero-player" id="gameHeroFirst"></div>
-          <div class="game-hero-score-circle" id="gameHeroScore">vs</div>
-          <div class="game-hero-player" id="gameHeroSecond"></div>
-        </div>
-        <div class="game-hero-pill" id="gameHeroStatus"></div>
       </div>
-
-      <h1 id="gameTitle" style="display:none;">对局详情</h1>
-      <div id="gameMeta" class="game-meta-card"></div>
-
+      <div id="gameMeta" class="game-meta"></div>
       <div class="board-wrap">
         <canvas id="renjuBoard" width="480" height="480"></canvas>
       </div>
@@ -51,6 +38,6 @@
       </div>
     </div>
   </main>
-  <script src="js/game.js?v=11"></script>
+  <script src="js/game.js?v=12"></script>
 </body>
 </html>

@@ -823,29 +823,39 @@
   }
 
   function renderTournamentGames(data, round) {
-    var teamWrap = document.getElementById("tourTeamTableWrap");
-    var fixturesWrap = document.getElementById("tourFixturesWrap");
+    var gamesWrap = document.getElementById("tourGamesWrap");
     var table = document.querySelector("table.tour-games");
 
+    var badge = document.getElementById("tourRoundBadge");
+    if (badge) {
+      if (round === "pre") {
+        badge.innerHTML = "<span>阶段</span>抽签前";
+      } else if (round === "draw") {
+        badge.innerHTML = "<span>阶段</span>首轮前";
+      } else if (round != null) {
+        badge.innerHTML = "<span>轮次</span>第 " + round + " 轮";
+      }
+    }
+
     if (data.team_matches && data.team_matches.length) {
-      if (fixturesWrap) { fixturesWrap.innerHTML = ""; fixturesWrap.style.display = "none"; }
-      if (teamWrap) teamWrap.style.display = "";
+      if (gamesWrap) gamesWrap.style.display = "";
       if (table) table.style.display = "";
       renderTeamMatches(data, round);
       renderRoundStandings(data, round);
       return;
     }
 
-    if (teamWrap) teamWrap.style.display = "none";
     if (round === "pre" || round === "draw") {
-      if (fixturesWrap) { fixturesWrap.innerHTML = ""; fixturesWrap.style.display = "none"; }
+      if (gamesWrap) gamesWrap.style.display = "none";
+      if (table) table.style.display = "none";
       renderRoundStandings(data, round);
       return;
     }
-
-    if (!fixturesWrap) return;
-    fixturesWrap.style.display = "";
-    fixturesWrap.innerHTML = "";
+    if (gamesWrap) gamesWrap.style.display = "";
+    if (table) table.style.display = "";
+    if (!table || !table.tBodies[0]) return;
+    var tbody = table.tBodies[0];
+    while (tbody.rows.length > 1) tbody.deleteRow(tbody.rows.length - 1);
 
     var rs = (data && data.round_standings) || {};
     function lookupPrevPts(rnd, pid, name) {
@@ -860,105 +870,50 @@
     }
 
     var roundNum = round !== null ? Number(round) : null;
-    var games = (data.games || []).filter(function (g) {
-      return roundNum === null || Number(g.round) === roundNum;
-    });
-
-    if (games.length) {
-      var card = el("div", "fixture-card");
-      var lastDateKey = null;
-
-      games.forEach(function (game) {
-        var dateKey = (game.date || "") + "|" + (game.rule || "");
-        if (dateKey !== lastDateKey) {
-          lastDateKey = dateKey;
-          var headerParts = [];
-          if (game.date) headerParts.push(game.date);
-          headerParts.push("第" + game.round + "轮");
-          if (game.rule) headerParts.push(game.rule);
-          card.appendChild(el("div", "fixture-date-bar", headerParts.join(" · ")));
-        }
-
-        var row = el("div", "fixture-row");
-        var gr = Number(game.round);
-        var fPrev = lookupPrevPts(gr, game.first_id, game.first);
-        var sPrev = lookupPrevPts(gr, game.second_id, game.second);
-
-        var resStr = String(game.result || "");
-        var firstLost = resStr === "0" || resStr === "-+" || resStr === "--";
-        var secondLost = resStr === "1" || resStr === "+-" || resStr === "--";
-
-        var pf = game.p_first != null ? Number(game.p_first) : null;
-        var pd = game.p_draw != null ? Number(game.p_draw) : null;
-        var ps = game.p_second != null ? Number(game.p_second) : null;
-        var pMax = (pf != null && pd != null && ps != null) ? Math.max(pf, pd, ps) : null;
-
-        function buildSide(name, id, no, prevPts, prob, isLost, sideClass) {
-          var side = el("div", "fixture-side " + sideClass);
-          var pWrap = el("div", "fixture-player" + (name === "轮空" ? " is-bye" : (isLost ? " is-loser" : "")));
-          if (name === "轮空") {
-            pWrap.appendChild(el("span", "pname", name));
-          } else {
-            if (no !== null && no !== undefined && no !== "") {
-              pWrap.appendChild(el("span", "player-no", String(no)));
-            }
-            if (id) {
-              var link = el("a", "", name);
-              link.href = "player.html?id=" + encodeURIComponent(id);
-              pWrap.appendChild(link);
-            } else {
-              pWrap.appendChild(el("span", "pname", name || ""));
-            }
-            if (prevPts !== null && prevPts !== undefined && prevPts !== "") {
-              pWrap.appendChild(el("span", "player-pts", "[" + prevPts + "]"));
-            }
-          }
-          side.appendChild(pWrap);
-
-          if (prob != null) {
-            var pLine = el("div", "fixture-prob-line");
-            var txt = prob.toFixed(1) + "%";
-            if (pMax != null && prob === pMax) {
-              pLine.appendChild(el("span", "prob-pill " + (prob >= 50 ? "is-green" : "is-slate"), txt));
-            } else {
-              pLine.textContent = txt;
-            }
-            side.appendChild(pLine);
-          }
-          return side;
-        }
-
-        row.appendChild(buildSide(game.first, game.first_id, game.first_no, fPrev, pf, firstLost, "is-left"));
-
-        var center = el("div", "fixture-center");
-        var scoreText = RESULT_SCORE[resStr] || resStr;
-        var bye = game.first === "轮空" || game.second === "轮空";
-        if (!bye && game.game_id !== null && game.game_id !== undefined) {
-          var sLink = el("a", "fixture-score", scoreText);
-          sLink.href = "game.html?id=" + encodeURIComponent(game.game_id);
-          center.appendChild(sLink);
+    (data.games || []).forEach(function (game) {
+      if (roundNum !== null && Number(game.round) !== roundNum) return;
+      var tr = el("tr");
+      var day = el("td", "date", short_date(game.date));
+      day.title = game.date;
+      tr.appendChild(day);
+      tr.appendChild(el("td", "rnd", "第" + game.round + "轮 第" + game.board + "台"));
+      tr.appendChild(el("td", "rule", game.rule || ""));
+      var gr = Number(game.round);
+      var fPrev = lookupPrevPts(gr, game.first_id, game.first);
+      var sPrev = lookupPrevPts(gr, game.second_id, game.second);
+      tr.appendChild(playerCell(game.first, game.first_id, game.first_no, fPrev));
+      var scoreTd = el("td", "score");
+      var scoreText = RESULT_SCORE[String(game.result)] || String(game.result);
+      var bye = game.first === "轮空" || game.second === "轮空";
+      if (!bye && game.game_id !== null && game.game_id !== undefined) {
+        var scoreLink = el("a", "score-link", scoreText);
+        scoreLink.href = "game.html?id=" + encodeURIComponent(game.game_id);
+        scoreTd.appendChild(scoreLink);
+      } else {
+        scoreTd.textContent = scoreText;
+      }
+      tr.appendChild(scoreTd);
+      tr.appendChild(playerCell(game.second, game.second_id, game.second_no, sPrev));
+      var pf = game.p_first != null ? Number(game.p_first) : null;
+      var pd = game.p_draw != null ? Number(game.p_draw) : null;
+      var ps = game.p_second != null ? Number(game.p_second) : null;
+      var pMax = (pf != null && pd != null && ps != null) ? Math.max(pf, pd, ps) : null;
+      function makeProbTd(val) {
+        var td = el("td", "prob");
+        if (val == null) return td;
+        var txt = val.toFixed(1) + "%";
+        if (pMax != null && val === pMax) {
+          td.appendChild(el("span", "prob-pill " + (val >= 50 ? "is-green" : "is-slate"), txt));
         } else {
-          center.appendChild(el("span", "fixture-score", scoreText));
+          td.textContent = txt;
         }
-        if (pd != null) {
-          var dWrap = el("div", "fixture-draw-prob");
-          var dTxt = "和 " + pd.toFixed(1) + "%";
-          if (pMax != null && pd === pMax) {
-            dWrap.appendChild(el("span", "prob-pill " + (pd >= 50 ? "is-green" : "is-slate"), dTxt));
-          } else {
-            dWrap.textContent = dTxt;
-          }
-          center.appendChild(dWrap);
-        }
-        center.appendChild(el("div", "fixture-submeta", "第" + game.board + "台"));
-        row.appendChild(center);
-
-        row.appendChild(buildSide(game.second, game.second_id, game.second_no, sPrev, ps, secondLost, "is-right"));
-        card.appendChild(row);
-      });
-
-      fixturesWrap.appendChild(card);
-    }
+        return td;
+      }
+      tr.appendChild(makeProbTd(pf));
+      tr.appendChild(makeProbTd(pd));
+      tr.appendChild(makeProbTd(ps));
+      tbody.appendChild(tr);
+    });
     renderRoundStandings(data, round);
   }
 
@@ -1023,7 +978,7 @@
     }
 
     rows.forEach(function (r) {
-      var tr = el("tr", Number(r.rank) === 1 ? "rank-top" : "");
+      var tr = el("tr");
       tr.appendChild(el("td", "num", String(r.rank)));
       tr.appendChild(playerCell(r.name || "", r.player_id, r.player_no));
       tr.appendChild(el("td", "num", String(r.pts)));
@@ -1054,25 +1009,24 @@
   function syncTourViewSeg() {
     var seg = document.getElementById("tourViewSeg");
     var standingsWrap = document.getElementById("roundStandingsWrap");
-    var fixturesWrap = document.getElementById("tourFixturesWrap");
-    var teamWrap = document.getElementById("tourTeamTableWrap");
+    var gamesWrap = document.getElementById("tourGamesWrap");
+    var table = document.querySelector("table.tour-games");
     if (!seg) return;
-    var hasGames = (fixturesWrap && fixturesWrap.children.length > 0) || (teamWrap && teamWrap.style.display !== "none");
+    var hasGames = table && table.tBodies[0] && table.tBodies[0].rows.length > 1;
     var hasStandings = standingsWrap && standingsWrap.querySelector("table.tour-standings tbody tr") && standingsWrap.style.display !== "none";
     if (!hasGames || !hasStandings) {
       seg.style.display = "none";
       return;
     }
-    seg.style.display = "inline-flex";
+    seg.style.display = "flex";
     if (tourActiveView === "games") {
-      if (fixturesWrap && fixturesWrap.children.length) fixturesWrap.style.display = "";
+      if (gamesWrap) gamesWrap.style.display = "";
       if (standingsWrap) standingsWrap.style.display = "none";
     } else if (tourActiveView === "standings") {
-      if (fixturesWrap) fixturesWrap.style.display = "none";
-      if (teamWrap) teamWrap.style.display = "none";
+      if (gamesWrap) gamesWrap.style.display = "none";
       if (standingsWrap) standingsWrap.style.display = "block";
     } else {
-      if (fixturesWrap && fixturesWrap.children.length) fixturesWrap.style.display = "";
+      if (gamesWrap) gamesWrap.style.display = "";
       if (standingsWrap) standingsWrap.style.display = "block";
     }
   }
@@ -1155,10 +1109,10 @@
 
     var seg = document.getElementById("tourViewSeg");
     if (seg) {
-      seg.querySelectorAll(".seg-btn").forEach(function (btn) {
+      seg.querySelectorAll(".fbt").forEach(function (btn) {
         btn.addEventListener("click", function () {
           tourActiveView = btn.getAttribute("data-view") || "all";
-          seg.querySelectorAll(".seg-btn").forEach(function (b) {
+          seg.querySelectorAll(".fbt").forEach(function (b) {
             b.classList.toggle("active", b === btn);
           });
           renderTournamentGames(data, String(select.value));
