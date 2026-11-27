@@ -9,16 +9,16 @@ body,
 		"Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
-/* 表格横向滚动容器 */
+/* 表格横向滚动容器 — sport.dev 纯白底细线分割 */
 
 .table-wrap {
 	width: 100%;
 	overflow-x: auto;
 	-webkit-overflow-scrolling: touch;
 	margin-bottom: 1.5em;
-	background: var(--surface, #fff);
-	border: 1px solid var(--line, #dcdcdc);
-	border-radius: var(--radius-md, 8px);
+	background: transparent;
+	border: 0;
+	border-radius: 0;
 }
 
 .table-wrap > table {
@@ -442,11 +442,11 @@ body,
 
 .prob-pill {
 	display: inline-block;
-	padding: 0.14em 0.48em;
-	border-radius: 4px;
-	font-weight: 700;
-	font-size: 0.88em;
-	line-height: 1.35;
+	padding: 0.2em 0.55em;
+	border-radius: 5px;
+	font-weight: 600;
+	font-size: 0.9em;
+	line-height: 1.25;
 	color: #ffffff;
 	font-variant-numeric: tabular-nums;
 }

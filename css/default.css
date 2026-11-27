@@ -82,14 +82,14 @@ textarea:focus-visible {
 	background: var(--header-bg);
 	border-bottom: 1px solid var(--line);
 	height: 51px;
-	padding: 0 max(1.5rem, calc((100% - 960px) / 2));
+	padding: 0 max(1.5rem, calc((100% - 896px) / 2));
 }
 
 #menu {
 	position: absolute;
 	top: 0;
-	left: max(1.5rem, calc((100% - 960px) / 2));
-	right: max(1.5rem, calc((100% - 960px) / 2));
+	left: max(1.5rem, calc((100% - 896px) / 2));
+	right: max(1.5rem, calc((100% - 896px) / 2));
 	height: 51px;
 	display: flex;
 	align-items: center;
@@ -366,7 +366,7 @@ textarea:focus-visible {
 	float: none;
 	margin: 0 auto;
 	width: 100%;
-	max-width: 960px;
+	max-width: 896px;
 }
 
 #primaryContent {
