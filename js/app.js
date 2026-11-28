@@ -772,7 +772,8 @@
         var maxSp = Math.max.apply(null, tm.score_probs.map(function (sp) { return Number(sp.prob) || 0; }));
         tm.score_probs.forEach(function (sp) {
           var pVal = Number(sp.prob);
-          var cell = el("div", "tm-sp-item" + (pVal === maxSp && maxSp > 0 ? " is-top" : ""));
+          var isTop = pVal === maxSp && maxSp > 0;
+          var cell = el("div", "tm-sp-item" + (isTop ? (" is-lean " + (pVal >= 50 ? "lean-green" : "lean-grey")) : ""));
           cell.appendChild(el("span", "tm-sp-score", sp.score));
           cell.appendChild(el("span", "tm-sp-prob", pVal.toFixed(1) + "%"));
           spWrap.appendChild(cell);
