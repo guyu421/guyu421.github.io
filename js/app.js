@@ -920,8 +920,9 @@
       meta.appendChild(lead);
 
       var end = el("span", "mc-end");
-      if (game.date) {
-        end.appendChild(el("span", "mc-where", game.date));
+      var dateText = game.date || (data && data.start_date) || "";
+      if (dateText) {
+        end.appendChild(el("span", "mc-where mc-date", dateText));
       }
       var bye = game.first === "轮空" || game.second === "轮空";
       if (!bye && game.game_id !== null && game.game_id !== undefined) {

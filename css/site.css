@@ -127,6 +127,19 @@ main.container .sd-col[data-admin-page] {
   text-decoration: underline;
 }
 
+/* Always show match date on pairing cards, including narrow/mobile viewports */
+.mc-where.mc-date {
+  display: inline;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+@container mc (max-width: 440px) {
+  .mc-where.mc-date {
+    display: inline;
+  }
+}
+
 .mc-side .mc-chip {
   font-weight: 600;
 }
