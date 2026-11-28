@@ -127,7 +127,12 @@ main.container .sd-col[data-admin-page] {
   text-decoration: underline;
 }
 
-/* Always show match date on pairing cards, including narrow/mobile viewports */
+/* Always show match rule & date on pairing cards, including narrow/mobile viewports */
+.mc-rule {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 .mc-where.mc-date {
   display: inline;
   flex-shrink: 0;

@@ -913,13 +913,12 @@
       var lead = el("span", "mc-lead");
       var lg = el("b", "mc-lg", "第" + game.round + "轮 第" + game.board + "台");
       lead.appendChild(lg);
-      if (game.rule) {
-        lead.appendChild(document.createTextNode(" "));
-        lead.appendChild(el("span", "mc-rd", game.rule));
-      }
       meta.appendChild(lead);
 
       var end = el("span", "mc-end");
+      if (game.rule) {
+        end.appendChild(el("span", "mc-rd mc-rule", game.rule));
+      }
       var dateText = game.date || (data && data.start_date) || "";
       if (dateText) {
         end.appendChild(el("span", "mc-where mc-date", dateText));
