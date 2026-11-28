@@ -677,196 +677,206 @@
   }
 
   function renderTeamMatches(data, round) {
-    var table = document.querySelector("table.tour-games");
-    if (!table || !table.tBodies[0]) return;
-    var tbody = table.tBodies[0];
-    if (tbody.rows[0] && tbody.rows[0].cells.length >= 9) {
-      tbody.rows[0].cells[3].textContent = "左方";
-      tbody.rows[0].cells[5].textContent = "右方";
-      tbody.rows[0].cells[6].textContent = "左方胜率";
-      tbody.rows[0].cells[8].textContent = "右方胜率";
-    }
-    while (tbody.rows.length > 1) tbody.deleteRow(tbody.rows.length - 1);
+    var cardsWrap = document.getElementById("tourMatchesCards");
+    var teamWrap = document.getElementById("tourTeamTableWrap");
+    if (teamWrap) teamWrap.style.display = "none";
+    if (!cardsWrap) return;
+    cardsWrap.style.display = "";
+    cardsWrap.innerHTML = "";
 
     var roundNum = round !== null ? Number(round) : null;
-    (data.team_matches || []).forEach(function (tm) {
-      if (roundNum !== null && Number(tm.round) !== roundNum) return;
+    var matches = (data.team_matches || []).filter(function (tm) {
+      return roundNum === null || Number(tm.round) === roundNum;
+    });
 
-      // 团体对抗汇总行（沿用原有表格列：日期 | 轮次 | 规则 | 队伍A | 局分 | 队伍B | 胜% | 平% | 负%）
-      var tr = el("tr");
-      var day = el("td", "date", short_date(tm.date));
-      day.title = tm.date;
-      tr.appendChild(day);
-      tr.appendChild(el("td", "rnd", "第" + tm.round + "轮 第" + tm.match_board + "台"));
-      tr.appendChild(el("td", "rule", tm.rule || ""));
-      var ta = el("td", "");
-      ta.style.fontWeight = "600";
-      if (tm.team_a_no !== null && tm.team_a_no !== undefined && tm.team_a_no !== "") {
-        ta.appendChild(el("span", "player-no", String(tm.team_a_no)));
+    var FLIP_SCORE = {
+      "1:0": "0:1",
+      "0:1": "1:0",
+      "+:-": "-:+",
+      "-:+": "+:-"
+    };
+
+    matches.forEach(function (tm, idx) {
+      if (idx > 0) {
+        cardsWrap.appendChild(el("div", "upcoming-match-divider"));
       }
-      ta.appendChild(document.createTextNode(tm.team_a_name || ""));
-      tr.appendChild(ta);
-      var sc = el("td", "score", tm.score_a + "-" + tm.score_b);
-      sc.style.fontWeight = "700";
-      tr.appendChild(sc);
-      var tb = el("td", "");
-      tb.style.fontWeight = "600";
-      if (tm.team_b_no !== null && tm.team_b_no !== undefined && tm.team_b_no !== "") {
-        tb.appendChild(el("span", "player-no", String(tm.team_b_no)));
+      var mcRow = el("div", "upcoming-match-row mc-row tm-row");
+      var mcIn = el("div", "mc-in");
+      var summary = el("div", "upcoming-match-summary");
+
+      // Top meta line: round/board left, rule center, date right
+      var meta = el("div", "mc-meta");
+      var lead = el("span", "mc-lead");
+      lead.appendChild(el("b", "mc-lg", "第" + tm.round + "轮 第" + tm.match_board + "台"));
+      meta.appendChild(lead);
+
+      var mid = el("span", "mc-mid");
+      if (tm.rule) {
+        mid.appendChild(el("span", "mc-rd mc-rule", tm.rule));
       }
-      tb.appendChild(document.createTextNode(tm.team_b_name || ""));
-      tr.appendChild(tb);
+      meta.appendChild(mid);
+
+      var end = el("span", "mc-end");
+      var tmDate = tm.date || (data && data.start_date) || "";
+      if (tmDate) {
+        end.appendChild(el("span", "mc-where mc-date", tmDate));
+      }
+      end.appendChild(el("span", "mc-chev"));
+      meta.appendChild(end);
+      summary.appendChild(meta);
+
+      // Team face-off (.mc-main)
+      var main = el("div", "mc-main");
       var pWin = tm.p_win != null ? Number(tm.p_win) : null;
       var pDraw = tm.p_draw != null ? Number(tm.p_draw) : null;
       var pLoss = tm.p_loss != null ? Number(tm.p_loss) : null;
       var tmMax = (pWin != null && pDraw != null && pLoss != null) ? Math.max(pWin, pDraw, pLoss) : null;
-      function makeTmProbTd(val) {
-        var td = el("td", "prob");
-        if (val == null) return td;
-        var txt = val.toFixed(1) + "%";
-        if (tmMax != null && val === tmMax) {
-          td.appendChild(el("span", "prob-pill " + (val >= 50 ? "is-green" : "is-slate"), txt));
-        } else {
-          td.textContent = txt;
-        }
-        return td;
-      }
-      tr.appendChild(makeTmProbTd(pWin));
-      tr.appendChild(makeTmProbTd(pDraw));
-      tr.appendChild(makeTmProbTd(pLoss));
-      tbody.appendChild(tr);
 
+      function buildTeamSide(name, no, prob, sideClass) {
+        var side = el("div", "mc-side " + sideClass);
+        var nm = el("span", "mc-nm");
+        if (no !== null && no !== undefined && no !== "") {
+          nm.appendChild(el("span", "player-no", String(no)));
+        }
+        nm.appendChild(el("span", "mc-name tm-team-name", name || ""));
+        side.appendChild(nm);
+        if (prob != null) {
+          var isLead = tmMax != null && prob === tmMax;
+          var cls = "mc-pct" + (isLead ? (" is-fav is-lean " + (prob >= 50 ? "lean-green" : "lean-grey")) : "");
+          side.appendChild(el("span", cls, prob.toFixed(1) + "%"));
+        }
+        return side;
+      }
+
+      main.appendChild(buildTeamSide(tm.team_a_name, tm.team_a_no, pWin, "is-home"));
+
+      var center = el("div", "mc-c");
+      var scoreSpan = el("span", "mc-score");
+      scoreSpan.appendChild(document.createTextNode(String(tm.score_a != null ? tm.score_a : "")));
+      scoreSpan.appendChild(el("span", "mc-dash", "–"));
+      scoreSpan.appendChild(document.createTextNode(String(tm.score_b != null ? tm.score_b : "")));
+      center.appendChild(scoreSpan);
+      if (pDraw != null) {
+        var dLead = tmMax != null && pDraw === tmMax;
+        var dCls = "mc-draw" + (dLead ? (" is-fav is-lean " + (pDraw >= 50 ? "lean-green" : "lean-grey")) : "");
+        center.appendChild(el("span", dCls, "平局 " + pDraw.toFixed(1) + "%"));
+      }
+      main.appendChild(center);
+
+      main.appendChild(buildTeamSide(tm.team_b_name, tm.team_b_no, pLoss, "is-away"));
+      summary.appendChild(main);
+
+      // Score distribution pills (.tm-score-probs)
       if (tm.score_probs && tm.score_probs.length) {
-        var spTr = el("tr", "score-probs-row");
-        var spTd = el("td", "");
-        spTd.colSpan = 9;
-        spTd.style.padding = "0";
-        var spTable = document.createElement("table");
-        spTable.className = "score-probs-table";
-        spTable.style.width = "100%";
-        spTable.style.borderCollapse = "collapse";
-        spTable.style.margin = "0";
-        spTable.style.fontSize = "12px";
-        spTable.style.textAlign = "center";
-        spTable.style.color = "#000";
-        var headRow = document.createElement("tr");
-        var valRow = document.createElement("tr");
-        var hLabel = el("td", "", "局分");
-        hLabel.style.padding = "3px 6px";
-        hLabel.style.background = "#f5f5f5";
-        hLabel.style.color = "#000";
-        hLabel.style.fontWeight = "600";
-        hLabel.style.border = "1px solid #ddd";
-        headRow.appendChild(hLabel);
-        var vLabel = el("td", "", "概率");
-        vLabel.style.padding = "3px 6px";
-        vLabel.style.color = "#000";
-        vLabel.style.fontWeight = "600";
-        vLabel.style.border = "1px solid #ddd";
-        valRow.appendChild(vLabel);
+        var spWrap = el("div", "tm-score-probs");
+        var maxSp = Math.max.apply(null, tm.score_probs.map(function (sp) { return Number(sp.prob) || 0; }));
         tm.score_probs.forEach(function (sp) {
-          var th = el("td", "", sp.score);
-          th.style.padding = "3px 6px";
-          th.style.background = "#f5f5f5";
-          th.style.color = "#000";
-          th.style.fontWeight = "600";
-          th.style.border = "1px solid #ddd";
-          headRow.appendChild(th);
-          var td = el("td", "", Number(sp.prob).toFixed(1) + "%");
-          td.style.padding = "3px 6px";
-          td.style.color = "#000";
-          td.style.border = "1px solid #ddd";
-          valRow.appendChild(td);
+          var pVal = Number(sp.prob);
+          var cell = el("div", "tm-sp-item" + (pVal === maxSp && maxSp > 0 ? " is-top" : ""));
+          cell.appendChild(el("span", "tm-sp-score", sp.score));
+          cell.appendChild(el("span", "tm-sp-prob", pVal.toFixed(1) + "%"));
+          spWrap.appendChild(cell);
         });
-        spTable.appendChild(headRow);
-        spTable.appendChild(valRow);
-        spTd.appendChild(spTable);
-        spTr.appendChild(spTd);
-        tbody.appendChild(spTr);
+        summary.appendChild(spWrap);
       }
 
-      var FLIP_SCORE = {
-        "1:0": "0:1",
-        "0:1": "1:0",
-        "+:-": "-:+",
-        "-:+": "+:-"
-      };
-      (tm.boards || []).forEach(function (b) {
-        var bTr = el("tr");
-        bTr.appendChild(el("td", "date", ""));
-        bTr.appendChild(el("td", "rnd", "第" + b.board_no + "台"));
-        bTr.appendChild(el("td", "rule", ""));
+      // Individual boards (.tm-boards)
+      if (tm.boards && tm.boards.length) {
+        var boardsWrap = el("div", "tm-boards");
+        tm.boards.forEach(function (b) {
+          var bRow = el("div", "tm-board-row");
+          var aIsFirst = b.team_a_side !== "second";
+          var leftName = aIsFirst ? (b.first || "—") : (b.second || "—");
+          var leftId = aIsFirst ? b.first_id : b.second_id;
+          var rightName = aIsFirst ? (b.second || "—") : (b.first || "—");
+          var rightId = aIsFirst ? b.second_id : b.first_id;
 
-        var aIsFirst = b.team_a_side !== "second";
-        var leftName = aIsFirst ? (b.first || "—") : (b.second || "—");
-        var leftId = aIsFirst ? b.first_id : b.second_id;
-        var rightName = aIsFirst ? (b.second || "—") : (b.first || "—");
-        var rightId = aIsFirst ? b.second_id : b.first_id;
+          var pLeft = aIsFirst ? b.p_first : b.p_second;
+          var pRight = aIsFirst ? b.p_second : b.p_first;
+          var bL = pLeft != null ? Number(pLeft) : null;
+          var bD = b.p_draw != null ? Number(b.p_draw) : null;
+          var bR = pRight != null ? Number(pRight) : null;
+          var bMax = (bL != null && bD != null && bR != null) ? Math.max(bL, bD, bR) : null;
 
-        var leftTd = playerCell(leftName, leftId);
-        if (aIsFirst && b.first) {
-          var starL = el("span", "", "* ");
-          starL.style.color = "#c0392b";
-          starL.style.fontWeight = "700";
-          leftTd.insertBefore(starL, leftTd.firstChild);
-        }
-        bTr.appendChild(leftTd);
-
-        var scoreTd = el("td", "score");
-        var rawScore = RESULT_SCORE[String(b.result)] || String(b.result || "--");
-        var scoreText = aIsFirst ? rawScore : (FLIP_SCORE[rawScore] || rawScore);
-        if (b.game_id !== null && b.game_id !== undefined) {
-          var scoreLink = el("a", "score-link", scoreText);
-          scoreLink.href = "game.html?id=" + encodeURIComponent(b.game_id);
-          scoreTd.appendChild(scoreLink);
-        } else {
-          scoreTd.textContent = scoreText;
-        }
-        bTr.appendChild(scoreTd);
-
-        var rightTd = playerCell(rightName, rightId);
-        if (!aIsFirst && b.first) {
-          var starR = el("span", "", "* ");
-          starR.style.color = "#c0392b";
-          starR.style.fontWeight = "700";
-          rightTd.insertBefore(starR, rightTd.firstChild);
-        }
-        bTr.appendChild(rightTd);
-
-        var pLeft = aIsFirst ? b.p_first : b.p_second;
-        var pRight = aIsFirst ? b.p_second : b.p_first;
-        var bL = pLeft != null ? Number(pLeft) : null;
-        var bD = b.p_draw != null ? Number(b.p_draw) : null;
-        var bR = pRight != null ? Number(pRight) : null;
-        var bMax = (bL != null && bD != null && bR != null) ? Math.max(bL, bD, bR) : null;
-        function makeBProbTd(val) {
-          var td = el("td", "prob");
-          if (val == null) return td;
-          var txt = val.toFixed(1) + "%";
-          if (bMax != null && val === bMax) {
-            td.appendChild(el("span", "prob-pill " + (val >= 50 ? "is-green" : "is-slate"), txt));
-          } else {
-            td.textContent = txt;
+          function buildBoardSide(name, id, isFirstBlack, prob, sideClass) {
+            var side = el("div", "mc-side " + sideClass);
+            var nm = el("span", "mc-nm");
+            if (sideClass === "is-home") {
+              nm.appendChild(el("span", "tm-board-no", "第" + b.board_no + "台"));
+            }
+            if (isFirstBlack) {
+              nm.appendChild(el("span", "tm-black-dot", "*"));
+            }
+            var nameEl = el("span", "mc-name");
+            if (id) {
+              var link = el("a", "mc-player-link", name);
+              link.href = "player.html?id=" + encodeURIComponent(id);
+              nameEl.appendChild(link);
+            } else {
+              nameEl.textContent = name;
+            }
+            nm.appendChild(nameEl);
+            side.appendChild(nm);
+            if (prob != null) {
+              var isLead = bMax != null && prob === bMax;
+              var cls = "mc-pct" + (isLead ? (" is-fav is-lean " + (prob >= 50 ? "lean-green" : "lean-grey")) : "");
+              side.appendChild(el("span", cls, prob.toFixed(1) + "%"));
+            }
+            return side;
           }
-          return td;
-        }
-        bTr.appendChild(makeBProbTd(bL));
-        bTr.appendChild(makeBProbTd(bD));
-        bTr.appendChild(makeBProbTd(bR));
-        tbody.appendChild(bTr);
-      });
+
+          bRow.appendChild(buildBoardSide(leftName, leftId, aIsFirst && !!b.first, bL, "is-home"));
+
+          var bCenter = el("div", "mc-c");
+          var rawScore = RESULT_SCORE[String(b.result)] || String(b.result || "--");
+          var scoreText = aIsFirst ? rawScore : (FLIP_SCORE[rawScore] || rawScore);
+          var bScoreSpan = el("span", "mc-score tm-board-score");
+          if (scoreText.indexOf(":") >= 0) {
+            var parts = scoreText.split(":");
+            bScoreSpan.appendChild(document.createTextNode(parts[0]));
+            bScoreSpan.appendChild(el("span", "mc-dash", "–"));
+            bScoreSpan.appendChild(document.createTextNode(parts[1]));
+          } else {
+            bScoreSpan.textContent = scoreText;
+          }
+          if (b.game_id !== null && b.game_id !== undefined) {
+            var bLink = el("a", "mc-player-link");
+            bLink.href = "game.html?id=" + encodeURIComponent(b.game_id);
+            bLink.appendChild(bScoreSpan);
+            bCenter.appendChild(bLink);
+          } else {
+            bCenter.appendChild(bScoreSpan);
+          }
+          if (bD != null) {
+            var bdLead = bMax != null && bD === bMax;
+            var bdCls = "mc-draw" + (bdLead ? (" is-fav is-lean " + (bD >= 50 ? "lean-green" : "lean-grey")) : "");
+            bCenter.appendChild(el("span", bdCls, "和棋 " + bD.toFixed(1) + "%"));
+          }
+          bRow.appendChild(bCenter);
+
+          bRow.appendChild(buildBoardSide(rightName, rightId, !aIsFirst && !!b.first, bR, "is-away"));
+          boardsWrap.appendChild(bRow);
+        });
+        summary.appendChild(boardsWrap);
+      }
+
+      mcIn.appendChild(summary);
+      mcRow.appendChild(mcIn);
+      cardsWrap.appendChild(mcRow);
     });
   }
 
   function renderTournamentGames(data, round) {
     var cardsWrap = document.getElementById("tourMatchesCards");
     var teamWrap = document.getElementById("tourTeamTableWrap");
-    var table = document.querySelector("table.tour-games");
 
     if (data.team_matches && data.team_matches.length) {
-      if (cardsWrap) { cardsWrap.innerHTML = ""; cardsWrap.style.display = "none"; }
-      if (teamWrap) teamWrap.style.display = "";
-      if (table) table.style.display = "";
+      if (round === "pre" || round === "draw") {
+        if (cardsWrap) { cardsWrap.innerHTML = ""; cardsWrap.style.display = "none"; }
+        if (teamWrap) teamWrap.style.display = "none";
+        renderRoundStandings(data, round);
+        return;
+      }
       renderTeamMatches(data, round);
       renderRoundStandings(data, round);
       return;
@@ -908,17 +918,20 @@
       var mcIn = el("div", "mc-in");
       var summary = el("div", "upcoming-match-summary");
 
-      // Top meta line (.mc-meta)
+      // Top meta line (.mc-meta): round/board left, rule center, date right
       var meta = el("div", "mc-meta");
       var lead = el("span", "mc-lead");
       var lg = el("b", "mc-lg", "第" + game.round + "轮 第" + game.board + "台");
       lead.appendChild(lg);
       meta.appendChild(lead);
 
-      var end = el("span", "mc-end");
+      var mid = el("span", "mc-mid");
       if (game.rule) {
-        end.appendChild(el("span", "mc-rd mc-rule", game.rule));
+        mid.appendChild(el("span", "mc-rd mc-rule", game.rule));
       }
+      meta.appendChild(mid);
+
+      var end = el("span", "mc-end");
       var dateText = game.date || (data && data.start_date) || "";
       if (dateText) {
         end.appendChild(el("span", "mc-where mc-date", dateText));
