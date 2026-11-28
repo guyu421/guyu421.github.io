@@ -101,6 +101,7 @@
     lines.push("赛事: " + tData.name);
     lines.push("日期: " + (tData.start_date || ""));
     lines.push("规则: " + defaultRule);
+    lines.push("总轮数: " + (tData.total_rounds != null ? tData.total_rounds : ""));
     lines.push("单循环: " + (tData.is_round_robin ? "是" : "否"));
     var tb = (tData.tiebreak_rules && tData.tiebreak_rules.length)
       ? tData.tiebreak_rules
@@ -199,6 +200,7 @@
       "赛事: 2026年示例锦标赛-公开组",
       "日期: 2026-11-25",
       "规则: 塔拉山口-10",
+      "总轮数: 7",
       "单循环: 否",
       "破同分: bh,mbh,wins",
       "夺冠概率: 否",
@@ -221,7 +223,7 @@
     txtEditorEl.value = [
       "# 共通指令示例（对象均支持 game/tournament/player 或 对局/赛事/选手）",
       "# SET game 4990 result=平 swap=+--+- 5a=8 moves=h8 h9 g10 g8",
-      "# SET tournament 57 name=新赛事名称 start_date=2026-11-25 is_round_robin=false tiebreak_rules=bh,mbh,wins calc_champ_prob=true",
+      "# SET tournament 57 name=新赛事名称 start_date=2026-11-25 total_rounds=7 is_round_robin=false tiebreak_rules=bh,mbh,wins calc_champ_prob=true",
       "# SET player 619 name=新姓名",
       "# RENAME tournament 57 新赛事名称",
       "# RENAME player 619 新姓名",
